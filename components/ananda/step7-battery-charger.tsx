@@ -1,11 +1,71 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { aChargers, aChargingPorts } from "@/lib/ananda-data"
 import { useAnandaProductData } from "./product-data-provider"
+import type { DbBattery } from "@/lib/ananda-db-types"
 import { StepHeader, SectionLabel, TechSpecRow, EmptyState } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Image as ImageIcon, BatteryFull } from "lucide-react"
+
+function BatteryCard({ battery, selected, onSelect }: { battery: DbBattery; selected: boolean; onSelect: () => void }) {
+  const [imageFailed, setImageFailed] = useState(false)
+  return (
+    <div
+      onClick={onSelect}
+      className={cn(
+        "relative cursor-pointer border-2 overflow-hidden transition-all flex flex-col",
+        selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40"
+      )}
+    >
+      <div className={cn("h-1 w-full", selected ? "bg-primary" : "bg-border")} />
+      {selected && (
+        <div className="absolute top-2 right-2 z-10">
+          <div className="bg-primary rounded-full p-0.5"><CheckCircle2 className="w-3 h-3 text-white" /></div>
+        </div>
+      )}
+
+      {/* Image placeholder */}
+      <div className={cn(
+        "relative flex items-center justify-center overflow-hidden",
+        selected ? "bg-primary/5" : "bg-surface"
+      )} style={{ minHeight: 100 }}>
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polygon points="60,0 100,0 100,100 40,100"
+            fill={selected ? "#008F36" : "#f3f4f6"} opacity={selected ? "0.12" : "0.6"} />
+        </svg>
+        {battery.image_url && !imageFailed ? (
+          <img
+            src={battery.image_url}
+            alt={battery.model}
+            className="relative z-10 max-h-20 object-contain"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <div className="relative z-10 flex flex-col items-center gap-1 py-4">
+            <ImageIcon className={cn("w-7 h-7", selected ? "text-primary/40" : "text-border")} />
+          </div>
+        )}
+      </div>
+
+      <div className="p-3 flex-1 flex flex-col">
+        {/* Big Wh number */}
+        <div className="flex items-end gap-0.5 mb-1">
+          <span className={cn("text-3xl font-sans font-black leading-none", selected ? "text-primary" : "text-graphite")}>
+            {battery.capacity_wh ?? "—"}
+          </span>
+          <span className="text-sm font-sans font-bold text-primary mb-0.5">Wh</span>
+        </div>
+        <span className="text-[11px] font-sans font-bold uppercase text-muted-foreground">{battery.voltage_v}V Platform</span>
+        <div className="mt-2 space-y-0.5 flex-1">
+          <TechSpecRow label="Weight" value={battery.weight_kg ? `${battery.weight_kg} kg` : null} />
+          {battery.size && <TechSpecRow label="Package" value={battery.size} />}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function Step7BatteryCharger() {
   const s = useAnandaStore()
@@ -58,54 +118,12 @@ export function Step7BatteryCharger() {
             <div className="col-span-full"><EmptyState title="No Batteries Available" description="No batteries match the selected voltage platform. Please adjust your selection in the previous steps, or select 'No Battery'." /></div>
           ) : (
             filteredBatteries.map(b => (
-              <div
+              <BatteryCard
                 key={b.id}
-                onClick={() => s.setField("batteryId", b.id)}
-                className={cn(
-                  "relative cursor-pointer border-2 overflow-hidden transition-all flex flex-col",
-                  s.batteryId === b.id ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40"
-                )}
-              >
-                <div className={cn("h-1 w-full", s.batteryId === b.id ? "bg-primary" : "bg-border")} />
-                {s.batteryId === b.id && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-primary rounded-full p-0.5"><CheckCircle2 className="w-3 h-3 text-white" /></div>
-                  </div>
-                )}
-
-                {/* Image placeholder */}
-                <div className={cn(
-                  "relative flex items-center justify-center overflow-hidden",
-                  s.batteryId === b.id ? "bg-primary/5" : "bg-surface"
-                )} style={{ minHeight: 100 }}>
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <polygon points="60,0 100,0 100,100 40,100"
-                      fill={s.batteryId === b.id ? "#008F36" : "#f3f4f6"} opacity={s.batteryId === b.id ? "0.12" : "0.6"} />
-                  </svg>
-                  {b.image_url ? (
-                    <img src={b.image_url} alt={b.model} className="relative z-10 max-h-20 object-contain" />
-                  ) : (
-                    <div className="relative z-10 flex flex-col items-center gap-1 py-4">
-                      <ImageIcon className={cn("w-7 h-7", s.batteryId === b.id ? "text-primary/40" : "text-border")} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-3 flex-1 flex flex-col">
-                  {/* Big Wh number */}
-                  <div className="flex items-end gap-0.5 mb-1">
-                    <span className={cn("text-3xl font-sans font-black leading-none", s.batteryId === b.id ? "text-primary" : "text-graphite")}>
-                      {b.capacity_wh ?? "—"}
-                    </span>
-                    <span className="text-sm font-sans font-bold text-primary mb-0.5">Wh</span>
-                  </div>
-                  <span className="text-[11px] font-sans font-bold uppercase text-muted-foreground">{b.voltage_v}V Platform</span>
-                  <div className="mt-2 space-y-0.5 flex-1">
-                    <TechSpecRow label="Weight" value={b.weight_kg ? `${b.weight_kg} kg` : null} />
-                    {b.size && <TechSpecRow label="Package" value={b.size} />}
-                  </div>
-                </div>
-              </div>
+                battery={b}
+                selected={s.batteryId === b.id}
+                onSelect={() => s.setField("batteryId", b.id)}
+              />
             ))
           )}
         </div>

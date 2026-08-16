@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { aSensors } from "@/lib/ananda-data"
 import { useAnandaProductData } from "./product-data-provider"
@@ -18,6 +19,7 @@ function SmallProductCard({
   selected: boolean; onSelect: () => void
   badge?: "required" | "optional"
 }) {
+  const [imageFailed, setImageFailed] = useState(false)
   return (
     <div
       onClick={onSelect}
@@ -46,8 +48,13 @@ function SmallProductCard({
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 112" preserveAspectRatio="none">
           <polygon points="120,0 200,0 200,112 80,112" fill={selected ? "#008F36" : "#f3f4f6"} opacity={selected ? "0.12" : "0.5"} />
         </svg>
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} className="relative z-10 max-h-20 object-contain" />
+        {imageUrl && !imageFailed ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="relative z-10 max-h-20 object-contain"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <div className="relative z-10 flex flex-col items-center gap-1">
             <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />

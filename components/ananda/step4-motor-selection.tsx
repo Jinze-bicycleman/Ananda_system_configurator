@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useAnandaProductData } from "./product-data-provider"
 import { driveTypeToMotorType } from "@/lib/ananda-db-types"
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { CheckCircle2, Image as ImageIcon } from "lucide-react"
 
 function MotorCard({ motor, selected, onSelect }: { motor: DbMotor; selected: boolean; onSelect: () => void }) {
+  const [imageFailed, setImageFailed] = useState(false)
   return (
     <div
       className={cn(
@@ -44,8 +46,13 @@ function MotorCard({ motor, selected, onSelect }: { motor: DbMotor; selected: bo
               fill={selected ? "#008F36" : "#f3f4f6"} opacity={selected ? "0.12" : "0.6"} />
           </svg>
         </div>
-        {motor.image_url ? (
-          <img src={motor.image_url} alt={motor.model} className="relative z-10 max-h-36 object-contain" />
+        {motor.image_url && !imageFailed ? (
+          <img
+            src={motor.image_url}
+            alt={motor.model}
+            className="relative z-10 max-h-36 object-contain"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <div className="relative z-10 flex flex-col items-center justify-center gap-2 py-10">
             <ImageIcon className={cn("w-12 h-12", selected ? "text-primary/40" : "text-border")} />
