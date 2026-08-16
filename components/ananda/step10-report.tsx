@@ -2,10 +2,10 @@
 
 import { useAnandaStore } from "@/lib/ananda-store"
 import {
-  aMotors, aBatteries, aControllers, aDisplays, aRemotes,
   aSensors, aChargers, aChargingPorts, aAccessories,
-  motorTorqueFallback
 } from "@/lib/ananda-data"
+import { useAnandaProductData } from "./product-data-provider"
+import type { DbMotor } from "@/lib/ananda-db-types"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -16,13 +16,14 @@ function calcDrivetrain(
   cadenceRpm: number,
   tyreCircumferenceMm: number | null,
   motorId: string | null,
-  driveType: "mid" | "hub" | null
+  driveType: "mid" | "hub" | null,
+  motors: DbMotor[]
 ) {
   const gearRatio = chainringT / rearT
   const wheelCircumM = (tyreCircumferenceMm ?? 2200) / 1000
   const speedKmh = (cadenceRpm * gearRatio * wheelCircumM * 60) / 1000
-  const motor = aMotors.find(m => m.id === motorId)
-  const motorTorque = motor?.torqueNm ?? (motorId ? (motorTorqueFallback[motorId] ?? 80) : 80)
+  const motor = motors.find(m => m.id === motorId)
+  const motorTorque = motor?.torque_nm ?? 80
   const onWheelTorque = driveType === "mid"
     ? motorTorque / gearRatio
     : motorTorque
@@ -61,12 +62,12 @@ function Row({ label, value, highlight, warn }: {
 
 export function Step10Report() {
   const s = useAnandaStore()
+  const { motors, controllers, batteries, hmiDisplays } = useAnandaProductData()
 
-  const motor        = aMotors.find(m => m.id === s.motorId)
-  const battery      = aBatteries.find(b => b.id === s.batteryId)
-  const controller   = aControllers.find(c => c.id === s.controllerId)
-  const display      = aDisplays.find(d => d.id === s.displayId)
-  const remote       = aRemotes.find(r => r.id === s.remoteId)
+  const motor        = motors.find(m => m.id === s.motorId)
+  const battery      = batteries.find(b => b.id === s.batteryId)
+  const controller   = controllers.find(c => c.id === s.controllerId)
+  const display      = hmiDisplays.find(d => d.id === s.hmiDisplayId)
   const charger      = aChargers.find(c => c.id === s.chargerId)
   const chargingPort = aChargingPorts.find(p => p.id === s.chargingPortId)
   const speedSensor  = aSensors.find(x => x.id === s.speedSensorId)
@@ -80,7 +81,8 @@ export function Step10Report() {
     s.cadenceRpm,
     s.tyreCircumferenceMm,
     s.motorId,
-    s.driveType
+    s.driveType,
+    motors
   )
 
   const speedExceedsLimit = s.speedLimitKmh != null && speedKmh > s.speedLimitKmh
@@ -88,8 +90,8 @@ export function Step10Report() {
 
   // Weight: motor + battery only
   let systemWeightKg = 0
-  if (motor?.weightKg)   systemWeightKg += motor.weightKg
-  if (battery?.weightKg) systemWeightKg += battery.weightKg
+  if (motor?.weight_kg)   systemWeightKg += motor.weight_kg
+  if (battery?.weight_kg) systemWeightKg += battery.weight_kg
 
   const isMid = s.driveType === "mid"
 
@@ -117,17 +119,16 @@ export function Step10Report() {
       <ReportSection title="Drive System">
         <Row label="Drive Type"       value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub Motor" : "—"} highlight />
         <Row label="Voltage Platform" value={s.voltagePlatform ? `${s.voltagePlatform}V` : "—"} highlight />
-        <Row label="Motor"            value={motor ? motor.name : "—"} />
-        <Row label="Motor Power"      value={motor?.powerW ? `${motor.powerW}W` : "—"} />
-        <Row label="Motor Torque"     value={motor?.torqueNm ? `${motor.torqueNm} Nm` : "—"} />
-        {motor?.weightKg && <Row label="Motor Weight" value={`${motor.weightKg} kg`} />}
+        <Row label="Motor"            value={motor ? motor.model : "—"} />
+        <Row label="Motor Power"      value={motor?.rated_power_w ? `${motor.rated_power_w}W` : "—"} />
+        <Row label="Motor Torque"     value={motor?.torque_nm ? `${motor.torque_nm} Nm` : "—"} />
+        {motor?.weight_kg && <Row label="Motor Weight" value={`${motor.weight_kg} kg`} />}
       </ReportSection>
 
       {/* ─── System Components ─── */}
       <ReportSection title="System Components">
-        <Row label="Controller"    value={isMid ? "Integrated" : controller ? controller.name : "—"} />
-        <Row label="Display"       value={display ? display.name : "—"} />
-        <Row label="Remote"        value={remote ? remote.name : "—"} />
+        <Row label="Controller"    value={isMid ? "Integrated" : controller ? controller.model : "—"} />
+        <Row label="Display"       value={display ? display.model : "—"} />
         <Row label="Speed Sensor"  value={speedSensor ? speedSensor.name : "—"} />
         {isMid ? (
           <>
@@ -180,9 +181,9 @@ export function Step10Report() {
 
       {/* ─── Battery / Charger ─── */}
       <ReportSection title="Battery & Charging">
-        <Row label="Battery"          value={battery ? battery.name : s.batteryId === "none" ? "No Battery" : "—"} />
-        {battery?.capacityWh && <Row label="Capacity"  value={`${battery.capacityWh} Wh`} />}
-        {battery?.weightKg && <Row label="Battery Weight" value={`${battery.weightKg} kg`} />}
+        <Row label="Battery"          value={battery ? battery.model : s.batteryId === "none" ? "No Battery" : "—"} />
+        {battery?.capacity_wh && <Row label="Capacity"  value={`${battery.capacity_wh} Wh`} />}
+        {battery?.weight_kg && <Row label="Battery Weight" value={`${battery.weight_kg} kg`} />}
         <Row label="Charger"          value={charger ? charger.name : "—"} />
         <Row label="Charging Port"    value={chargingPort ? chargingPort.name : "—"} />
       </ReportSection>
@@ -199,8 +200,8 @@ export function Step10Report() {
       {/* ─── System Weight Estimate ─── */}
       {systemWeightKg > 0 && (
         <ReportSection title="System Weight Estimate">
-          {motor?.weightKg && <Row label="Motor"   value={`${motor.weightKg} kg`} />}
-          {battery?.weightKg && <Row label="Battery" value={`${battery.weightKg} kg`} />}
+          {motor?.weight_kg && <Row label="Motor"   value={`${motor.weight_kg} kg`} />}
+          {battery?.weight_kg && <Row label="Battery" value={`${battery.weight_kg} kg`} />}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border">
             <span className="text-[11px] font-sans font-black uppercase tracking-wider text-graphite">Total (Motor + Battery)</span>
             <span className="text-lg font-sans font-black text-primary">{systemWeightKg.toFixed(1)} kg</span>

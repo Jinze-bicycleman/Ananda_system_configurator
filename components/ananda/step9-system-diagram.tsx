@@ -1,10 +1,7 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aControllers, aBatteries, aChargers, aChargingPorts,
-  aDisplays, aRemotes, aSensors, aAccessories, cablePresets
-} from "@/lib/ananda-data"
+import { cablePresets } from "@/lib/ananda-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
@@ -106,7 +103,7 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={130} y1={82} x2={240} y2={155} color="#008F36" label="Power" />
 
           {/* Central motor block */}
-          <Block x={240} y={130} w={160} h={70} label="7100 / 7200 / 7600" sublabel="Mid-Drive Motor Unit" accent />
+          <Block x={240} y={130} w={160} h={70} label="Motor Unit" sublabel="Mid-Drive Motor Unit" accent />
           {/* Integrated sub-labels */}
           <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
@@ -117,12 +114,8 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={480} y={30} w={100} h={44} label="Display" sublabel="D1 / D18 / D20" active />
+          <Block x={480} y={30} w={100} h={44} label="Display" sublabel="HMI Display" active />
           <Arrow x1={480} y1={52} x2={400} y2={148} color="#008F36" label="HMI" />
-
-          {/* Remote → Display */}
-          <Block x={530} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2 / R3" active />
-          <Arrow x1={570} y1={110} x2={532} y2={74} color="#9ca3af" />
 
           {/* Accessories → System Harness */}
           <Block x={480} y={260} w={120} h={44} label="Accessories" sublabel="IoT · Lights · Throttle" active />
@@ -144,11 +137,11 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={130} y1={82} x2={220} y2={120} color="#008F36" label="Power" />
 
           {/* External Controller */}
-          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel="C1 / C2 / C3 / C4" accent />
+          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel="External Controller" accent />
 
           {/* Controller → Hub Motor */}
           <Arrow x1={360} y1={125} x2={440} y2={140} color="#008F36" label="Phase" />
-          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel="R900 / R400 / F131" active />
+          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel="Hub Motor Unit" active />
 
           {/* Torque/Cadence Sensor → Controller */}
           <Block x={200} y={235} w={110} h={44} label="Torque Sensor" sublabel="TS1 (Required)" active />
@@ -162,12 +155,8 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={175} y1={235} x2={260} y2={150} color="#008F36" />
 
           {/* Display → Controller */}
-          <Block x={460} y={30} w={110} h={44} label="Display" sublabel="D1 / D18 / D20" active />
+          <Block x={460} y={30} w={110} h={44} label="Display" sublabel="HMI Display" active />
           <Arrow x1={510} y1={74} x2={360} y2={125} color="#008F36" label="HMI" />
-
-          {/* Remote → Display */}
-          <Block x={540} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2" active />
-          <Arrow x1={570} y1={110} x2={572} y2={74} color="#9ca3af" />
 
           {/* Accessories → Controller */}
           <Block x={460} y={230} w={120} h={44} label="Accessories" sublabel="IoT · Lights" active />

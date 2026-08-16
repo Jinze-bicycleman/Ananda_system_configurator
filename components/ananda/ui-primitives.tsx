@@ -79,4 +79,19 @@ export function BigSpec({ value, unit, label }: BigSpecProps) {
   )
 }
 
+interface EmptyStateProps {
+  title: string
+  description: string
+  className?: string
+}
+
+export function EmptyState({ title, description, className }: EmptyStateProps) {
+  return (
+    <div className={cn("border-2 border-dashed border-border p-12 text-center", className)}>
+      <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
+      <p className="text-sm font-body text-muted-foreground">{description}</p>
+    </div>
+  )
+}
+
 
