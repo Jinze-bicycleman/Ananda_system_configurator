@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Ananda E-Drive Brand Theme */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+
+  /* Primary: Ananda Green #008F36 */
+  --primary: oklch(0.51 0.165 145);
+  --primary-foreground: oklch(1 0 0);
+
+  /* Lime accent #B4D600 */
+  --lime: oklch(0.82 0.18 115);
+  --lime-foreground: oklch(0.15 0 0);
+
+  /* Neutrals */
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --accent: oklch(0.51 0.165 145);
+  --accent-foreground: oklch(1 0 0);
+
+  /* Status */
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
+  --warning: oklch(0.75 0.17 70);
+  --warning-foreground: oklch(0.18 0 0);
+
+  --border: oklch(0.88 0 0);
+  --border-strong: oklch(0.78 0 0);
+  --input: oklch(0.94 0 0);
+  --ring: oklch(0.51 0.165 145);
+
+  /* Chart colors */
+  --chart-1: oklch(0.51 0.165 145);
+  --chart-2: oklch(0.82 0.18 115);
+  --chart-3: oklch(0.36 0.12 145);
+  --chart-4: oklch(0.75 0.17 70);
+  --chart-5: oklch(0.58 0.2 25);
+
+  --radius: 0.375rem;
+
+  /* Graphite dark */
+  --graphite: oklch(0.22 0 0);
+  --graphite-light: oklch(0.35 0 0);
+  --surface: oklch(0.975 0 0);
+}
+
+@theme inline {
+  --font-sans: 'Barlow Condensed', 'Barlow', sans-serif;
+  --font-body: 'Barlow', 'Inter', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-graphite: var(--graphite);
+  --color-graphite-light: var(--graphite-light);
+  --color-surface: var(--surface);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Barlow', 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+  }
+}
+
+/* Ananda-style diagonal clip utilities */
+.clip-diagonal-r {
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 100%, 0 100%);
+}
+.clip-diagonal-l {
+  clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%);
+}
+.clip-diagonal-card {
+  clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+}
+
+/* Energy stripe animation */
+@keyframes energy-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.energy-bar {
+  background: linear-gradient(90deg, #008F36 0%, #B4D600 50%, #008F36 100%);
+  background-size: 200% 100%;
+  animation: energy-pulse 3s ease-in-out infinite;
+}
+
+/* Print styles */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print { display: none !important; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background-color: #f5f5f5 !important; font-weight: bold; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #008F36; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #006828; }
