@@ -1,22 +1,20 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aControllers, aBatteries, aChargers, aChargingPorts,
-  aDisplays, aRemotes, aSensors, aAccessories
-} from "@/lib/ananda-data"
+import { aChargers, aChargingPorts, aSensors, aAccessories } from "@/lib/ananda-data"
+import { useAnandaProductData } from "./product-data-provider"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "./status-badge"
 import { AlertTriangle, CheckCircle2, Weight, Zap } from "lucide-react"
 
 export function ConfigSummaryPanel() {
   const s = useAnandaStore()
+  const { motors, controllers, batteries, hmiDisplays } = useAnandaProductData()
 
-  const motor      = aMotors.find(m => m.id === s.motorId)
-  const battery    = aBatteries.find(b => b.id === s.batteryId)
-  const controller = aControllers.find(c => c.id === s.controllerId)
-  const display    = aDisplays.find(d => d.id === s.displayId)
-  const remote     = aRemotes.find(r => r.id === s.remoteId)
+  const motor      = motors.find(m => m.id === s.motorId)
+  const battery    = batteries.find(b => b.id === s.batteryId)
+  const controller = controllers.find(c => c.id === s.controllerId)
+  const display    = hmiDisplays.find(d => d.id === s.hmiDisplayId)
   const charger    = aChargers.find(c => c.id === s.chargerId)
   const chargingPort = aChargingPorts.find(p => p.id === s.chargingPortId)
   const speedSensor  = aSensors.find(s2 => s2.id === s.speedSensorId)
@@ -24,8 +22,8 @@ export function ConfigSummaryPanel() {
 
   // Weight estimate — motor and battery only
   let totalKg = 0
-  if (motor?.weightKg)   totalKg += motor.weightKg
-  if (battery?.weightKg) totalKg += battery.weightKg
+  if (motor?.weight_kg)   totalKg += motor.weight_kg
+  if (battery?.weight_kg) totalKg += battery.weight_kg
 
   // Compatibility checks
   const issues: string[] = []
@@ -33,7 +31,7 @@ export function ConfigSummaryPanel() {
   if (s.driveType === "hub" && !s.controllerId) issues.push("Controller required for hub motor")
   if (s.driveType === "hub" && !s.torqueSensorId && !s.cadenceSensorId) issues.push("Pedal sensing required for hub motor")
   if (!s.speedSensorId) issues.push("Speed sensor required")
-  const voltageOk = !motor || !s.voltagePlatform || (Array.isArray(motor.voltages) ? motor.voltages.includes(s.voltagePlatform) : motor.voltages === s.voltagePlatform)
+  const voltageOk = !motor || !s.voltagePlatform || motor.voltage_v === s.voltagePlatform
   if (!voltageOk) issues.push("Voltage mismatch — check motor/platform")
 
   const complete = issues.length === 0
@@ -67,18 +65,18 @@ export function ConfigSummaryPanel() {
         <Divider />
 
         <Row label="Motor"
-          value={motor ? motor.name : "—"}
-          badge={motor?.recommended ? "recommended" : undefined}
+          value={motor ? motor.model : "—"}
+          badge={motor?.is_recommended ? "recommended" : undefined}
         />
         <Row label="Controller"
-          value={s.driveType === "mid" ? "Integrated" : controller ? controller.name : "—"}
+          value={s.driveType === "mid" ? "Integrated" : controller ? controller.model : "—"}
           badge={s.driveType === "mid" ? "integrated" : !controller ? undefined : undefined}
         />
 
         <Divider />
 
         <Row label="Battery"
-          value={battery ? battery.name : s.batteryId === "none" ? "No Battery" : "—"}
+          value={battery ? battery.model : s.batteryId === "none" ? "No Battery" : "—"}
         />
         <Row label="Charger"      value={charger ? charger.name : "—"} />
         <Row label="Charge Port"  value={chargingPort ? chargingPort.name : "—"} />
@@ -86,7 +84,7 @@ export function ConfigSummaryPanel() {
         <Divider />
 
         <Row label="Drivetrain"   value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} />
-        <Row label="Display"      value={display ? display.name : "—"} />
+        <Row label="Display"      value={display ? display.model : "—"} />
         <Row label="Accessories"  value={accessories.length > 0 ? `${accessories.length} selected` : "None"} />
 
         {/* Weight estimate */}

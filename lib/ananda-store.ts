@@ -19,8 +19,7 @@ export interface AnandaConfig {
   torqueSensorId: string | null
   cadenceSensorId: string | null
   speedSensorId: string | null
-  displayId: string | null
-  remoteId: string | null
+  hmiDisplayId: string | null
   drivetrainType: "chain" | "belt" | null
   chainringTeeth: number
   rearSprocketTeeth: number
@@ -60,8 +59,8 @@ const defaultState: AnandaConfig = {
   sellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
   bikeCategory: null, wheelSize: null, tyreWidth: null, tyreCircumferenceMm: null,
   driveType: null, voltagePlatform: null, motorId: null, controllerId: null,
-  torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null,
-  remoteId: null, drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
+  torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, hmiDisplayId: null,
+  drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
   cadenceRpm: 80, gearRatio: null, estimatedSpeedKmh: null,
   estimatedOnWheelTorqueNm: null, gearSystem: null, crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
@@ -87,7 +86,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       setField: (key, value) => set((state) => ({ ...state, [key]: value })),
       setMarket: (market) => set((state) => ({ ...state, sellRegion: market, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
-      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null })),
+      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, hmiDisplayId: null })),
       setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null })),
       setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreCircumferenceMm: null })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
@@ -116,7 +115,7 @@ export const hasBikeCategory = (state: AnandaConfig) => Boolean(state.bikeCatego
 export const hasDrive = (state: AnandaConfig) => Boolean(state.driveType)
 export const hasVoltage = (state: AnandaConfig) => Boolean(state.voltagePlatform)
 export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)
-export const hasCoreComponents = (state: AnandaConfig) => Boolean(state.displayId && state.speedSensorId)
+export const hasCoreComponents = (state: AnandaConfig) => Boolean(state.hmiDisplayId && state.speedSensorId)
 export const hasDrivetrain = (state: AnandaConfig) => Boolean(state.drivetrainType)
 export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId)
 export const hasAccessories = (_state: AnandaConfig) => true

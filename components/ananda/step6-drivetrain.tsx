@@ -3,8 +3,10 @@
 import { useAnandaStore } from "@/lib/ananda-store"
 import {
   chainringTeethOptions, rearSprocketTeethOptions,
-  cadenceRpmOptions, aMotors, motorTorqueFallback
+  cadenceRpmOptions
 } from "@/lib/ananda-data"
+import { useAnandaProductData } from "./product-data-provider"
+import type { DbMotor } from "@/lib/ananda-db-types"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react"
@@ -18,13 +20,13 @@ function calcDrivetrain(
   tyreCircumferenceMm: number | null,
   motorId: string | null,
   driveType: "mid" | "hub" | null,
-  motors: typeof aMotors
+  motors: DbMotor[]
 ) {
   const gearRatio = chainringT / rearT
   const wheelCircumM = (tyreCircumferenceMm ?? 2200) / 1000
   const speedKmh = (cadenceRpm * gearRatio * wheelCircumM * 60) / 1000
   const motor = motors.find(m => m.id === motorId)
-  const motorTorque = motor?.torqueNm ?? (motorId ? (motorTorqueFallback[motorId] ?? 80) : 80)
+  const motorTorque = motor?.torque_nm ?? 80
   const onWheelTorque = driveType === "mid"
     ? motorTorque / gearRatio
     : motorTorque
@@ -224,6 +226,7 @@ const DRIVETRAIN_TYPES = [
 
 export function Step6DrivetrainSelection() {
   const s = useAnandaStore()
+  const { motors } = useAnandaProductData()
 
   const { gearRatio, speedKmh, onWheelTorque } = calcDrivetrain(
     s.chainringTeeth,
@@ -232,7 +235,7 @@ export function Step6DrivetrainSelection() {
     s.tyreCircumferenceMm,
     s.motorId,
     s.driveType,
-    aMotors
+    motors
   )
 
   const speedExceedsLimit = s.speedLimitKmh != null && speedKmh > s.speedLimitKmh

@@ -1,9 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
-import { aMotors, aControllers, aDisplays, aRemotes, aSensors } from "@/lib/ananda-data"
-import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
+import { aSensors } from "@/lib/ananda-data"
+import { useAnandaProductData } from "./product-data-provider"
+import { StepHeader, SectionLabel, TechSpecRow, EmptyState } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
+import { ProductCard } from "./product-card"
+import { ProductSpecificationModal, useSpecificationModal } from "./product-specification-modal"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Image as ImageIcon, Info } from "lucide-react"
 
@@ -11,11 +15,12 @@ function SmallProductCard({
   id, name, imageUrl, description,
   specs, selected, onSelect, badge,
 }: {
-  id: string; name: string; imageUrl?: string; description: string
+  id: string; name: string; imageUrl?: string | null; description?: string | null
   specs?: { label: string; value: string | null }[]
   selected: boolean; onSelect: () => void
   badge?: "required" | "optional"
 }) {
+  const [imageFailed, setImageFailed] = useState(false)
   return (
     <div
       onClick={onSelect}
@@ -44,8 +49,13 @@ function SmallProductCard({
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 112" preserveAspectRatio="none">
           <polygon points="120,0 200,0 200,112 80,112" fill={selected ? "#008F36" : "#f3f4f6"} opacity={selected ? "0.12" : "0.5"} />
         </svg>
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} className="relative z-10 max-h-20 object-contain" />
+        {imageUrl && !imageFailed ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="relative z-10 max-h-20 object-contain"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <div className="relative z-10 flex flex-col items-center gap-1">
             <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />
@@ -56,10 +66,10 @@ function SmallProductCard({
 
       <div className="p-3">
         <p className={cn("text-sm font-sans font-bold uppercase mb-1", selected ? "text-primary" : "text-graphite")}>{name}</p>
-        <p className="text-[11px] font-body text-muted-foreground leading-relaxed mb-2">{description}</p>
+        {description && <p className="text-[11px] font-body text-muted-foreground leading-relaxed mb-2">{description}</p>}
         {specs && specs.length > 0 && (
           <div className="border border-border rounded-sm overflow-hidden">
-            {specs.map(sp => sp.value && (
+            {specs.map(sp => (
               <TechSpecRow key={sp.label} label={sp.label} value={sp.value} />
             ))}
           </div>
@@ -73,9 +83,16 @@ export function Step5SystemComponents() {
   const s = useAnandaStore()
   const isHub = s.driveType === "hub"
   const isMid = s.driveType === "mid"
+  const { controllers, hmiDisplays, loading, error } = useAnandaProductData()
+  const specModal = useSpecificationModal()
 
-  const availableControllers = aControllers.filter(c =>
-    s.voltagePlatform ? c.voltages.includes(s.voltagePlatform) : true
+  const availableControllers = controllers.filter(c =>
+    (c.compatible_motor_type === "hub" || c.compatible_motor_type === "both") &&
+    (s.voltagePlatform ? c.voltage_v === s.voltagePlatform : true)
+  )
+
+  const availableDisplays = hmiDisplays.filter(d =>
+    d.voltage_v == null || (s.voltagePlatform ? d.voltage_v === s.voltagePlatform : true)
   )
 
   const speedSensor   = aSensors.find(x => x.sensorType === "speed")
@@ -112,23 +129,29 @@ export function Step5SystemComponents() {
                 A controller is required for hub motor systems.
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {availableControllers.map(c => (
-                <SmallProductCard
-                  key={c.id} id={c.id} name={c.name}
-                  imageUrl={c.imageUrl}
-                  description={c.description}
-                  specs={[
-                    { label: "Max Current", value: c.maxCurrentA ? `${c.maxCurrentA}A` : null },
-                    { label: "Voltage", value: c.voltages.join("V / ") + "V" },
-                    // Weight intentionally omitted for controllers
-                  ]}
-                  selected={s.controllerId === c.id}
-                  onSelect={() => s.setField("controllerId", c.id)}
-                  badge="required"
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="border border-border p-8 text-center">
+                <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider">Loading controllers…</p>
+              </div>
+            ) : error ? (
+              <EmptyState title="Unable to Load Controllers" description={error} />
+            ) : availableControllers.length === 0 ? (
+              <EmptyState title="No Controllers Available" description="No controllers match the selected voltage platform. Please adjust your selection in the previous steps." />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {availableControllers.map(c => (
+                  <ProductCard
+                    key={c.id}
+                    product={c}
+                    productType="controller"
+                    selected={s.controllerId === c.id}
+                    onSelect={() => s.setField("controllerId", c.id)}
+                    onCheckSpecification={() => specModal.open(c, "controller")}
+                    badge="required"
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>
@@ -213,39 +236,37 @@ export function Step5SystemComponents() {
       {/* ─── HMI — DISPLAYS ─── */}
       <section className="mb-8">
         <SectionLabel>HMI — Display</SectionLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {aDisplays.map(d => (
-            <SmallProductCard
-              key={d.id} id={d.id} name={d.name}
-              imageUrl={d.imageUrl}
-              description={d.description}
-              specs={[]}
-              selected={s.displayId === d.id}
-              onSelect={() => s.setField("displayId", s.displayId === d.id ? null : d.id)}
-              badge="optional"
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="border border-border p-8 text-center">
+            <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider">Loading displays…</p>
+          </div>
+        ) : error ? (
+          <EmptyState title="Unable to Load Displays" description={error} />
+        ) : availableDisplays.length === 0 ? (
+          <EmptyState title="No Displays Available" description="No HMI displays match the selected voltage platform. Please adjust your selection in the previous steps." />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {availableDisplays.map(d => (
+              <ProductCard
+                key={d.id}
+                product={d}
+                productType="hmi"
+                selected={s.hmiDisplayId === d.id}
+                onSelect={() => s.setField("hmiDisplayId", s.hmiDisplayId === d.id ? null : d.id)}
+                onCheckSpecification={() => specModal.open(d, "hmi")}
+                badge="optional"
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* ─── HMI — REMOTES ─── */}
-      <section className="mb-8">
-        <SectionLabel>HMI — Remote</SectionLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {aRemotes.map(r => (
-            <SmallProductCard
-              key={r.id} id={r.id} name={r.name}
-              imageUrl={r.imageUrl}
-              description={r.description}
-              specs={[]}
-              selected={s.remoteId === r.id}
-              onSelect={() => s.setField("remoteId", s.remoteId === r.id ? null : r.id)}
-              badge="optional"
-            />
-          ))}
-        </div>
-      </section>
-
+      <ProductSpecificationModal
+        product={specModal.product}
+        productType={specModal.productType}
+        isOpen={specModal.isOpen}
+        onClose={specModal.close}
+      />
     </div>
   )
 }

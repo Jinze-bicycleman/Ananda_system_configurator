@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { useAnandaStore, hasDrive, hasVoltage, hasMotor, hasCoreComponents, hasDrivetrain, hasBattery } from "@/lib/ananda-store"
+import { AnandaProductDataProvider } from "./product-data-provider"
 import { WelcomeScreen } from "./welcome-screen"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
@@ -48,6 +49,7 @@ export function AnandaConfigurator() {
   if (!hydrated || !state.hasStarted) return <WelcomeScreen />
 
   return (
+    <AnandaProductDataProvider>
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 border-b border-graphite-light bg-graphite">
         <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -65,5 +67,6 @@ export function AnandaConfigurator() {
         </div>
       </div>
     </div>
+    </AnandaProductDataProvider>
   )
 }
