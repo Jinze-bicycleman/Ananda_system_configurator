@@ -20,6 +20,14 @@ export interface DbMotor {
   communication_protocol: string | null
   controller_requirement: "integrated" | "external" | "not_required"
   pedal_sensing: "integrated" | "external_required" | "not_required" | null
+  rpm: number | null
+  max_efficiency: string | null
+  noise_grade_db: number | null
+  color: string | null
+  construction: string | null
+  light_drive_capacity: string | null
+  sensor_description: string | null
+  waterproof: string | null
   image_url: string | null
   datasheet_url: string | null
   short_description: string | null
@@ -83,6 +91,11 @@ export interface DbHmiDisplay {
   usb_charge_status: string | null
   remote_control_status: string | null
   waterproof: string | null
+  mounting_position: string | null
+  certifications: string | null
+  holder_mm: string | null
+  support_level: number | null
+  cable_length_mm: string | null
   is_active: boolean
   sort_order: number
 }

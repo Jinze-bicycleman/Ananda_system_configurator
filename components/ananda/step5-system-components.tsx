@@ -4,9 +4,10 @@ import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { aSensors } from "@/lib/ananda-data"
 import { useAnandaProductData } from "./product-data-provider"
-import { specOrConfirm } from "@/lib/ananda-db-types"
 import { StepHeader, SectionLabel, TechSpecRow, EmptyState } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
+import { ProductCard } from "./product-card"
+import { ProductSpecificationModal, useSpecificationModal } from "./product-specification-modal"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Image as ImageIcon, Info } from "lucide-react"
 
@@ -83,6 +84,7 @@ export function Step5SystemComponents() {
   const isHub = s.driveType === "hub"
   const isMid = s.driveType === "mid"
   const { controllers, hmiDisplays, loading, error } = useAnandaProductData()
+  const specModal = useSpecificationModal()
 
   const availableControllers = controllers.filter(c =>
     (c.compatible_motor_type === "hub" || c.compatible_motor_type === "both") &&
@@ -138,17 +140,13 @@ export function Step5SystemComponents() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {availableControllers.map(c => (
-                  <SmallProductCard
-                    key={c.id} id={c.id} name={c.model}
-                    imageUrl={c.image_url}
-                    description={c.short_description}
-                    specs={[
-                      { label: "Rated Current", value: specOrConfirm(c.rated_current_a, "A") },
-                      { label: "Voltage", value: specOrConfirm(c.voltage_v, "V") },
-                      // Weight intentionally omitted for controllers
-                    ]}
+                  <ProductCard
+                    key={c.id}
+                    product={c}
+                    productType="controller"
                     selected={s.controllerId === c.id}
                     onSelect={() => s.setField("controllerId", c.id)}
+                    onCheckSpecification={() => specModal.open(c, "controller")}
                     badge="required"
                   />
                 ))}
@@ -249,20 +247,13 @@ export function Step5SystemComponents() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {availableDisplays.map(d => (
-              <SmallProductCard
-                key={d.id} id={d.id} name={d.model}
-                imageUrl={d.image_url}
-                description={d.short_description}
-                specs={[
-                  { label: "Size", value: specOrConfirm(d.size) },
-                  { label: "Display Material", value: specOrConfirm(d.display_material) },
-                  { label: "Connection Type", value: specOrConfirm(d.connection_type) },
-                  { label: "Comm. Protocol", value: specOrConfirm(d.communication_protocol) },
-                  { label: "Bluetooth", value: specOrConfirm(d.bluetooth_status) },
-                  { label: "Waterproof", value: specOrConfirm(d.waterproof) },
-                ]}
+              <ProductCard
+                key={d.id}
+                product={d}
+                productType="hmi"
                 selected={s.hmiDisplayId === d.id}
                 onSelect={() => s.setField("hmiDisplayId", s.hmiDisplayId === d.id ? null : d.id)}
+                onCheckSpecification={() => specModal.open(d, "hmi")}
                 badge="optional"
               />
             ))}
@@ -270,6 +261,12 @@ export function Step5SystemComponents() {
         )}
       </section>
 
+      <ProductSpecificationModal
+        product={specModal.product}
+        productType={specModal.productType}
+        isOpen={specModal.isOpen}
+        onClose={specModal.close}
+      />
     </div>
   )
 }
