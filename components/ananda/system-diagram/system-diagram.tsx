@@ -162,7 +162,7 @@ export function SystemDiagram() {
                   x={anchor.x}
                   y={anchor.y}
                   textAnchor={anchor.anchor}
-                  fontSize={9}
+                  fontSize={key === "speedSensor" ? 20 : 24}
                   fontWeight={700}
                   fill="var(--foreground)"
                   fontFamily="Barlow Condensed, sans-serif"
@@ -176,7 +176,7 @@ export function SystemDiagram() {
                     x={anchor.x}
                     y={anchor.y + 12 * (i + 1)}
                     textAnchor={anchor.anchor}
-                    fontSize={7.5}
+                    fontSize={20}
                     fill="var(--muted-foreground)"
                     fontFamily="Barlow, sans-serif"
                   >
