@@ -23,23 +23,34 @@ async function fetchTyreSizes(): Promise<TyreSizeRow[]> {
   return data ?? []
 }
 
-export function useTyreSizes() {
+function useTyreSizeRows() {
   const { data, isLoading, error } = useSWR<TyreSizeRow[]>("bike-tyre-sizes", fetchTyreSizes)
-  const rows = data ?? []
+  return { rows: data ?? [], isLoading, error }
+}
 
-  const rimSizes = Array.from(new Set(rows.map((row) => row.rim_size))).sort(
+export function useWheelSizeOptions() {
+  const { rows, isLoading, error } = useTyreSizeRows()
+  const options = Array.from(new Set(rows.map((row) => row.rim_size))).sort(
     (a, b) => parseLeadingNumber(a) - parseLeadingNumber(b),
   )
+  return { options, isLoading, error }
+}
 
-  const widthsForRim = (rim: string | null) =>
-    rim
-      ? Array.from(new Set(rows.filter((row) => row.rim_size === rim).map((row) => row.tyre_width))).sort(
-          (a, b) => parseLeadingNumber(a) - parseLeadingNumber(b),
-        )
-      : []
+export function useTyreWidthOptions(wheelSize: string | null) {
+  const { rows, isLoading, error } = useTyreSizeRows()
+  const options = wheelSize
+    ? Array.from(new Set(rows.filter((row) => row.rim_size === wheelSize).map((row) => row.tyre_width))).sort(
+        (a, b) => parseLeadingNumber(a) - parseLeadingNumber(b),
+      )
+    : []
+  return { options, isLoading, error }
+}
 
-  const findMatch = (rim: string | null, width: string | null) =>
-    rim && width ? rows.find((row) => row.rim_size === rim && row.tyre_width === width) ?? null : null
-
-  return { rimSizes, widthsForRim, findMatch, isLoading, error }
+export function useTyreSizeMatch(wheelSize: string | null, tyreWidth: string | null) {
+  const { rows, isLoading, error } = useTyreSizeRows()
+  const match =
+    wheelSize && tyreWidth
+      ? rows.find((row) => row.rim_size === wheelSize && row.tyre_width === tyreWidth) ?? null
+      : null
+  return { match, isLoading, error }
 }
