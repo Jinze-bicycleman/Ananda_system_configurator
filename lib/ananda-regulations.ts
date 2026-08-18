@@ -11,6 +11,7 @@ export const regulationsByMarket: Record<string, RegulationOption[]> = {
     { id: 'class-1', label: 'Class 1', speedLimitKmh: 32, ratedPowerW: 750, note: 'Pedal assist only; limits vary by state or province.' },
     { id: 'class-2', label: 'Class 2', speedLimitKmh: 32, ratedPowerW: 750, note: 'Throttle-enabled class; confirm local access rules.' },
     { id: 'class-3', label: 'Class 3', speedLimitKmh: 45, ratedPowerW: 750, note: 'Speed-pedelec-style class with local restrictions.' },
+    { id: 'na-other', label: 'Other', speedLimitKmh: null, ratedPowerW: null, note: 'Enter the applicable speed and rated-power limits manually.' },
   ],
   'United Kingdom': [{ id: 'uk-epac', label: 'UK EPAC', speedLimitKmh: 25, ratedPowerW: 250, note: 'UK electrically assisted pedal cycle limits.' }],
   Japan: [{ id: 'jp-pas', label: 'Japan PAS', speedLimitKmh: 24, ratedPowerW: null, note: 'Assist-ratio rules apply; validate the final application.' }],
