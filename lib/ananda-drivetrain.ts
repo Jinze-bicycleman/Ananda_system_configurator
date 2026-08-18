@@ -665,10 +665,13 @@ export type TransmissionType = "derailleur" | "internal_gear_hub" | "cvt" | "sin
 // so the picker and slot filtering never mix the two. Only Shimano Nexus is
 // surfaced under the stepped "internal_gear_hub" type — Rohloff remains in
 // the catalogue but is intentionally excluded from this picker.
-export const NEXUS_PRODUCT_FAMILY = "Shimano Nexus"
-
+//
+// Identified by brand + ratio_type rather than product_family: an internal
+// hub's product_family is intentionally left null in the catalogue (it does
+// not lock the paired chainring/chain into a proprietary ecosystem the way
+// e.g. Shimano LINKGLIDE does), so product_family cannot be used here.
 export function isSteppedInternalHub(c: DrivetrainComponent): boolean {
-  return c.category === "internal_gear_hub" && c.product_family === NEXUS_PRODUCT_FAMILY
+  return c.category === "internal_gear_hub" && c.brand === "Shimano" && c.ratio_type === "stepped"
 }
 
 export function isCvtHub(c: DrivetrainComponent): boolean {
