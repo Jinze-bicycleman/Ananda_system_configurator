@@ -6,13 +6,12 @@ const STEPS = [
   { n: 1, label: "Sell Region & Regulation" },
   { n: 2, label: "Bike Category" },
   { n: 3, label: "Drive System & Voltage" },
-  { n: 4, label: "Motor Selection" },
-  { n: 5, label: "System Components" },
+  { n: 4, label: "Package Selection" },
+  { n: 5, label: "Package Configuration" },
   { n: 6, label: "Drivetrain" },
-  { n: 7, label: "Battery & Charger" },
-  { n: 8, label: "Accessories" },
-  { n: 9, label: "System Diagram" },
-  { n: 10, label: "Configuration Report" },
+  { n: 7, label: "Accessories" },
+  { n: 8, label: "System Diagram" },
+  { n: 9, label: "Configuration Report" },
 ]
 
 export function ProgressIndicator({ current, onStep }: { current: number; onStep: (n: number) => void }) {

@@ -49,7 +49,7 @@ export function WelcomeScreen() {
 
       <footer className="relative z-10 px-4 pb-6 sm:px-6 lg:px-16">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">
-          11 Stages &middot; Motor to Report
+          9 Stages &middot; Package to Report
         </p>
       </footer>
     </div>

@@ -1,7 +1,8 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import { cablePresets } from "@/lib/ananda-data"
+import { cablePresets, aAccessories } from "@/lib/ananda-data"
+import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
@@ -66,7 +67,22 @@ function Arrow({
   )
 }
 
-function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
+type DiagramLabels = {
+  motor: string
+  motorSub: string
+  display: string
+  speedSensor: string
+  battery: string
+  charger: string
+  chargingPort: string
+  accessories: string
+  controller: string
+  torqueSensor: string
+  cadenceSensor: string
+  remote: string
+}
+
+function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; labels: DiagramLabels }) {
   const isMid = driveType === "mid"
 
   return (
@@ -86,11 +102,11 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
       <line x1="320" y1="0" x2="320" y2="360" stroke="#f3f4f6" strokeWidth="1" />
 
       {/* ─── BATTERY (left) ─── */}
-      <Block x={30} y={60} w={100} h={50} label="Battery" sublabel={isMid ? "System Power" : "36V / 48V"} active />
+      <Block x={30} y={60} w={100} h={50} label="Battery" sublabel={labels.battery} active />
       {/* Charger below battery */}
-      <Block x={30} y={140} w={100} h={40} label="Charger" sublabel="CH-xx" active={false} />
+      <Block x={30} y={140} w={100} h={40} label="Charger" sublabel={labels.charger} active={false} />
       {/* Charging port */}
-      <Block x={30} y={205} w={100} h={40} label="Charge Port" sublabel="CP1/2/3" active={false} />
+      <Block x={30} y={205} w={100} h={40} label="Charge Port" sublabel={labels.chargingPort} active={false} />
 
       {/* Charger → Charging port arrow */}
       <Arrow x1={80} y1={180} x2={80} y2={205} color="#d1d5db" />
@@ -103,26 +119,26 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={130} y1={82} x2={240} y2={155} color="#008F36" label="Power" />
 
           {/* Central motor block */}
-          <Block x={240} y={130} w={160} h={70} label="7100 / 7200 / 7600" sublabel="Mid-Drive Motor Unit" accent />
+          <Block x={240} y={130} w={160} h={70} label={labels.motor} sublabel={labels.motorSub} accent />
           {/* Integrated sub-labels */}
           <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
           </text>
 
           {/* Speed sensor → Motor */}
-          <Block x={220} y={285} w={90} h={40} label="Speed Sensor" sublabel="SS1" active />
+          <Block x={220} y={285} w={90} h={40} label="Speed Sensor" sublabel={labels.speedSensor} active />
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={480} y={30} w={100} h={44} label="Display" sublabel="D1 / D18 / D20" active />
+          <Block x={480} y={30} w={100} h={44} label="Display" sublabel={labels.display} active />
           <Arrow x1={480} y1={52} x2={400} y2={148} color="#008F36" label="HMI" />
 
           {/* Remote → Display */}
-          <Block x={530} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2 / R3" active />
+          <Block x={530} y={110} w={80} h={40} label="Remote" sublabel={labels.remote} active />
           <Arrow x1={570} y1={110} x2={532} y2={74} color="#9ca3af" />
 
           {/* Accessories → System Harness */}
-          <Block x={480} y={260} w={120} h={44} label="Accessories" sublabel="IoT · Lights · Throttle" active />
+          <Block x={480} y={260} w={120} h={44} label="Accessories" sublabel={labels.accessories} active />
           <Arrow x1={540} y1={260} x2={400} y2={200} color="#9ca3af" label="Harness" />
 
           {/* Note */}
@@ -141,33 +157,33 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={130} y1={82} x2={220} y2={120} color="#008F36" label="Power" />
 
           {/* External Controller */}
-          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel="C1 / C2 / C3 / C4" accent />
+          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel={labels.controller} accent />
 
           {/* Controller → Hub Motor */}
           <Arrow x1={360} y1={125} x2={440} y2={140} color="#008F36" label="Phase" />
-          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel="R900 / R400 / F131" active />
+          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel={labels.motorSub} active />
 
           {/* Torque/Cadence Sensor → Controller */}
-          <Block x={200} y={235} w={110} h={44} label="Torque Sensor" sublabel="TS1 (Required)" active />
+          <Block x={200} y={235} w={110} h={44} label="Torque Sensor" sublabel={labels.torqueSensor} active />
           <Arrow x1={255} y1={235} x2={275} y2={150} color="#008F36" />
 
-          <Block x={330} y={235} w={100} h={44} label="Cadence Sensor" sublabel="CS1" active />
+          <Block x={330} y={235} w={100} h={44} label="Cadence Sensor" sublabel={labels.cadenceSensor} active />
           <Arrow x1={380} y1={235} x2={340} y2={150} color="#9ca3af" />
 
           {/* Speed Sensor → Controller */}
-          <Block x={130} y={235} w={90} h={44} label="Speed Sensor" sublabel="SS1 (Required)" active />
+          <Block x={130} y={235} w={90} h={44} label="Speed Sensor" sublabel={labels.speedSensor} active />
           <Arrow x1={175} y1={235} x2={260} y2={150} color="#008F36" />
 
           {/* Display → Controller */}
-          <Block x={460} y={30} w={110} h={44} label="Display" sublabel="D1 / D18 / D20" active />
+          <Block x={460} y={30} w={110} h={44} label="Display" sublabel={labels.display} active />
           <Arrow x1={510} y1={74} x2={360} y2={125} color="#008F36" label="HMI" />
 
           {/* Remote → Display */}
-          <Block x={540} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2" active />
+          <Block x={540} y={110} w={80} h={40} label="Remote" sublabel={labels.remote} active />
           <Arrow x1={570} y1={110} x2={572} y2={74} color="#9ca3af" />
 
           {/* Accessories → Controller */}
-          <Block x={460} y={230} w={120} h={44} label="Accessories" sublabel="IoT · Lights" active />
+          <Block x={460} y={230} w={120} h={44} label="Accessories" sublabel={labels.accessories} active />
           <Arrow x1={520} y1={230} x2={360} y2={150} color="#9ca3af" label="Harness" />
 
           {/* Note */}
@@ -235,6 +251,32 @@ export function Step9SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
 
+  const { motors } = useMotors()
+  const { displays } = useDisplays()
+  const { batteries } = useBatteries()
+
+  const motor = motors.find((m) => m.id === s.motorId) ?? null
+  const display = displays.find((d) => d.id === s.displayId) ?? null
+  const battery = batteries.find((b) => b.id === s.batteryId) ?? null
+  const charger = CHARGERS.find((c) => c.id === s.chargerId) ?? null
+  const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
+  const selectedAccessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
+
+  const labels: DiagramLabels = {
+    motor: motor?.model ?? "Motor Unit",
+    motorSub: driveType === "mid" ? "Mid-Drive Motor Unit" : "Hub Motor Unit",
+    display: display?.model ?? (s.skippedItems.includes("displayId") ? "Not Needed" : "—"),
+    speedSensor: s.skippedItems.includes("speedSensorId") ? "Not Needed" : s.speedSensorId ?? "—",
+    battery: battery?.model ?? (s.skippedItems.includes("batteryId") ? "Not Needed" : "System Power"),
+    charger: charger?.model ?? "—",
+    chargingPort: chargingPort?.model ?? "—",
+    accessories: selectedAccessories.length > 0 ? selectedAccessories.map((a) => a.name).join(" · ") : "None Selected",
+    controller: s.controllerId ?? "—",
+    torqueSensor: s.skippedItems.includes("torqueSensorId") ? "Not Needed" : s.torqueSensorId ?? "—",
+    cadenceSensor: s.cadenceSensorId ?? "—",
+    remote: "R1 / R2 / R3",
+  }
+
   return (
     <div>
       <StepHeader
@@ -254,7 +296,7 @@ export function Step9SystemDiagram() {
             <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
           </div>
         </div>
-        <SystemDiagramSVG driveType={driveType} />
+        <SystemDiagramSVG driveType={driveType} labels={labels} />
       </div>
 
       {/* Cable length table */}

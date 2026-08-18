@@ -103,7 +103,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
       setStep: (currentStep) => set({ currentStep }),
-      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 10) })),
+      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 9) })),
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       resetConfig: () => set({ ...defaultState, hasStarted: true }),
       startConfiguration: () => set({ hasStarted: true }),
