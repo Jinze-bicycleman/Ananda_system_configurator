@@ -24,6 +24,11 @@ export interface AnandaConfig {
   displayId: string | null
   remoteId: string | null
   skippedItems: string[]
+  // Drivetrain System — `drivetrainType` is the live "chain" | "belt" selection
+  // (spec's `driveType`, renamed to avoid clashing with the motor `driveType`
+  // field above). The remaining chainring/rearSprocket/cadence/gear fields are
+  // legacy and retained only for backward compatibility with previously
+  // persisted state; the drivetrain step no longer writes to them.
   drivetrainType: "chain" | "belt" | null
   chainringTeeth: number
   rearSprocketTeeth: number
@@ -32,6 +37,25 @@ export interface AnandaConfig {
   estimatedSpeedKmh: number | null
   estimatedOnWheelTorqueNm: number | null
   gearSystem: string | null
+  transmissionType: "derailleur" | "internal_gear_hub" | "single_speed" | "gearbox" | null
+  selectedComponentIds: string[]
+  frontTeeth: number | null
+  rearTeeth: number | null
+  selectedBeltId: string | null
+  centerDistanceMm: number | null
+  adjustmentMm: number | null
+  drivetrainEfficiency: number
+  drivetrainWarnings: string[]
+  drivetrainErrors: string[]
+  warningsAcknowledged: boolean
+  gvwKg: number | null
+  frameHasBeltOpening: boolean | null
+  beltAlternateInstallationApproved: boolean
+  tensioningMethod: string | null
+  frameStiffnessVerified: "yes" | "no" | "not_yet" | null
+  frontPulleyClearanceVerified: boolean
+  rearPulleyClearanceVerified: boolean
+  beltlineVerified: boolean
   crankLength: string | null
   crankInterface: string | null
   batteryId: string | null
@@ -54,6 +78,9 @@ export interface AnandaActions {
   setItemSkipped: (key: string, skipped: boolean) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number) => void
+  setDrivetrainType: (drivetrainType: "chain" | "belt") => void
+  setTransmissionType: (transmissionType: AnandaConfig["transmissionType"]) => void
+  resetDrivetrainDownstream: (from: "type" | "transmission" | "components") => void
   setStep: (step: number) => void
   nextStep: () => void
   prevStep: () => void
@@ -68,7 +95,14 @@ const defaultState: AnandaConfig = {
   torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null,
   remoteId: null, skippedItems: [], drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
   cadenceRpm: 80, gearRatio: null, estimatedSpeedKmh: null,
-  estimatedOnWheelTorqueNm: null, gearSystem: null, crankLength: null,
+  estimatedOnWheelTorqueNm: null, gearSystem: null,
+  transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null,
+  selectedBeltId: null, centerDistanceMm: null, adjustmentMm: null, drivetrainEfficiency: 0.95,
+  drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false, gvwKg: null,
+  frameHasBeltOpening: null, beltAlternateInstallationApproved: false, tensioningMethod: null,
+  frameStiffnessVerified: null, frontPulleyClearanceVerified: false, rearPulleyClearanceVerified: false,
+  beltlineVerified: false,
+  crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
   accessoryIds: [], cableLengths: {}, currentStep: 1, hasStarted: false,
 }
@@ -102,6 +136,23 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
+      setDrivetrainType: (drivetrainType) => set((state) => ({
+        ...state, drivetrainType, transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null,
+        selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false,
+      })),
+      setTransmissionType: (transmissionType) => set((state) => ({
+        ...state, transmissionType, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null,
+        drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false,
+      })),
+      resetDrivetrainDownstream: (from) => set((state) => {
+        if (from === "type") {
+          return { transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
+        }
+        if (from === "transmission") {
+          return { selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
+        }
+        return { drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
+      }),
       setStep: (currentStep) => set({ currentStep }),
       nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 9) })),
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
@@ -112,8 +163,8 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       name: "ananda-edrive-config-v1",
       merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
       partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setStep, nextStep, prevStep, resetConfig, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setStep; void nextStep; void prevStep; void resetConfig
+        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
+        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
         return rest
       },
     },
@@ -139,7 +190,14 @@ const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
 export const hasCoreComponents = (state: AnandaConfig) =>
   hasMotor(state) && packageItemKeys(state.driveType).every((key) => isItemSatisfied(state, key))
 
-export const hasDrivetrain = (state: AnandaConfig) => Boolean(state.drivetrainType)
+export const hasDrivetrain = (state: AnandaConfig) =>
+  Boolean(
+    state.drivetrainType &&
+      state.transmissionType &&
+      state.selectedComponentIds.length > 0 &&
+      state.drivetrainErrors.length === 0 &&
+      (state.drivetrainWarnings.length === 0 || state.warningsAcknowledged),
+  )
 export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId) || state.skippedItems.includes("batteryId")
 export const hasAccessories = (_state: AnandaConfig) => true
 export const hasDiagram = (_state: AnandaConfig) => true
