@@ -17,9 +17,9 @@ export const bikeCategoryContent: Record<string, string> = {
   City: 'Daily urban riding and practical commuting.',
   Trekking: 'Longer mixed-surface rides and touring.',
   MTB: 'Trail riding with dynamic climbing demands.',
-  'Cargo 2-wheeler': 'Two-wheel utility and load carrying.',
-  'Cargo tricycle': 'Stable utility platform with high system demands.',
+  'Cargo bike': 'Two-wheel or tricycle utility platform for load carrying.',
   'Fat bike': 'Wide tyres for loose or soft terrain.',
+  'Folding bike': 'Compact frame for storage and multi-modal commuting.',
   'Speed pedelec': 'Higher-speed assisted mobility platform.',
   Other: 'Special application requiring custom review.',
 }

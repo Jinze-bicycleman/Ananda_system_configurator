@@ -11,6 +11,7 @@ export interface AnandaConfig {
   bikeCategory: string | null
   wheelSize: string | null
   tyreWidth: string | null
+  tyreIsoSize: string | null
   tyreCircumferenceMm: number | null
   driveType: "mid" | "hub" | null
   voltagePlatform: 36 | 48 | null
@@ -58,7 +59,7 @@ export interface AnandaActions {
 
 const defaultState: AnandaConfig = {
   sellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
-  bikeCategory: null, wheelSize: null, tyreWidth: null, tyreCircumferenceMm: null,
+  bikeCategory: null, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null,
   driveType: null, voltagePlatform: null, motorId: null, controllerId: null,
   torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null,
   remoteId: null, drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
@@ -75,6 +76,7 @@ function normalizePersisted(input: Partial<AnandaConfig> & Record<string, unknow
     speedLimitKmh: input.speedLimitKmh ?? (input.speedLimit as number | null | undefined) ?? null,
     tyreCircumferenceMm: input.tyreCircumferenceMm ?? null,
     tyreWidth: input.tyreWidth ?? (input.tyreSize as string | null | undefined) ?? null,
+    tyreIsoSize: input.tyreIsoSize ?? null,
     regulation: input.regulation ?? null,
     ratedPowerW: input.ratedPowerW ?? null,
   }
@@ -89,7 +91,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
       setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null })),
       setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null })),
-      setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreCircumferenceMm: null })),
+      setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
       setStep: (currentStep) => set({ currentStep }),
