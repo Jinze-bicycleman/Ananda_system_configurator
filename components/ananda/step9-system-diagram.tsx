@@ -147,7 +147,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           <Arrow x1={550} y1={120} x2={548} y2={106} color="#9ca3af" />
           
           {/* Accessories → System Harness */}
-          <Block x={390} y={232} w={230} h={104} label="Accessories" sublabel={labels.accessories} active large />
+          <Block x={410} y={232} w={210} h={104} label="Accessories" sublabel={labels.accessories} active large />
           <Arrow x1={510} y1={238} x2={400} y2={200} color="#9ca3af" label="Harness" />
           
           {/* Note */}
