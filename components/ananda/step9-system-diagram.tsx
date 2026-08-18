@@ -1,10 +1,7 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aControllers, aBatteries, aChargers, aChargingPorts,
-  aDisplays, aRemotes, aSensors, aAccessories, cablePresets
-} from "@/lib/ananda-data"
+import { cablePresets } from "@/lib/ananda-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
@@ -241,7 +238,7 @@ export function Step9SystemDiagram() {
   return (
     <div>
       <StepHeader
-        step={9}
+        step={8}
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />

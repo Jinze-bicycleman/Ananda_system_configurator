@@ -2,41 +2,40 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { useAnandaStore, hasDriveAndVoltage, hasMotor, hasCoreComponents, hasDrivetrain, hasBattery } from "@/lib/ananda-store"
+import { useAnandaStore, hasDriveAndVoltage, hasMotor, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { WelcomeScreen } from "./welcome-screen"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
 import { Step1ProjectContext } from "./step1-project-context"
 import { Step2BikeCategory } from "./step2-bike-category"
 import { Step2DriveSystem } from "./step2-drive-system"
-import { Step4MotorSelection } from "./step4-motor-selection"
-import { Step5SystemComponents } from "./step5-system-components"
+import { Step4PackageSelection } from "./step4-package-selection"
+import { Step5PackageConfiguration } from "./step5-package-configuration"
 import { Step6DrivetrainSelection } from "./step6-drivetrain"
-import { Step7BatteryCharger } from "./step7-battery-charger"
 import { Step8Accessories } from "./step8-accessories"
 import { Step9SystemDiagram } from "./step9-system-diagram"
 import { Step10Report } from "./step10-report"
 
-const labels = ["Sell Region & Regulation", "Bike Category", "Drive System & Voltage", "Motor Selection", "System Components", "Drivetrain", "Battery & Charging", "Accessories", "System Diagram", "Final Report"]
+const labels = ["Sell Region & Regulation", "Bike Category", "Drive System & Voltage", "Package Selection", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
-  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), 9))
-  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), 9)) }, [state.currentStep])
+  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), 8))
+  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), 8)) }, [state.currentStep])
 
   const complete = useMemo(() => [
     Boolean(state.sellRegion && state.regulation),
     Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm),
     hasDriveAndVoltage(state), hasMotor(state), hasCoreComponents(state),
-    hasDrivetrain(state), hasBattery(state), true, true, false,
+    hasDrivetrain(state), true, true, false,
   ], [state])
   const unlocked = complete.map((_, index) => index === 0 || complete[index - 1])
   const content = [
     <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />, <Step2DriveSystem key="drive" />,
-    <Step4MotorSelection key="motor" />, <Step5SystemComponents key="components" />,
-    <Step6DrivetrainSelection key="drivetrain" />, <Step7BatteryCharger key="battery" />, <Step8Accessories key="accessories" />,
+    <Step4PackageSelection key="package" />, <Step5PackageConfiguration key="config" />,
+    <Step6DrivetrainSelection key="drivetrain" />, <Step8Accessories key="accessories" />,
     <Step9SystemDiagram key="diagram" />, <Step10Report key="report" />,
   ]
   const openSection = (index: number) => { if (unlocked[index]) { setOpen(index); state.setStep(index + 1); window.scrollTo({ top: 0, behavior: "smooth" }) } }

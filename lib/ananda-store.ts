@@ -15,6 +15,7 @@ export interface AnandaConfig {
   tyreCircumferenceMm: number | null
   driveType: "mid" | "hub" | null
   voltagePlatform: 36 | 48 | 52 | null
+  packageId: string | null
   motorId: string | null
   controllerId: string | null
   torqueSensorId: string | null
@@ -22,6 +23,7 @@ export interface AnandaConfig {
   speedSensorId: string | null
   displayId: string | null
   remoteId: string | null
+  skippedItems: string[]
   drivetrainType: "chain" | "belt" | null
   chainringTeeth: number
   rearSprocketTeeth: number
@@ -48,6 +50,8 @@ export interface AnandaActions {
   setDriveType: (drive: "mid" | "hub") => void
   setVoltage: (voltage: 36 | 48 | 52) => void
   setBikeCategory: (category: string) => void
+  selectPackage: (packageId: string, defaults: Partial<AnandaConfig>) => void
+  setItemSkipped: (key: string, skipped: boolean) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number) => void
   setStep: (step: number) => void
@@ -60,9 +64,9 @@ export interface AnandaActions {
 const defaultState: AnandaConfig = {
   sellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
   bikeCategory: null, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null,
-  driveType: null, voltagePlatform: null, motorId: null, controllerId: null,
+  driveType: null, voltagePlatform: null, packageId: null, motorId: null, controllerId: null,
   torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null,
-  remoteId: null, drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
+  remoteId: null, skippedItems: [], drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
   cadenceRpm: 80, gearRatio: null, estimatedSpeedKmh: null,
   estimatedOnWheelTorqueNm: null, gearSystem: null, crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
@@ -89,9 +93,13 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       setField: (key, value) => set((state) => ({ ...state, [key]: value })),
       setMarket: (market) => set((state) => ({ ...state, sellRegion: market, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
-      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null })),
-      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null })),
+      setDriveType: (driveType) => set((state) => ({ ...state, driveType, packageId: null, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [] })),
+      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, packageId: null, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [] })),
       setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null })),
+      selectPackage: (packageId, defaults) => set((state) => ({ ...state, ...defaults, packageId, skippedItems: [] })),
+      setItemSkipped: (key, skipped) => set((state) => ({
+        skippedItems: skipped ? Array.from(new Set([...state.skippedItems, key])) : state.skippedItems.filter((item) => item !== key),
+      })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
       setStep: (currentStep) => set({ currentStep }),
@@ -104,8 +112,8 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       name: "ananda-edrive-config-v1",
       merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
       partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, toggleAccessory, setCableLength, setStep, nextStep, prevStep, resetConfig, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void toggleAccessory; void setCableLength; void setStep; void nextStep; void prevStep; void resetConfig
+        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setStep, nextStep, prevStep, resetConfig, ...rest } = state
+        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setStep; void nextStep; void prevStep; void resetConfig
         return rest
       },
     },
@@ -118,9 +126,20 @@ export const hasBikeCategory = (state: AnandaConfig) => Boolean(state.bikeCatego
 export const hasDrive = (state: AnandaConfig) => Boolean(state.driveType)
 export const hasVoltage = (state: AnandaConfig) => Boolean(state.voltagePlatform)
 export const hasDriveAndVoltage = (state: AnandaConfig) => hasDrive(state) && hasVoltage(state)
-export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)
-export const hasCoreComponents = (state: AnandaConfig) => Boolean(state.displayId && state.speedSensorId)
+export const hasMotor = (state: AnandaConfig) => Boolean(state.packageId && state.motorId)
+
+export function packageItemKeys(driveType: AnandaConfig["driveType"]): (keyof AnandaConfig)[] {
+  const base: (keyof AnandaConfig)[] = ["motorId", "displayId", "speedSensorId", "batteryId", "chargerId", "chargingPortId"]
+  return driveType === "hub" ? ["motorId", "controllerId", "torqueSensorId", ...base.slice(1)] : base
+}
+
+const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
+  Boolean(state[key]) || state.skippedItems.includes(key)
+
+export const hasCoreComponents = (state: AnandaConfig) =>
+  hasMotor(state) && packageItemKeys(state.driveType).every((key) => isItemSatisfied(state, key))
+
 export const hasDrivetrain = (state: AnandaConfig) => Boolean(state.drivetrainType)
-export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId)
+export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId) || state.skippedItems.includes("batteryId")
 export const hasAccessories = (_state: AnandaConfig) => true
 export const hasDiagram = (_state: AnandaConfig) => true
