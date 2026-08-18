@@ -1,14 +1,77 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { usePackageMotors, useControllers, type MotorRow } from "@/lib/ananda-packages"
 import { StepHeader, BigSpec, TechSpecRow } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, Image as ImageIcon, Loader2 } from "lucide-react"
+import { CheckCircle2, Image as ImageIcon, Loader2, ChevronDown, FileText, AlertTriangle } from "lucide-react"
+
+function FullSpecSheet({ motor }: { motor: MotorRow }) {
+  const isMid = motor.motor_type === "mid_drive"
+  const missingCount = [
+    motor.size,
+    motor.rpm,
+    motor.max_efficiency,
+    motor.noise_grade_db,
+    motor.waterproof,
+    motor.color,
+    motor.construction,
+    motor.light_drive_capacity,
+    motor.sensor_description,
+    motor.communication_protocol,
+    motor.datasheet_url,
+  ].filter((v) => v === null || v === undefined || v === "").length
+
+  return (
+    <div className="border border-border rounded-sm overflow-hidden mb-4">
+      <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border">
+        <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-muted-foreground">
+          Full Technical Specification
+        </span>
+        {missingCount > 0 && (
+          <span className="flex items-center gap-1 text-[10px] font-sans font-bold uppercase tracking-wider text-warning">
+            <AlertTriangle className="w-3 h-3" />
+            {missingCount} Missing
+          </span>
+        )}
+      </div>
+      <TechSpecRow label="Voltage Platform" value={motor.voltage_v} unit="V" />
+      <TechSpecRow label="RPM" value={motor.rpm} />
+      <TechSpecRow label="Max Efficiency" value={motor.max_efficiency} />
+      <TechSpecRow label="Noise Grade" value={motor.noise_grade_db} unit="dB" />
+      <TechSpecRow label="Dimensions" value={motor.size} />
+      <TechSpecRow label="Waterproof Rating" value={motor.waterproof} />
+      <TechSpecRow label="Color" value={motor.color} />
+      <TechSpecRow label="Construction" value={motor.construction} />
+      <TechSpecRow label="Light Drive Capacity" value={motor.light_drive_capacity} />
+      <TechSpecRow label="Sensor Description" value={motor.sensor_description} />
+      <TechSpecRow label="Communication Protocol" value={motor.communication_protocol} />
+      <TechSpecRow label={isMid ? "Shaft Interface" : "Mounting Interface"} value={isMid ? motor.shaft_interface : motor.mounting_interface} />
+      {motor.datasheet_url ? (
+        <a
+          href={motor.datasheet_url}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between py-1.5 px-3 border-b border-border last:border-0 hover:bg-primary/5 group"
+        >
+          <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Datasheet</span>
+          <span className="flex items-center gap-1 text-sm font-sans font-bold text-primary group-hover:underline">
+            <FileText className="w-3.5 h-3.5" />
+            View PDF
+          </span>
+        </a>
+      ) : (
+        <TechSpecRow label="Datasheet" value={null} />
+      )}
+    </div>
+  )
+}
 
 function PackageCard({ motor, selected, onSelect }: { motor: MotorRow; selected: boolean; onSelect: () => void }) {
   const isMid = motor.motor_type === "mid_drive"
+  const [showFullSpec, setShowFullSpec] = useState(false)
   return (
     <div
       className={cn(
@@ -66,7 +129,7 @@ function PackageCard({ motor, selected, onSelect }: { motor: MotorRow; selected:
           <BigSpec value={motor.weight_kg} unit="kg" label="Weight" />
         </div>
 
-        <div className="border border-border rounded-sm overflow-hidden mb-4">
+        <div className="border border-border rounded-sm overflow-hidden mb-3">
           <TechSpecRow label="Motor Type" value={isMid ? "Mid-Drive" : "Hub Motor"} />
           <TechSpecRow
             label="Controller"
@@ -79,6 +142,20 @@ function PackageCard({ motor, selected, onSelect }: { motor: MotorRow; selected:
             highlight={motor.pedal_sensing === "integrated"}
           />
         </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowFullSpec((v) => !v)
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 mb-3 text-[11px] font-sans font-bold uppercase tracking-wider text-muted-foreground hover:text-primary border border-border rounded-sm transition-colors"
+        >
+          Full Technical Specification
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showFullSpec && "rotate-180")} />
+        </button>
+
+        {showFullSpec && <FullSpecSheet motor={motor} />}
 
         <button
           className={cn(

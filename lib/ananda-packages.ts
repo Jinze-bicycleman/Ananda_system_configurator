@@ -31,6 +31,8 @@ export type MotorRow = {
   construction: string | null
   light_drive_capacity: string | null
   sensor_description: string | null
+  shaft_interface: string | null
+  mounting_interface: string | null
 }
 
 export type ControllerRow = {
@@ -92,7 +94,7 @@ export type BatteryRow = {
 }
 
 const MOTOR_COLUMNS =
-  "id, model, motor_type, torque_nm, rated_power_w, peak_power_w, weight_kg, size, voltage_v, controller_requirement, pedal_sensing, communication_protocol, image_url, image_path, datasheet_url, short_description, is_recommended, is_active, sort_order, rpm, max_efficiency, noise_grade_db, waterproof, color, construction, light_drive_capacity, sensor_description"
+  "id, model, motor_type, torque_nm, rated_power_w, peak_power_w, weight_kg, size, voltage_v, controller_requirement, pedal_sensing, communication_protocol, image_url, image_path, datasheet_url, short_description, is_recommended, is_active, sort_order, rpm, max_efficiency, noise_grade_db, waterproof, color, construction, light_drive_capacity, sensor_description, shaft_interface, mounting_interface"
 
 const CONTROLLER_COLUMNS =
   "id, model, compatible_motor_type, voltage_v, rated_power_w, peak_power_w, rated_current_a, peak_current_a, communication_protocol, connection_type, size, weight_kg, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
