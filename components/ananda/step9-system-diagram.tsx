@@ -19,6 +19,10 @@ function Block({
   const border = lime ? "#8fa300" : accent ? "#006828" : active ? "#008F36" : "#d1d5db"
   const textMain = lime || accent ? "white" : active ? "#008F36" : "#374151"
   const textSub = lime || accent ? "rgba(255,255,255,0.8)" : "#9ca3af"
+  const enlargedLabel = label === "Display" || label === "Remote" || label === "Accessories"
+  const labelFontSize = enlargedLabel ? 30 : 10
+  const sublabelFontSize = enlargedLabel ? 28 : 7.5
+  const textWidth = Math.max(w - 12, 24)
 
   return (
     <g>
@@ -34,15 +38,17 @@ function Block({
         />
       )}
       {/* Labels */}
-      <text x={x + w / 2} y={y + h / 2 + (sublabel ? -5 : 4)}
-        textAnchor="middle" fill={textMain} fontSize={10} fontWeight="700"
-        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}>
+      <text x={x + w / 2} y={y + h / 2 + (sublabel ? -labelFontSize * 0.35 : labelFontSize * 0.35)}
+        textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
+        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}
+        textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
         {label}
       </text>
       {sublabel && (
-        <text x={x + w / 2} y={y + h / 2 + 9}
-          textAnchor="middle" fill={textSub} fontSize={7.5}
-          fontFamily="Barlow, sans-serif">
+        <text x={x + w / 2} y={y + h / 2 + sublabelFontSize * 0.42}
+          textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
+          fontFamily="Barlow, sans-serif"
+          textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
           {sublabel}
         </text>
       )}
@@ -87,7 +93,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
   const isMid = driveType === "mid"
 
   return (
-    <svg viewBox="0 0 640 360" className="w-full max-w-2xl" style={{ minHeight: 280 }}>
+    <svg viewBox="0 0 640 380" className="w-full max-w-2xl" style={{ minHeight: 320 }}>
       <defs>
         <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
           <polygon points="0 0, 6 2, 0 4" fill="#9ca3af" />
@@ -98,7 +104,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
       </defs>
 
       {/* Background grid */}
-      <rect width="640" height="360" fill="white" rx="4" />
+      <rect width="640" height="380" fill="white" rx="4" />
       <line x1="0" y1="180" x2="640" y2="180" stroke="#f3f4f6" strokeWidth="1" />
       <line x1="320" y1="0" x2="320" y2="360" stroke="#f3f4f6" strokeWidth="1" />
 
@@ -131,23 +137,23 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={480} y={30} w={100} h={44} label="Display" sublabel={labels.display} active />
-          <Arrow x1={480} y1={52} x2={400} y2={148} color="#008F36" label="HMI" />
-
+          <Block x={430} y={18} w={170} h={88} label="Display" sublabel={labels.display} active />
+          <Arrow x1={430} y1={62} x2={400} y2={148} color="#008F36" label="HMI" />
+          
           {/* Remote → Display */}
-          <Block x={530} y={110} w={80} h={40} label="Remote" sublabel={labels.remote} active />
-          <Arrow x1={570} y1={110} x2={532} y2={74} color="#9ca3af" />
-
+          <Block x={480} y={120} w={140} h={86} label="Remote" sublabel={labels.remote} active />
+          <Arrow x1={550} y1={120} x2={548} y2={106} color="#9ca3af" />
+          
           {/* Accessories → System Harness */}
-          <Block x={480} y={260} w={120} h={44} label="Accessories" sublabel={labels.accessories} active />
-          <Arrow x1={540} y1={260} x2={400} y2={200} color="#9ca3af" label="Harness" />
-
+          <Block x={405} y={238} w={215} h={88} label="Accessories" sublabel={labels.accessories} active />
+          <Arrow x1={510} y1={238} x2={400} y2={200} color="#9ca3af" label="Harness" />
+          
           {/* Note */}
-          <rect x={20} y={310} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
-          <text x={320} y={327} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
+          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
             Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.
           </text>
-          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
             External controller and external sensors are not required.
           </text>
         </>
