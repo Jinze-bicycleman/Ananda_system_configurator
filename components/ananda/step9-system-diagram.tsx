@@ -241,7 +241,7 @@ export function Step9SystemDiagram() {
   return (
     <div>
       <StepHeader
-        step={10}
+        step={9}
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />

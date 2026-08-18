@@ -116,7 +116,7 @@ export function Step4MotorSelection() {
   return (
     <div>
       <StepHeader
-        step={5}
+        step={4}
         title="Motor Selection"
         subtitle="Choose the motor architecture for this e-bike system. This affects the motor product list, controller requirements, and system wiring."
       />

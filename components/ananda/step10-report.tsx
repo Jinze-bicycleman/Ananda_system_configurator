@@ -96,7 +96,7 @@ export function Step10Report() {
   return (
     <div>
       <StepHeader
-        step={11}
+        step={10}
         title="Final Configuration Report"
         subtitle="Complete system summary. Review all selections and drivetrain outputs before exporting or sharing."
       />

@@ -3,7 +3,7 @@
 import { useAnandaStore } from "@/lib/ananda-store"
 import { StepHeader } from "./ui-primitives"
 import { cn } from "@/lib/utils"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Zap } from "lucide-react"
 
 const DRIVE_SYSTEMS = [
   {
@@ -15,6 +15,7 @@ const DRIVE_SYSTEMS = [
     bestFor: "City commuting, casual cruising on flat pavement and budget-sensitive applications.",
     pros: ["Lower cost", "Less drivetrain wear", "Simple maintenance"],
     cons: ["Less efficient on hills", "Added unsprung weight at wheel"],
+    disabled: true,
   },
   {
     id: "mid" as const,
@@ -25,7 +26,14 @@ const DRIVE_SYSTEMS = [
     bestFor: "Electric mountain bikes, steep hilly terrain, cargo bikes and carrying children or heavy loads.",
     pros: ["Better hill climbing", "Balanced weight distribution", "Uses bike's gear range"],
     cons: ["Higher cost", "More chain and sprocket wear"],
+    disabled: false,
   },
+]
+
+const VOLTAGE_PLATFORMS = [
+  { v: 36 as const, label: "36V" },
+  { v: 48 as const, label: "48V" },
+  { v: 52 as const, label: "52V" },
 ]
 
 export function Step2DriveSystem() {
@@ -35,19 +43,20 @@ export function Step2DriveSystem() {
     <div>
       <StepHeader
         step={3}
-        title="Drive System"
-        subtitle="Select the motor architecture for this e-bike system. This determines the motor product list, controller requirement and system wiring."
+        title="Drive System & Voltage Platform"
+        subtitle="Select the motor architecture and system voltage for this e-bike system. These determine the motor product list, controller requirement and system wiring."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {DRIVE_SYSTEMS.map(ds => {
-          const selected = s.driveType === ds.id
+          const selected = !ds.disabled && s.driveType === ds.id
           return (
             <div
               key={ds.id}
-              onClick={() => s.setField("driveType", ds.id)}
+              onClick={() => { if (!ds.disabled) s.setField("driveType", ds.id) }}
               className={cn(
-                "relative cursor-pointer border-2 transition-all overflow-hidden",
+                "relative border-2 transition-all overflow-hidden",
+                ds.disabled ? "cursor-not-allowed opacity-50 grayscale" : "cursor-pointer",
                 selected ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/40"
               )}
             >
@@ -99,26 +108,89 @@ export function Step2DriveSystem() {
 
               <div className="p-6">
                 <h3 className={cn(
-                  "text-2xl font-sans font-black uppercase tracking-tight mb-3",
+                  "text-2xl font-sans font-black uppercase tracking-tight mb-1",
                   selected ? "text-primary" : "text-graphite"
                 )}>
                   {ds.title}
                 </h3>
+                {ds.disabled && (
+                  <p className="mb-3 text-xs font-sans font-bold uppercase tracking-wider text-destructive">
+                    (Hub motor selection coming soon)
+                  </p>
+                )}
                 <button
-                  onClick={() => s.setField("driveType", ds.id)}
+                  disabled={ds.disabled}
+                  onClick={() => { if (!ds.disabled) s.setField("driveType", ds.id) }}
                   className={cn(
                     "mt-5 w-full py-2.5 text-sm font-sans font-bold uppercase tracking-wider transition-all",
-                    selected
-                      ? "bg-primary text-white"
-                      : "border border-border text-graphite hover:border-primary hover:text-primary"
+                    ds.disabled
+                      ? "cursor-not-allowed border border-border text-muted-foreground"
+                      : selected
+                        ? "bg-primary text-white"
+                        : "border border-border text-graphite hover:border-primary hover:text-primary"
                   )}
                 >
-                  {selected ? "Selected" : `Select ${ds.title}`}
+                  {ds.disabled ? "Coming Soon" : selected ? "Selected" : `Select ${ds.title}`}
                 </button>
               </div>
             </div>
           )
         })}
+      </div>
+
+      <div className="mt-10">
+        <h3 className="mb-4 font-sans text-lg font-black uppercase tracking-tight text-graphite">Voltage Platform</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {VOLTAGE_PLATFORMS.map(vp => {
+            const selected = s.voltagePlatform === vp.v
+            return (
+              <div
+                key={vp.v}
+                onClick={() => s.setField("voltagePlatform", vp.v)}
+                className={cn(
+                  "relative cursor-pointer border-2 overflow-hidden transition-all",
+                  selected ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/40"
+                )}
+              >
+                <div className={cn(
+                  "relative px-6 pt-6 pb-5",
+                  selected ? "bg-graphite" : "bg-surface"
+                )}>
+                  {/* Selection mark */}
+                  {selected && (
+                    <div className="absolute top-3 right-3">
+                      <div className="bg-primary rounded-full p-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-end gap-2">
+                    <span className={cn(
+                      "text-5xl font-sans font-black leading-none",
+                      selected ? "text-white" : "text-graphite"
+                    )}>
+                      {vp.label}
+                    </span>
+                    <Zap className={cn("w-6 h-6 mb-1", selected ? "text-lime" : "text-primary")} />
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  <button
+                    className={cn(
+                      "w-full py-2.5 text-sm font-sans font-bold uppercase tracking-wider transition-all",
+                      selected
+                        ? "bg-primary text-white"
+                        : "border border-border text-graphite hover:border-primary hover:text-primary"
+                    )}
+                  >
+                    {selected ? `${vp.label} Selected` : `Select ${vp.label}`}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
     </div>

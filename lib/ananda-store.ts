@@ -14,7 +14,7 @@ export interface AnandaConfig {
   tyreIsoSize: string | null
   tyreCircumferenceMm: number | null
   driveType: "mid" | "hub" | null
-  voltagePlatform: 36 | 48 | null
+  voltagePlatform: 36 | 48 | 52 | null
   motorId: string | null
   controllerId: string | null
   torqueSensorId: string | null
@@ -46,7 +46,7 @@ export interface AnandaActions {
   setMarket: (market: string) => void
   setRegulation: (regulation: string | null) => void
   setDriveType: (drive: "mid" | "hub") => void
-  setVoltage: (voltage: 36 | 48) => void
+  setVoltage: (voltage: 36 | 48 | 52) => void
   setBikeCategory: (category: string) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number) => void
@@ -95,7 +95,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
       setStep: (currentStep) => set({ currentStep }),
-      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 11) })),
+      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 10) })),
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       resetConfig: () => set({ ...defaultState, hasStarted: true }),
       startConfiguration: () => set({ hasStarted: true }),
@@ -117,6 +117,7 @@ export const hasProjectContext = (state: AnandaConfig) => Boolean(state.sellRegi
 export const hasBikeCategory = (state: AnandaConfig) => Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm)
 export const hasDrive = (state: AnandaConfig) => Boolean(state.driveType)
 export const hasVoltage = (state: AnandaConfig) => Boolean(state.voltagePlatform)
+export const hasDriveAndVoltage = (state: AnandaConfig) => hasDrive(state) && hasVoltage(state)
 export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)
 export const hasCoreComponents = (state: AnandaConfig) => Boolean(state.displayId && state.speedSensorId)
 export const hasDrivetrain = (state: AnandaConfig) => Boolean(state.drivetrainType)

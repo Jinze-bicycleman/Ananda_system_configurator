@@ -22,7 +22,7 @@ export function Step7BatteryCharger() {
   return (
     <div>
       <StepHeader
-        step={8}
+        step={7}
         title="Battery, Charger & Charging Port"
         subtitle={`Showing ${s.voltagePlatform}V compatible products. Select 'No Battery' if the battery will be supplied by the customer.`}
       />

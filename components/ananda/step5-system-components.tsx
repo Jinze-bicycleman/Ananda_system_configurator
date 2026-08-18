@@ -85,7 +85,7 @@ export function Step5SystemComponents() {
   return (
     <div>
       <StepHeader
-        step={6}
+        step={5}
         title="Required System Components"
         subtitle="Configure controller, sensors and HMI for the selected drive system. Items shown are filtered to your voltage platform."
       />

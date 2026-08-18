@@ -252,7 +252,7 @@ export function Step6DrivetrainSelection() {
   return (
     <div>
       <StepHeader
-        step={7}
+        step={6}
         title="Drivetrain Selection"
         subtitle="Select chain or belt drive type and configure chainring, rear sprocket and cadence. Outputs update live."
       />
