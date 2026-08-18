@@ -4,6 +4,7 @@ import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
+import { SystemDiagram } from "./system-diagram/system-diagram"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
 
@@ -277,6 +278,19 @@ export function Step9SystemDiagram() {
     remote: "R1 / R2 / R3",
   }
 
+  if (driveType === "mid") {
+    return (
+      <div>
+        <StepHeader
+          step={8}
+          title="System Diagram Overview"
+          subtitle="Interactive system architecture diagram based on your configuration. Select a connection below to inspect it, and edit cable lengths as needed."
+        />
+        <SystemDiagram />
+      </div>
+    )
+  }
+
   return (
     <div>
       <StepHeader
@@ -289,7 +303,7 @@ export function Step9SystemDiagram() {
       <div className="border border-border bg-white p-4 mb-6 overflow-x-auto">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
-            System Architecture — {driveType === "mid" ? "Mid-Drive" : "Hub Motor"} · {s.voltagePlatform ?? "—"}V
+            System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
           </p>
           <div className="flex items-center gap-4 text-[10px] font-body text-muted-foreground">
             <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
