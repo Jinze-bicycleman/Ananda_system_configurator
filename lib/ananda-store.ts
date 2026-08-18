@@ -37,7 +37,7 @@ export interface AnandaConfig {
   estimatedSpeedKmh: number | null
   estimatedOnWheelTorqueNm: number | null
   gearSystem: string | null
-  transmissionType: "derailleur" | "internal_gear_hub" | "single_speed" | "gearbox" | null
+  transmissionType: "derailleur" | "internal_gear_hub" | "cvt" | "single_speed" | "gearbox" | null
   selectedComponentIds: string[]
   frontTeeth: number | null
   rearTeeth: number | null

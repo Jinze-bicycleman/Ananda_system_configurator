@@ -91,11 +91,13 @@ export function ConfigSummaryPanel() {
                     ? "Derailleur"
                     : s.transmissionType === "internal_gear_hub"
                       ? "Internal-Gear Hub"
-                      : s.transmissionType === "single_speed"
-                        ? "Single Speed"
-                        : s.transmissionType === "gearbox"
-                          ? "Gearbox"
-                          : "—"
+                      : s.transmissionType === "cvt"
+                        ? "CVT"
+                        : s.transmissionType === "single_speed"
+                          ? "Single Speed"
+                          : s.transmissionType === "gearbox"
+                            ? "Gearbox"
+                            : "—"
                 }`
               : "—"
           }

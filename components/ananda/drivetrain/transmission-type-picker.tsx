@@ -8,7 +8,8 @@ import { DrivetrainEmptyState } from "./drivetrain-states"
 
 const TRANSMISSION_META: Record<TransmissionType, { label: string; description: string }> = {
   derailleur: { label: "Derailleur & Cassette", description: "Wide-range multi-speed shifting for chain drivetrains." },
-  internal_gear_hub: { label: "Internal-Gear Hub", description: "Sealed, low-maintenance gearing inside the rear hub." },
+  internal_gear_hub: { label: "Internal-Gear Hub", description: "Sealed, stepped gearing inside the rear hub (Shimano Nexus)." },
+  cvt: { label: "CVT (Continuously Variable)", description: "Stepless, sealed ratio range with no fixed gear steps (enviolo)." },
   single_speed: { label: "Single Speed", description: "Fixed ratio, minimal maintenance." },
   gearbox: { label: "Gearbox", description: "Mid-frame gearbox transmission." },
 }

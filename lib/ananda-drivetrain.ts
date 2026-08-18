@@ -656,26 +656,56 @@ export function findBeltCandidates(
 // Transmission availability (computed from live catalogue only)
 // ───────��─────────────────────────────────────────────────────────────────────
 
-export type TransmissionType = "derailleur" | "internal_gear_hub" | "single_speed" | "gearbox"
+export type TransmissionType = "derailleur" | "internal_gear_hub" | "cvt" | "single_speed" | "gearbox"
+
+// The catalogue's "internal_gear_hub" category holds two physically distinct
+// technologies: stepped hubs (Shimano Nexus, Rohloff — fixed discrete gears)
+// and continuously-variable hubs (enviolo — a stepless ratio range). These
+// are split into separate transmission types ("internal_gear_hub" vs "cvt")
+// so the picker and slot filtering never mix the two. Only Shimano Nexus is
+// surfaced under the stepped "internal_gear_hub" type — Rohloff remains in
+// the catalogue but is intentionally excluded from this picker.
+export const NEXUS_PRODUCT_FAMILY = "Shimano Nexus"
+
+export function isSteppedInternalHub(c: DrivetrainComponent): boolean {
+  return c.category === "internal_gear_hub" && c.product_family === NEXUS_PRODUCT_FAMILY
+}
+
+export function isCvtHub(c: DrivetrainComponent): boolean {
+  return c.category === "internal_gear_hub" && c.ratio_type === "continuous"
+}
 
 export function getAvailableTransmissionTypes(catalogue: DrivetrainComponent[], driveType: "chain" | "belt"): TransmissionType[] {
   const types: TransmissionType[] = []
   const hasCategory = (cat: string, matchesDrive: (dt: string) => boolean) =>
     catalogue.some((c) => c.category === cat && matchesDrive(c.drive_type))
+  const matchesDrive = (dt: string) => dt === driveType || dt === "both"
 
-  if (driveType === "chain" && hasCategory("derailleur", (dt) => dt === "chain" || dt === "both")) {
+  if (driveType === "chain" && hasCategory("derailleur", matchesDrive)) {
     types.push("derailleur")
   }
-  if (hasCategory("internal_gear_hub", (dt) => dt === driveType || dt === "both")) {
+  if (catalogue.some((c) => isSteppedInternalHub(c) && matchesDrive(c.drive_type))) {
     types.push("internal_gear_hub")
   }
-  if (hasCategory("sprocket", (dt) => dt === driveType || dt === "both")) {
+  if (catalogue.some((c) => isCvtHub(c) && matchesDrive(c.drive_type))) {
+    types.push("cvt")
+  }
+  if (hasCategory("rear_sprocket", matchesDrive)) {
     types.push("single_speed")
   }
-  if (hasCategory("gearbox", (dt) => dt === driveType || dt === "both")) {
+  if (hasCategory("gearbox", matchesDrive)) {
     types.push("gearbox")
   }
   return types
+}
+
+// "enviolo Heavy Duty" was enviolo's original industrial/cargo CVT hub before
+// "Extreme" and "Utility" were introduced as its successors — there is no
+// is_active/legacy column in the schema, so this is derived from the model
+// name, matching the same heuristic used for the "Legacy company option" UI badge.
+export function isLegacyEnvioloOption(c: DrivetrainComponent): boolean {
+  const haystack = `${c.model ?? ""} ${c.display_name ?? ""} ${c.product_family ?? ""}`
+  return /heavy duty/i.test(haystack)
 }
 
 export function displayName(c: DrivetrainComponent | null | undefined): string {
@@ -692,7 +722,7 @@ export type RecommendationPosition = "climbing" | "balanced" | "speed"
 export type RecommendationCard = {
   position: RecommendationPosition
   label: string
-  transmissionType: "derailleur" | "internal_gear_hub"
+  transmissionType: "derailleur" | "cvt"
   front: DrivetrainComponent
   rear: DrivetrainComponent
   chain?: DrivetrainComponent | null
@@ -797,7 +827,7 @@ export function buildBeltHubRecommendations(
   data: DrivetrainData,
   ctx: CompatibilityContext,
 ): Record<RecommendationPosition, RecommendationCard | null> {
-  const hubs = data.catalogue.filter((c) => c.category === "internal_gear_hub" && (c.drive_type === "belt" || c.drive_type === "both"))
+  const hubs = data.catalogue.filter((c) => isCvtHub(c) && (c.drive_type === "belt" || c.drive_type === "both"))
   const frontPulleys = data.catalogue.filter((c) => c.category === "front_pulley")
   const rearPulleys = data.catalogue.filter((c) => c.category === "rear_pulley")
 
@@ -852,7 +882,7 @@ export function buildBeltHubRecommendations(
     return {
       position,
       label: POSITION_LABELS[position],
-      transmissionType: "internal_gear_hub",
+      transmissionType: "cvt",
       front: frontPulley ?? rearPulley,
       rear: rearPulley,
       belt: null,

@@ -48,7 +48,7 @@ export function RecommendationCards({
               <div className="p-5 flex-1 flex flex-col">
                 <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-primary mb-1">{card.label}</p>
                 <p className="text-sm font-sans font-bold text-graphite mb-3">
-                  {card.transmissionType === "derailleur" ? "Derailleur & Cassette" : "Internal-Gear Hub"}
+                  {card.transmissionType === "derailleur" ? "Derailleur & Cassette" : "CVT (Continuously Variable)"}
                 </p>
 
                 <div className="space-y-1 mb-3 text-xs font-body">

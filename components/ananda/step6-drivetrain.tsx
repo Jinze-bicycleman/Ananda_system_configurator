@@ -75,11 +75,23 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
     [motor, motorType, s.gvwKg, s.frontTeeth, s.rearTeeth, isSpeedPedelec, wheelSizeInch, frameBeltRequirementsMet],
   )
 
+  // Recommendation cards are only meaningful for the two transmission types
+  // that have a dedicated recommendation builder: derailleur (chain drive)
+  // and CVT (enviolo, on either chain or belt drive). Stepped internal-gear
+  // hubs (Shimano Nexus) and single-speed builds don't have a recommendation
+  // builder, so no cards are shown for those — showing derailleur-based cards
+  // there would misrepresent the selected transmission.
   const recommendations = useMemo(() => {
-    if (!s.drivetrainType || isLoading) return { climbing: null, balanced: null, speed: null }
-    if (s.drivetrainType === "chain") return buildChainDerailleurRecommendations(data, ctx)
-    return buildBeltHubRecommendations(data, ctx)
-  }, [s.drivetrainType, data, ctx, isLoading])
+    const empty = { climbing: null, balanced: null, speed: null }
+    if (!s.drivetrainType || !s.transmissionType || isLoading) return empty
+    if (s.drivetrainType === "chain" && s.transmissionType === "derailleur") {
+      return buildChainDerailleurRecommendations(data, ctx)
+    }
+    if (s.transmissionType === "cvt") {
+      return buildBeltHubRecommendations(data, ctx)
+    }
+    return empty
+  }, [s.drivetrainType, s.transmissionType, data, ctx, isLoading])
 
   const selectedComponents = s.selectedComponentIds
     .map((id) => catalogue.find((c) => c.id === id))
@@ -87,7 +99,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
 
   const frontComponent = selectedComponents.find((c) => ["chainring", "front_pulley"].includes(c.category)) ?? null
   const rearComponent = selectedComponents.find((c) =>
-    ["cassette", "rear_pulley", "internal_gear_hub", "sprocket"].includes(c.category),
+    ["cassette", "rear_pulley", "internal_gear_hub", "rear_sprocket"].includes(c.category),
   ) ?? null
   const hubComponent = selectedComponents.find((c) => c.category === "internal_gear_hub") ?? null
   const belts = catalogue.filter((c) => c.category === "belt")
@@ -134,7 +146,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   }, [s.transmissionType, rearComponent])
 
   const enviolo = useMemo(() => {
-    if (s.transmissionType !== "internal_gear_hub" || !hubComponent || !s.frontTeeth || !s.rearTeeth) return null
+    if (s.transmissionType !== "cvt" || !hubComponent || !s.frontTeeth || !s.rearTeeth) return null
     if (hubComponent.minimum_internal_ratio == null || hubComponent.maximum_internal_ratio == null) return null
     const circumference = s.tyreCircumferenceMm ?? 2200
     return calculateEnvioloBoundaries(
@@ -203,7 +215,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
       if (["chainring", "front_pulley"].includes(component.category)) {
         s.setField("frontTeeth", component.teeth)
       }
-      if (["sprocket"].includes(component.category)) {
+      if (["rear_sprocket"].includes(component.category)) {
         s.setField("rearTeeth", component.teeth)
       }
       if (component.category === "cassette" && component.tooth_counts) {
@@ -284,7 +296,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
         />
       )}
 
-      {s.drivetrainType && s.transmissionType && (s.transmissionType === "derailleur" || s.transmissionType === "internal_gear_hub") && (
+      {s.drivetrainType && s.transmissionType && (s.transmissionType === "derailleur" || s.transmissionType === "cvt") && (
         <RecommendationCards
           recommendations={recommendations}
           onSelect={handleSelectRecommendation}
@@ -310,7 +322,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
         />
       )}
 
-      {s.drivetrainType === "belt" && s.transmissionType === "internal_gear_hub" && (
+      {s.drivetrainType === "belt" && s.transmissionType === "cvt" && (
         <BeltFrameRequirements
           belts={belts}
           frontTeeth={s.frontTeeth}

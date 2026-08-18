@@ -8,6 +8,7 @@ import { getAvailableTransmissionTypes } from "@/lib/ananda-drivetrain"
 const TRANSMISSION_LABELS: Record<string, string> = {
   derailleur: "Derailleur & Cassette",
   internal_gear_hub: "Internal-Gear Hub",
+  cvt: "CVT",
   single_speed: "Single Speed",
   gearbox: "Gearbox",
 }
@@ -15,7 +16,7 @@ const TRANSMISSION_LABELS: Record<string, string> = {
 const DRIVE_TYPE_META = {
   chain: {
     title: "Chain Drive",
-    description: "Flexible gearing with derailleur, internal-gear-hub and single-speed options.",
+    description: "Flexible gearing with derailleur, internal-gear-hub, CVT and single-speed options.",
     benefits: ["Affordable", "Efficient power transfer", "Widely available parts"],
     icon: Link2,
   },

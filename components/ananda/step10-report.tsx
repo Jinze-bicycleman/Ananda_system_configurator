@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 const TRANSMISSION_LABEL: Record<string, string> = {
   derailleur: "Derailleur & Cassette",
   internal_gear_hub: "Internal-Gear Hub",
+  cvt: "CVT",
   single_speed: "Single Speed",
   gearbox: "Gearbox",
 }

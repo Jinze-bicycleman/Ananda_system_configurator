@@ -8,12 +8,25 @@ import { DrivetrainEmptyState } from "./drivetrain-states"
 import {
   displayName,
   evaluateCompatibility,
+  isCvtHub,
+  isLegacyEnvioloOption,
+  isSteppedInternalHub,
   type CompatibilityContext,
   type DrivetrainComponent,
   type DrivetrainData,
 } from "@/lib/ananda-drivetrain"
 
-type Slot = { key: string; category: string; label: string; optional?: boolean }
+type Slot = {
+  key: string
+  category: string
+  label: string
+  optional?: boolean
+  // Extra filter applied on top of category + drive type, used to separate
+  // technologies that share the same catalogue category (e.g. stepped
+  // Shimano Nexus hubs vs. continuously-variable enviolo hubs both live
+  // under "internal_gear_hub").
+  extraFilter?: (c: DrivetrainComponent) => boolean
+}
 
 function getSlots(driveType: "chain" | "belt", transmissionType: string): Slot[] {
   if (driveType === "chain" && transmissionType === "derailleur") {
@@ -25,22 +38,39 @@ function getSlots(driveType: "chain" | "belt", transmissionType: string): Slot[]
       { key: "chain_guide", category: "chain_guide", label: "Chain Guide", optional: true },
     ]
   }
-  if (driveType === "belt" && transmissionType === "internal_gear_hub") {
+  if (transmissionType === "cvt") {
+    const hub: Slot = { key: "hub", category: "internal_gear_hub", label: "CVT Hub", extraFilter: isCvtHub }
+    if (driveType === "belt") {
+      return [
+        hub,
+        { key: "front_pulley", category: "front_pulley", label: "Front Pulley" },
+        { key: "rear_pulley", category: "rear_pulley", label: "Rear Pulley" },
+        { key: "belt", category: "belt", label: "Belt" },
+        { key: "tensioner", category: "tensioner", label: "Tensioner", optional: true },
+      ]
+    }
     return [
-      { key: "hub", category: "internal_gear_hub", label: "Internal-Gear Hub" },
-      { key: "front_pulley", category: "front_pulley", label: "Front Pulley" },
-      { key: "rear_pulley", category: "rear_pulley", label: "Rear Pulley" },
-      { key: "belt", category: "belt", label: "Belt" },
+      hub,
+      { key: "chainring", category: "chainring", label: "Chainring" },
+      { key: "rear_sprocket", category: "rear_sprocket", label: "Rear Sprocket" },
+      { key: "chain", category: "chain", label: "Chain" },
       { key: "tensioner", category: "tensioner", label: "Tensioner", optional: true },
     ]
   }
   if (driveType === "chain" && transmissionType === "internal_gear_hub") {
     return [
-      { key: "hub", category: "internal_gear_hub", label: "Internal-Gear Hub" },
+      { key: "hub", category: "internal_gear_hub", label: "Internal-Gear Hub", extraFilter: isSteppedInternalHub },
       { key: "chainring", category: "chainring", label: "Chainring" },
-      { key: "sprocket", category: "sprocket", label: "Rear Sprocket" },
+      { key: "rear_sprocket", category: "rear_sprocket", label: "Rear Sprocket" },
       { key: "chain", category: "chain", label: "Chain" },
       { key: "tensioner", category: "tensioner", label: "Tensioner", optional: true },
+    ]
+  }
+  if (driveType === "chain" && transmissionType === "single_speed") {
+    return [
+      { key: "chainring", category: "chainring", label: "Chainring" },
+      { key: "rear_sprocket", category: "rear_sprocket", label: "Rear Sprocket" },
+      { key: "chain", category: "chain", label: "Chain" },
     ]
   }
   return []
@@ -74,7 +104,10 @@ export function AdvancedConfiguration({
       <div className="space-y-4">
         {slots.map((slot, index) => {
           const options = data.catalogue.filter(
-            (c) => c.category === slot.category && (c.drive_type === driveType || c.drive_type === "both"),
+            (c) =>
+              c.category === slot.category &&
+              (c.drive_type === driveType || c.drive_type === "both") &&
+              (!slot.extraFilter || slot.extraFilter(c)),
           )
           const priorSelections = selectedIds.slice(0, index).filter(Boolean)
           const priorComponents = priorSelections
@@ -128,7 +161,14 @@ export function AdvancedConfiguration({
                     >
                       <Icon className={cn("h-4 w-4 flex-shrink-0 mt-0.5", STATUS_CLS[status])} />
                       <span className="min-w-0">
-                        <span className="block text-xs font-sans font-semibold text-graphite truncate">{displayName(option)}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="block text-xs font-sans font-semibold text-graphite truncate">{displayName(option)}</span>
+                          {isLegacyEnvioloOption(option) && (
+                            <span className="flex-shrink-0 px-1.5 py-0.5 text-[9px] font-sans font-bold uppercase tracking-wider border border-muted-foreground/40 text-muted-foreground">
+                              Legacy company option
+                            </span>
+                          )}
+                        </span>
                         {priorComponents.length > 0 && (
                           <span className={cn("block text-[10px] font-body", STATUS_CLS[status])}>
                             {status === "green" ? "Compatible" : status === "amber" ? "Verification required" : "Not compatible"}
