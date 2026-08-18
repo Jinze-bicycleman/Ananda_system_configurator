@@ -1,10 +1,8 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aControllers, aBatteries, aChargers, aChargingPorts,
-  aDisplays, aRemotes, aSensors, aAccessories
-} from "@/lib/ananda-data"
+import { aAccessories } from "@/lib/ananda-data"
+import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "./status-badge"
 import { AlertTriangle, CheckCircle2, Weight, Zap } from "lucide-react"
@@ -12,29 +10,35 @@ import { AlertTriangle, CheckCircle2, Weight, Zap } from "lucide-react"
 export function ConfigSummaryPanel() {
   const s = useAnandaStore()
 
-  const motor      = aMotors.find(m => m.id === s.motorId)
-  const battery    = aBatteries.find(b => b.id === s.batteryId)
-  const controller = aControllers.find(c => c.id === s.controllerId)
-  const display    = aDisplays.find(d => d.id === s.displayId)
-  const remote     = aRemotes.find(r => r.id === s.remoteId)
-  const charger    = aChargers.find(c => c.id === s.chargerId)
-  const chargingPort = aChargingPorts.find(p => p.id === s.chargingPortId)
-  const speedSensor  = aSensors.find(s2 => s2.id === s.speedSensorId)
-  const accessories  = aAccessories.filter(a => s.accessoryIds.includes(a.id))
+  const { motors } = useMotors()
+  const { controllers } = useControllers()
+  const { displays } = useDisplays()
+  const { batteries } = useBatteries()
+
+  const motor = motors.find((m) => m.id === s.motorId) ?? null
+  const battery = batteries.find((b) => b.id === s.batteryId) ?? null
+  const controller = controllers.find((c) => c.id === s.controllerId) ?? null
+  const display = displays.find((d) => d.id === s.displayId) ?? null
+  const charger = CHARGERS.find((c) => c.id === s.chargerId) ?? null
+  const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
+  const accessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
+
+  const torqueSensorSkipped = s.skippedItems.includes("torqueSensorId")
+  const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
+  const batterySkipped = s.skippedItems.includes("batteryId")
 
   // Weight estimate — motor and battery only
   let totalKg = 0
-  if (motor?.weightKg)   totalKg += motor.weightKg
-  if (battery?.weightKg) totalKg += battery.weightKg
+  if (motor?.weight_kg) totalKg += motor.weight_kg
+  if (battery?.weight_kg) totalKg += battery.weight_kg
 
   // Compatibility checks
   const issues: string[] = []
-  if (!s.motorId)   issues.push("No motor selected")
+  if (!s.motorId) issues.push("No package selected")
   if (s.driveType === "hub" && !s.controllerId) issues.push("Controller required for hub motor")
-  if (s.driveType === "hub" && !s.torqueSensorId && !s.cadenceSensorId) issues.push("Pedal sensing required for hub motor")
-  if (!s.speedSensorId) issues.push("Speed sensor required")
-  const voltageOk = !motor || !s.voltagePlatform || (Array.isArray(motor.voltages) ? motor.voltages.includes(s.voltagePlatform) : motor.voltages === s.voltagePlatform)
-  if (!voltageOk) issues.push("Voltage mismatch — check motor/platform")
+  if (s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped) issues.push("Torque sensor required for hub motor")
+  if (!s.speedSensorId && !speedSensorSkipped) issues.push("Speed sensor required")
+  if (!s.batteryId && !batterySkipped) issues.push("Battery required")
 
   const complete = issues.length === 0
 
@@ -46,48 +50,61 @@ export function ConfigSummaryPanel() {
       {/* Header */}
       <div className="px-4 py-3 bg-surface border-b border-border flex items-center justify-between">
         <span className="text-[11px] font-sans font-black uppercase tracking-[0.2em] text-graphite">Configuration Summary</span>
-        {complete
-          ? <CheckCircle2 className="w-4 h-4 text-primary" />
-          : <AlertTriangle className="w-4 h-4 text-warning" />
-        }
+        {complete ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
       </div>
 
       <div className="p-4 space-y-3 text-[12px]">
-        <Row label="Sell Market"   value={s.sellRegion ?? "—"} />
-        <Row label="Regulation"   value={s.regulation ?? "—"} />
-        <Row label="Speed Limit"  value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
-        <Row label="Rated Power"  value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
+        <Row label="Sell Market" value={s.sellRegion ?? "—"} />
+        <Row label="Regulation" value={s.regulation ?? "—"} />
+        <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
+        <Row label="Rated Power" value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
         <Row label="Bike Category" value={s.bikeCategory ?? "—"} />
 
         <Divider />
 
-        <Row label="Drive Type"   value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub Motor" : "—"} />
-        <Row label="Voltage"      value={s.voltagePlatform ? `${s.voltagePlatform}V` : "—"} highlight />
+        <Row label="Drive Type" value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub Motor" : "—"} />
+        <Row label="Voltage" value={s.voltagePlatform ? `${s.voltagePlatform}V` : "—"} highlight />
 
         <Divider />
 
-        <Row label="Motor"
-          value={motor ? motor.name : "—"}
-          badge={motor?.recommended ? "recommended" : undefined}
-        />
-        <Row label="Controller"
-          value={s.driveType === "mid" ? "Integrated" : controller ? controller.name : "—"}
-          badge={s.driveType === "mid" ? "integrated" : !controller ? undefined : undefined}
+        <Row label="Package" value={motor ? motor.model : "—"} badge={motor?.is_recommended ? "recommended" : undefined} />
+        <Row
+          label="Controller"
+          value={s.driveType === "mid" ? "Integrated" : controller ? controller.model : "—"}
+          badge={s.driveType === "mid" ? "integrated" : undefined}
         />
 
         <Divider />
 
-        <Row label="Battery"
-          value={battery ? battery.name : s.batteryId === "none" ? "No Battery" : "—"}
-        />
-        <Row label="Charger"      value={charger ? charger.name : "—"} />
-        <Row label="Charge Port"  value={chargingPort ? chargingPort.name : "—"} />
+        <Row label="Battery" value={batterySkipped ? "Not Needed" : battery ? battery.model : "—"} />
+        <Row label="Charger" value={charger ? charger.model : "—"} />
+        <Row label="Charge Port" value={chargingPort ? chargingPort.model : "—"} />
 
         <Divider />
 
-        <Row label="Drivetrain"   value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} />
-        <Row label="Display"      value={display ? display.name : "—"} />
-        <Row label="Accessories"  value={accessories.length > 0 ? `${accessories.length} selected` : "None"} />
+        <Row
+          label="Drivetrain"
+          value={
+            s.drivetrainType
+              ? `${s.drivetrainType === "chain" ? "Chain" : "Belt"} · ${
+                  s.transmissionType === "derailleur"
+                    ? "Derailleur"
+                    : s.transmissionType === "internal_gear_hub"
+                      ? "Internal-Gear Hub"
+                      : s.transmissionType === "cvt"
+                        ? "CVT"
+                        : s.transmissionType === "single_speed"
+                          ? "Single Speed"
+                          : s.transmissionType === "gearbox"
+                            ? "Gearbox"
+                            : "—"
+                }`
+              : "—"
+          }
+          warn={s.drivetrainErrors.length > 0}
+        />
+        <Row label="Display" value={display ? display.model : "—"} />
+        <Row label="Accessories" value={accessories.length > 0 ? `${accessories.length} selected` : "None"} />
 
         {/* Weight estimate */}
         {totalKg > 0 && (
@@ -139,11 +156,13 @@ function Row({
   label,
   value,
   highlight,
+  warn,
   badge,
 }: {
   label: string
   value: string
   highlight?: boolean
+  warn?: boolean
   badge?: "recommended" | "integrated"
 }) {
   return (
@@ -151,10 +170,12 @@ function Row({
       <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 flex-wrap justify-end">
         {badge && <StatusBadge variant={badge} />}
-        <span className={cn(
-          "text-[12px] font-sans font-semibold text-right leading-tight",
-          highlight ? "text-primary" : "text-foreground"
-        )}>
+        <span
+          className={cn(
+            "text-[12px] font-sans font-semibold text-right leading-tight",
+            warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
+          )}
+        >
           {value}
         </span>
       </div>

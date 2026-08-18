@@ -1,37 +1,10 @@
 "use client"
 
-import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aBatteries, aControllers, aDisplays, aRemotes,
-  aSensors, aChargers, aChargingPorts, aAccessories,
-  motorTorqueFallback
-} from "@/lib/ananda-data"
+import { displayName } from "@/lib/ananda-drivetrain"
+import { useReportData, TRANSMISSION_LABEL } from "@/lib/ananda-report"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-function calcDrivetrain(
-  chainringT: number,
-  rearT: number,
-  cadenceRpm: number,
-  tyreCircumferenceMm: number | null,
-  motorId: string | null,
-  driveType: "mid" | "hub" | null
-) {
-  const gearRatio = chainringT / rearT
-  const wheelCircumM = (tyreCircumferenceMm ?? 2200) / 1000
-  const speedKmh = (cadenceRpm * gearRatio * wheelCircumM * 60) / 1000
-  const motor = aMotors.find(m => m.id === motorId)
-  const motorTorque = motor?.torqueNm ?? (motorId ? (motorTorqueFallback[motorId] ?? 80) : 80)
-  const onWheelTorque = driveType === "mid"
-    ? motorTorque / gearRatio
-    : motorTorque
-  return {
-    gearRatio: Math.round(gearRatio * 100) / 100,
-    speedKmh: Math.round(speedKmh * 10) / 10,
-    onWheelTorque: Math.round(onWheelTorque * 10) / 10,
-  }
-}
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -45,152 +18,172 @@ function ReportSection({ title, children }: { title: string; children: React.Rea
   )
 }
 
-function Row({ label, value, highlight, warn }: {
-  label: string; value: string; highlight?: boolean; warn?: boolean
-}) {
+function Row({ label, value, highlight, warn }: { label: string; value: string; highlight?: boolean; warn?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={cn(
-        "text-[12px] font-sans font-semibold text-right",
-        warn ? "text-warning" : highlight ? "text-primary" : "text-foreground"
-      )}>{value}</span>
+      <span className={cn("text-[12px] font-sans font-semibold text-right", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
+        {value}
+      </span>
     </div>
   )
 }
 
 export function Step10Report() {
-  const s = useAnandaStore()
-
-  const motor        = aMotors.find(m => m.id === s.motorId)
-  const battery      = aBatteries.find(b => b.id === s.batteryId)
-  const controller   = aControllers.find(c => c.id === s.controllerId)
-  const display      = aDisplays.find(d => d.id === s.displayId)
-  const remote       = aRemotes.find(r => r.id === s.remoteId)
-  const charger      = aChargers.find(c => c.id === s.chargerId)
-  const chargingPort = aChargingPorts.find(p => p.id === s.chargingPortId)
-  const speedSensor  = aSensors.find(x => x.id === s.speedSensorId)
-  const torqueSensor = aSensors.find(x => x.id === s.torqueSensorId)
-  const cadenceSensor = aSensors.find(x => x.id === s.cadenceSensorId)
-  const accessories  = aAccessories.filter(a => s.accessoryIds.includes(a.id))
-
-  const { gearRatio, speedKmh, onWheelTorque } = calcDrivetrain(
-    s.chainringTeeth,
-    s.rearSprocketTeeth,
-    s.cadenceRpm,
-    s.tyreCircumferenceMm,
-    s.motorId,
-    s.driveType
-  )
-
-  const speedExceedsLimit = s.speedLimitKmh != null && speedKmh > s.speedLimitKmh
-  const usesDefaultCircumference = s.tyreCircumferenceMm == null
-
-  // Weight: motor + battery only
-  let systemWeightKg = 0
-  if (motor?.weightKg)   systemWeightKg += motor.weightKg
-  if (battery?.weightKg) systemWeightKg += battery.weightKg
-
-  const isMid = s.driveType === "mid"
+  const {
+    s,
+    motor,
+    controller,
+    display,
+    battery,
+    charger,
+    chargingPort,
+    accessories,
+    torqueSensorSkipped,
+    speedSensorSkipped,
+    batterySkipped,
+    selectedDrivetrainComponents,
+    selectedBelt,
+    systemWeightKg,
+    isMid,
+    cableRows,
+  } = useReportData()
 
   return (
     <div>
       <StepHeader
-        step={11}
+        step={9}
         title="Final Configuration Report"
-        subtitle="Complete system summary. Review all selections and drivetrain outputs before exporting or sharing."
+        subtitle="Complete system summary. Review all selections and drivetrain outputs, then download the PDF report below."
       />
 
       {/* ─── Project Context ─── */}
       <ReportSection title="Project Context">
-        <Row label="Sell Market"    value={s.sellRegion ?? "—"} />
-        <Row label="Regulation"     value={s.regulation ?? "—"} />
-        <Row label="Speed Limit"    value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
-        <Row label="Rated Power"    value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
-        <Row label="Bike Category"  value={s.bikeCategory ?? "—"} />
-        <Row label="Wheel Size"     value={s.wheelSize ?? "—"} />
-        <Row label="Tyre Width"     value={s.tyreWidth ?? "—"} />
-        <Row label="Circumference"  value={s.tyreCircumferenceMm ? `${s.tyreCircumferenceMm} mm` : "Default 2200 mm"} />
+        <Row label="Sell Market" value={s.sellRegion ?? "—"} />
+        <Row label="Regulation" value={s.regulation ?? "—"} />
+        <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
+        <Row label="Rated Power" value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
+        <Row label="Bike Category" value={s.bikeCategory ?? "—"} />
+        <Row label="Wheel Size" value={s.wheelSize ?? "—"} />
+        <Row label="Tyre Width" value={s.tyreWidth ?? "—"} />
+        <Row label="Circumference" value={s.tyreCircumferenceMm ? `${s.tyreCircumferenceMm} mm` : "Default 2200 mm"} />
       </ReportSection>
 
-      {/* ─── Drive System ─── */}
-      <ReportSection title="Drive System">
-        <Row label="Drive Type"       value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub Motor" : "—"} highlight />
+      {/* ─── Drive System & Package ─── */}
+      <ReportSection title="Drive System & Package">
+        <Row label="Drive Type" value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub Motor" : "—"} highlight />
         <Row label="Voltage Platform" value={s.voltagePlatform ? `${s.voltagePlatform}V` : "—"} highlight />
-        <Row label="Motor"            value={motor ? motor.name : "—"} />
-        <Row label="Motor Power"      value={motor?.powerW ? `${motor.powerW}W` : "—"} />
-        <Row label="Motor Torque"     value={motor?.torqueNm ? `${motor.torqueNm} Nm` : "—"} />
-        {motor?.weightKg && <Row label="Motor Weight" value={`${motor.weightKg} kg`} />}
+        <Row label="Motor Package" value={motor ? motor.model : "—"} />
+        <Row label="Motor Power" value={motor?.rated_power_w ? `${motor.rated_power_w}W` : "—"} />
+        <Row label="Motor Torque" value={motor?.torque_nm ? `${motor.torque_nm} Nm` : "—"} />
+        {motor?.weight_kg && <Row label="Motor Weight" value={`${motor.weight_kg} kg`} />}
       </ReportSection>
 
-      {/* ─── System Components ─── */}
-      <ReportSection title="System Components">
-        <Row label="Controller"    value={isMid ? "Integrated" : controller ? controller.name : "—"} />
-        <Row label="Display"       value={display ? display.name : "—"} />
-        <Row label="Remote"        value={remote ? remote.name : "—"} />
-        <Row label="Speed Sensor"  value={speedSensor ? speedSensor.name : "—"} />
-        {isMid ? (
-          <>
-            <Row label="Torque Sensing"  value="Integrated" />
-            <Row label="Cadence Sensing" value="Integrated" />
-          </>
-        ) : (
-          <>
-            <Row label="Torque Sensor"  value={torqueSensor ? torqueSensor.name : "—"} />
-            <Row label="Cadence Sensor" value={cadenceSensor ? cadenceSensor.name : "—"} />
-          </>
-        )}
+      {/* ─── Package Configuration ─── */}
+      <ReportSection title="Package Configuration">
+        <Row label="Controller" value={isMid ? "Integrated" : controller ? controller.model : "—"} />
+        <Row label="Display (HMI)" value={display ? display.model : "—"} />
+        {!isMid && <Row label="Torque Sensor" value={torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ? s.torqueSensorId : "—"} warn={!torqueSensorSkipped && !s.torqueSensorId} />}
+        <Row label="Speed Sensor" value={speedSensorSkipped ? "Not Needed" : s.speedSensorId ? s.speedSensorId : "—"} warn={!speedSensorSkipped && !s.speedSensorId} />
       </ReportSection>
 
       {/* ─── Drivetrain ─── */}
       <ReportSection title="Drivetrain">
-        <Row label="Drivetrain Type"    value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} />
-        <Row label="Chainring Size"     value={`${s.chainringTeeth}T`} />
-        <Row label="Rear Sprocket Size" value={`${s.rearSprocketTeeth}T`} />
-        <Row label="Selected Cadence"   value={`${s.cadenceRpm} rpm`} />
-        <Row label="Gear Ratio"         value={`${gearRatio.toFixed(2)} : 1`} highlight />
-        <Row
-          label="Est. Max Speed"
-          value={`${speedKmh.toFixed(1)} km/h`}
-          warn={speedExceedsLimit}
-        />
-        <Row label="Est. On-Wheel Torque" value={`${onWheelTorque.toFixed(1)} Nm`} />
+        <Row label="Drive Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} highlight />
+        <Row label="Transmission Type" value={s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—"} />
+        {s.frontTeeth != null && <Row label="Front (Chainring / Pulley)" value={`${s.frontTeeth}T`} />}
+        {s.rearTeeth != null && <Row label="Rear (Cassette / Hub / Pulley)" value={`${s.rearTeeth}T`} />}
+        {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
 
-        {usesDefaultCircumference && <p className="mb-3 text-xs text-muted-foreground">Speed estimate uses the default 2200 mm tyre circumference because no measured value was entered.</p>}
+        {selectedDrivetrainComponents.length > 0 && (
+          <div className="pt-2">
+            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground mb-1.5 mt-2">
+              Selected Components
+            </p>
+            {selectedDrivetrainComponents.map((c) => (
+              <Row key={c.id} label={c.category.replace(/_/g, " ")} value={displayName(c)} />
+            ))}
+            {selectedBelt && <Row label="Belt" value={displayName(selectedBelt)} />}
+          </div>
+        )}
 
-        {/* Drivetrain behaviour note */}
+        {s.selectedComponentIds.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">No drivetrain components have been selected yet.</p>
+        )}
+
         <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
           <p className="text-xs font-body text-muted-foreground">
             {isMid
-              ? "Mid-drive motor torque passes through the drivetrain. Chainring and sprocket selection directly affect speed range, climbing torque and drivetrain load."
-              : "Hub motor torque is delivered directly at the wheel. Chainring and sprocket selection mainly affect rider cadence and pedalling comfort."}
+              ? "Mid-drive motor torque passes through the drivetrain. Gearing selection directly affects speed range, climbing torque and drivetrain load."
+              : "Hub motor torque is delivered directly at the wheel. Pedal drivetrain gearing mainly affects rider cadence and pedalling comfort."}
           </p>
         </div>
 
-        {/* Speed limit warning */}
-        {speedExceedsLimit && (
-          <div className="mt-3 flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
-            <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-body text-warning-foreground">
-              Estimated drivetrain speed exceeds the selected speed limit ({s.speedLimitKmh} km/h). Final assistance cut-off must follow the selected regional regulation.
-            </p>
+        {s.drivetrainErrors.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {s.drivetrainErrors.map((msg, i) => (
+              <div key={i} className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 px-4 py-3">
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-body text-destructive">{msg}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {s.drivetrainErrors.length === 0 && s.drivetrainWarnings.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {s.drivetrainWarnings.map((msg, i) => (
+              <div key={i} className="flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
+                <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-body text-warning-foreground">{msg}</p>
+              </div>
+            ))}
           </div>
         )}
       </ReportSection>
 
+      {/* ─── Cable & Harness Specification ─── */}
+      <ReportSection title="Cable & Harness Specification">
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-graphite text-white">
+                {["Connection", "Connector", "Pins", "Cable Type", "Length"].map((h) => (
+                  <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[10px]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cableRows.map((c, i) => (
+                <tr key={c.connection} className={i % 2 === 0 ? "bg-white" : "bg-surface"}>
+                  <td className="px-3 py-2 font-sans font-semibold text-foreground">{c.connection}</td>
+                  <td className="px-3 py-2 font-body text-muted-foreground">{c.connector}</td>
+                  <td className="px-3 py-2 font-sans font-bold text-foreground">{c.pins}</td>
+                  <td className="px-3 py-2 font-body text-muted-foreground">{c.cableType}</td>
+                  <td className="px-3 py-2 font-sans font-bold text-primary">{c.lengthM.toFixed(1)} m</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] font-body text-muted-foreground mt-3">
+          Cable lengths reflect the values set on the System Diagram step and are included in the downloadable PDF report.
+        </p>
+      </ReportSection>
+
       {/* ─── Battery / Charger ─── */}
       <ReportSection title="Battery & Charging">
-        <Row label="Battery"          value={battery ? battery.name : s.batteryId === "none" ? "No Battery" : "—"} />
-        {battery?.capacityWh && <Row label="Capacity"  value={`${battery.capacityWh} Wh`} />}
-        {battery?.weightKg && <Row label="Battery Weight" value={`${battery.weightKg} kg`} />}
-        <Row label="Charger"          value={charger ? charger.name : "—"} />
-        <Row label="Charging Port"    value={chargingPort ? chargingPort.name : "—"} />
+        <Row label="Battery" value={batterySkipped ? "Not Needed" : battery ? battery.model : "—"} />
+        {battery?.capacity_wh && <Row label="Capacity" value={`${battery.capacity_wh} Wh`} />}
+        {battery?.weight_kg && <Row label="Battery Weight" value={`${battery.weight_kg} kg`} />}
+        <Row label="Charger" value={charger ? charger.model : "—"} />
+        <Row label="Charging Port" value={chargingPort ? chargingPort.model : "—"} />
       </ReportSection>
 
       {/* ─── Accessories ─── */}
       {accessories.length > 0 && (
         <ReportSection title="Accessories">
-          {accessories.map(a => (
+          {accessories.map((a) => (
             <Row key={a.id} label={a.category.toUpperCase()} value={a.name} />
           ))}
         </ReportSection>
@@ -199,8 +192,8 @@ export function Step10Report() {
       {/* ─── System Weight Estimate ─── */}
       {systemWeightKg > 0 && (
         <ReportSection title="System Weight Estimate">
-          {motor?.weightKg && <Row label="Motor"   value={`${motor.weightKg} kg`} />}
-          {battery?.weightKg && <Row label="Battery" value={`${battery.weightKg} kg`} />}
+          {motor?.weight_kg && <Row label="Motor" value={`${motor.weight_kg} kg`} />}
+          {battery?.weight_kg && <Row label="Battery" value={`${battery.weight_kg} kg`} />}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border">
             <span className="text-[11px] font-sans font-black uppercase tracking-wider text-graphite">Total (Motor + Battery)</span>
             <span className="text-lg font-sans font-black text-primary">{systemWeightKg.toFixed(1)} kg</span>
@@ -214,17 +207,22 @@ export function Step10Report() {
       {/* ─── System Compatibility ─── */}
       <ReportSection title="System Compatibility Check">
         {[
-          { ok: !!s.motorId, label: "Motor selected" },
+          { ok: !!s.motorId, label: "Motor package selected" },
           { ok: !(s.driveType === "hub" && !s.controllerId), label: "Controller configured" },
-          { ok: !(s.driveType === "hub" && !s.torqueSensorId && !s.cadenceSensorId), label: "Pedal sensing configured" },
-          { ok: !!s.speedSensorId, label: "Speed sensor selected" },
-          { ok: !!s.batteryId, label: "Battery selected" },
-          { ok: !!s.drivetrainType, label: "Drivetrain type selected" },
+          { ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped), label: "Pedal sensing configured" },
+          { ok: !!s.speedSensorId || speedSensorSkipped, label: "Speed sensor configured" },
+          { ok: !!s.batteryId || batterySkipped, label: "Battery configured" },
+          {
+            ok: Boolean(s.drivetrainType && s.transmissionType && s.selectedComponentIds.length > 0 && s.drivetrainErrors.length === 0),
+            label: "Drivetrain system configured",
+          },
         ].map(({ ok, label }) => (
           <div key={label} className="flex items-center gap-2 py-1.5 border-b border-border/40 last:border-0">
-            {ok
-              ? <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              : <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
+            {ok ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
+            )}
             <span className={cn("text-xs font-body", ok ? "text-foreground" : "text-warning")}>{label}</span>
           </div>
         ))}

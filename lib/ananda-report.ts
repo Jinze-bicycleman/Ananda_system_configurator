@@ -1,0 +1,314 @@
+"use client"
+
+// Shared data shaping for the Final Configuration Report (Step 10) and its
+// PDF export. `useReportData` is the single source of truth for every value
+// rendered on-screen in Step10Report — the PDF export (`generateReportPdf`)
+// consumes the exact same shape so the downloaded file can never drift from
+// what the user reviewed on screen.
+
+import { useAnandaStore, type AnandaConfig } from "@/lib/ananda-store"
+import { aAccessories, cablePresets } from "@/lib/ananda-data"
+import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
+import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
+
+export const TRANSMISSION_LABEL: Record<string, string> = {
+  derailleur: "Derailleur & Cassette",
+  internal_gear_hub: "Internal-Gear Hub",
+  cvt: "CVT",
+  single_speed: "Single Speed",
+  gearbox: "Gearbox",
+}
+
+export interface CableRow {
+  connection: string
+  connector: string
+  pins: number
+  cableType: string
+  lengthM: number
+}
+
+export function useReportData() {
+  const s = useAnandaStore()
+
+  const { motors } = useMotors()
+  const { controllers } = useControllers()
+  const { displays } = useDisplays()
+  const { batteries } = useBatteries()
+  const { catalogue } = useDrivetrainData()
+
+  const motor = motors.find((m) => m.id === s.motorId) ?? null
+  const controller = controllers.find((c) => c.id === s.controllerId) ?? null
+  const display = displays.find((d) => d.id === s.displayId) ?? null
+  const battery = batteries.find((b) => b.id === s.batteryId) ?? null
+  const charger = CHARGERS.find((c) => c.id === s.chargerId) ?? null
+  const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
+  const accessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
+
+  const torqueSensorSkipped = s.skippedItems.includes("torqueSensorId")
+  const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
+  const batterySkipped = s.skippedItems.includes("batteryId")
+
+  const selectedDrivetrainComponents = s.selectedComponentIds
+    .map((id) => catalogue.find((c) => c.id === id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c))
+  const selectedBelt = s.selectedBeltId ? catalogue.find((c) => c.id === s.selectedBeltId) ?? null : null
+
+  let systemWeightKg = 0
+  if (motor?.weight_kg) systemWeightKg += motor.weight_kg
+  if (battery?.weight_kg) systemWeightKg += battery.weight_kg
+
+  const isMid = s.driveType === "mid"
+
+  // Cable & harness specification — mid-drive systems use the CABLE_SPECS
+  // set (driven by the interactive System Diagram on Step 9); hub-motor
+  // systems use the hub cable preset list. Both key into the same
+  // `s.cableLengths` map by connection name, falling back to each
+  // connection's default length when the user hasn't edited it.
+  const cablePresetList = s.driveType === "hub" ? cablePresets.hub : CABLE_SPECS
+  const cableRows: CableRow[] = cablePresetList.map((c) => ({
+    connection: c.connection,
+    connector: c.connector,
+    pins: c.pins,
+    cableType: c.cableType,
+    lengthM: s.cableLengths[c.connection] ?? c.defaultLength,
+  }))
+
+  return {
+    s,
+    motor,
+    controller,
+    display,
+    battery,
+    charger,
+    chargingPort,
+    accessories,
+    torqueSensorSkipped,
+    speedSensorSkipped,
+    batterySkipped,
+    selectedDrivetrainComponents,
+    selectedBelt,
+    systemWeightKg,
+    isMid,
+    cableRows,
+  }
+}
+
+export type ReportData = ReturnType<typeof useReportData>
+
+function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
+  return driveType === "mid" ? "Mid-Drive" : driveType === "hub" ? "Hub Motor" : "—"
+}
+
+/**
+ * Builds and downloads the Final Configuration Report as a PDF, mirroring
+ * every section shown on screen in Step10Report plus the cable & harness
+ * length table. Runs client-side only (jsPDF has no server dependency).
+ */
+export async function generateReportPdf(data: ReportData) {
+  const { jsPDF } = await import("jspdf")
+  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows } = data
+
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const marginX = 40
+  let y = 48
+
+  const primary: [number, number, number] = [0, 143, 54] // matches --primary green
+  const graphite: [number, number, number] = [31, 41, 55]
+  const muted: [number, number, number] = [107, 114, 128]
+
+  function ensureSpace(rowsNeeded = 1) {
+    const rowHeight = 16
+    if (y + rowsNeeded * rowHeight > doc.internal.pageSize.getHeight() - 48) {
+      doc.addPage()
+      y = 48
+    }
+  }
+
+  function sectionTitle(title: string) {
+    ensureSpace(2)
+    doc.setFillColor(...primary)
+    doc.rect(marginX, y, pageWidth - marginX * 2, 3, "F")
+    y += 14
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(10)
+    doc.setTextColor(...graphite)
+    doc.text(title.toUpperCase(), marginX, y)
+    y += 8
+    doc.setDrawColor(220, 220, 220)
+    doc.line(marginX, y, pageWidth - marginX, y)
+    y += 14
+  }
+
+  function row(label: string, value: string) {
+    ensureSpace(1)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...muted)
+    doc.text(label.toUpperCase(), marginX, y)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(...graphite)
+    doc.text(value, pageWidth - marginX, y, { align: "right" })
+    y += 16
+  }
+
+  function paragraph(text: string) {
+    ensureSpace(2)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...muted)
+    const lines = doc.splitTextToSize(text, pageWidth - marginX * 2)
+    doc.text(lines, marginX, y)
+    y += lines.length * 12 + 6
+  }
+
+  function tableHeader(headers: string[], colX: number[]) {
+    ensureSpace(1)
+    doc.setFillColor(...graphite)
+    doc.rect(marginX, y - 10, pageWidth - marginX * 2, 16, "F")
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(8)
+    doc.setTextColor(255, 255, 255)
+    headers.forEach((h, i) => doc.text(h.toUpperCase(), colX[i], y))
+    y += 16
+  }
+
+  function tableRow(cells: string[], colX: number[], zebra: boolean) {
+    ensureSpace(1)
+    if (zebra) {
+      doc.setFillColor(245, 247, 246)
+      doc.rect(marginX, y - 10, pageWidth - marginX * 2, 16, "F")
+    }
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    doc.setTextColor(...graphite)
+    cells.forEach((c, i) => doc.text(c, colX[i], y))
+    y += 16
+  }
+
+  // ─── Header ───
+  doc.setFillColor(...primary)
+  doc.rect(0, 0, pageWidth, 40, "F")
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(14)
+  doc.setTextColor(255, 255, 255)
+  doc.text("ANANDA — FINAL CONFIGURATION REPORT", marginX, 26)
+  y = 64
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(...muted)
+  doc.text(`Generated ${new Date().toLocaleString()}`, marginX, y)
+  y += 22
+
+  // ─── Project Context ───
+  sectionTitle("Project Context")
+  row("Sell Market", s.sellRegion ?? "—")
+  row("Regulation", s.regulation ?? "—")
+  row("Speed Limit", s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—")
+  row("Rated Power", s.ratedPowerW ? `${s.ratedPowerW} W` : "—")
+  row("Bike Category", s.bikeCategory ?? "—")
+  row("Wheel Size", s.wheelSize ?? "—")
+  row("Tyre Width", s.tyreWidth ?? "—")
+  row("Circumference", s.tyreCircumferenceMm ? `${s.tyreCircumferenceMm} mm` : "Default 2200 mm")
+
+  // ─── Drive System & Package ───
+  sectionTitle("Drive System & Package")
+  row("Drive Type", driveTypeLabel(s.driveType))
+  row("Voltage Platform", s.voltagePlatform ? `${s.voltagePlatform}V` : "—")
+  row("Motor Package", motor ? motor.model : "—")
+  row("Motor Power", motor?.rated_power_w ? `${motor.rated_power_w}W` : "—")
+  row("Motor Torque", motor?.torque_nm ? `${motor.torque_nm} Nm` : "—")
+  if (motor?.weight_kg) row("Motor Weight", `${motor.weight_kg} kg`)
+
+  // ─── Package Configuration ───
+  sectionTitle("Package Configuration")
+  row("Controller", isMid ? "Integrated" : controller ? controller.model : "—")
+  row("Display (HMI)", display ? display.model : "—")
+  if (!isMid) row("Torque Sensor", torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ? s.torqueSensorId : "—")
+  row("Speed Sensor", speedSensorSkipped ? "Not Needed" : s.speedSensorId ? s.speedSensorId : "—")
+
+  // ─── Drivetrain ───
+  sectionTitle("Drivetrain")
+  row("Drive Type", s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—")
+  row("Transmission Type", s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—")
+  if (s.frontTeeth != null) row("Front (Chainring / Pulley)", `${s.frontTeeth}T`)
+  if (s.rearTeeth != null) row("Rear (Cassette / Hub / Pulley)", `${s.rearTeeth}T`)
+  if (s.gvwKg != null) row("Estimated GVW", `${s.gvwKg} kg`)
+  if (selectedDrivetrainComponents.length > 0) {
+    for (const c of selectedDrivetrainComponents) {
+      row(c.category.replace(/_/g, " "), displayName(c))
+    }
+    if (selectedBelt) row("Belt", displayName(selectedBelt))
+  } else {
+    paragraph("No drivetrain components have been selected yet.")
+  }
+  if (s.drivetrainErrors.length > 0) {
+    for (const msg of s.drivetrainErrors) paragraph(`Error: ${msg}`)
+  } else if (s.drivetrainWarnings.length > 0) {
+    for (const msg of s.drivetrainWarnings) paragraph(`Warning: ${msg}`)
+  }
+
+  // ─── Battery & Charging ───
+  sectionTitle("Battery & Charging")
+  row("Battery", batterySkipped ? "Not Needed" : battery ? battery.model : "—")
+  if (battery?.capacity_wh) row("Capacity", `${battery.capacity_wh} Wh`)
+  if (battery?.weight_kg) row("Battery Weight", `${battery.weight_kg} kg`)
+  row("Charger", charger ? charger.model : "—")
+  row("Charging Port", chargingPort ? chargingPort.model : "—")
+
+  // ─── Accessories ───
+  if (accessories.length > 0) {
+    sectionTitle("Accessories")
+    for (const a of accessories) row(a.category.toUpperCase(), a.name)
+  }
+
+  // ─── Cable & Harness Specification ───
+  sectionTitle("Cable & Harness Specification")
+  const cableColX = [marginX, marginX + 190, marginX + 300, marginX + 335, marginX + 430]
+  tableHeader(["Connection", "Connector", "Pins", "Cable Type", "Length (m)"], cableColX)
+  cableRows.forEach((c, i) => {
+    tableRow(
+      [c.connection, c.connector, String(c.pins), c.cableType, `${c.lengthM.toFixed(1)} m`],
+      cableColX,
+      i % 2 === 1,
+    )
+  })
+
+  // ─── System Weight Estimate ───
+  if (systemWeightKg > 0) {
+    sectionTitle("System Weight Estimate")
+    if (motor?.weight_kg) row("Motor", `${motor.weight_kg} kg`)
+    if (battery?.weight_kg) row("Battery", `${battery.weight_kg} kg`)
+    row("Total (Motor + Battery)", `${systemWeightKg.toFixed(1)} kg`)
+    paragraph("Weight estimate includes motor and battery only. Accessories, sensors, and ancillary components are not included in this total.")
+  }
+
+  // ─── System Compatibility Check ───
+  sectionTitle("System Compatibility Check")
+  const checks = [
+    { ok: !!s.motorId, label: "Motor package selected" },
+    { ok: !(s.driveType === "hub" && !s.controllerId), label: "Controller configured" },
+    { ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped), label: "Pedal sensing configured" },
+    { ok: !!s.speedSensorId || speedSensorSkipped, label: "Speed sensor configured" },
+    { ok: !!s.batteryId || batterySkipped, label: "Battery configured" },
+    {
+      ok: Boolean(s.drivetrainType && s.transmissionType && s.selectedComponentIds.length > 0 && s.drivetrainErrors.length === 0),
+      label: "Drivetrain system configured",
+    },
+  ]
+  for (const { ok, label } of checks) {
+    ensureSpace(1)
+    const statusColor: [number, number, number] = ok ? primary : [180, 130, 0]
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(9)
+    doc.setTextColor(...statusColor)
+    doc.text(ok ? "OK" : "!", marginX, y)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(...graphite)
+    doc.text(label, marginX + 24, y)
+    y += 16
+  }
+
+  doc.save("ananda-configuration-report.pdf")
+}

@@ -1,25 +1,30 @@
 "use client"
 
 import { useAnandaStore } from "@/lib/ananda-store"
-import {
-  aMotors, aControllers, aBatteries, aChargers, aChargingPorts,
-  aDisplays, aRemotes, aSensors, aAccessories, cablePresets
-} from "@/lib/ananda-data"
+import { cablePresets, aAccessories } from "@/lib/ananda-data"
+import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
+import { SystemDiagram } from "./system-diagram/system-diagram"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
 
 function Block({
-  x, y, w = 100, h = 44, label, sublabel, active, accent, lime
+  x, y, w = 100, h = 44, label, sublabel, active, accent, lime, large
 }: {
   x: number; y: number; w?: number; h?: number
   label: string; sublabel?: string
-  active?: boolean; accent?: boolean; lime?: boolean
+  active?: boolean; accent?: boolean; lime?: boolean; large?: boolean
 }) {
   const bg = lime ? "#B4D600" : accent ? "#008F36" : active ? "#f0fdf4" : "#f9fafb"
   const border = lime ? "#8fa300" : accent ? "#006828" : active ? "#008F36" : "#d1d5db"
   const textMain = lime || accent ? "white" : active ? "#008F36" : "#374151"
   const textSub = lime || accent ? "rgba(255,255,255,0.8)" : "#9ca3af"
+  const enlargedLabel = Boolean(large)
+  const labelFontSize = enlargedLabel ? 30 : 10
+  const sublabelFontSize = enlargedLabel ? 20 : 7.5
+  const textWidth = Math.max(w - 16, 24)
+  const labelOffset = sublabel ? (enlargedLabel ? -16 : -labelFontSize * 0.35) : labelFontSize * 0.35
+  const sublabelOffset = enlargedLabel ? 18 : sublabelFontSize * 0.42
 
   return (
     <g>
@@ -35,15 +40,17 @@ function Block({
         />
       )}
       {/* Labels */}
-      <text x={x + w / 2} y={y + h / 2 + (sublabel ? -5 : 4)}
-        textAnchor="middle" fill={textMain} fontSize={10} fontWeight="700"
-        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}>
+      <text x={x + w / 2} y={y + h / 2 + labelOffset}
+        textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
+        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}
+        textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
         {label}
       </text>
       {sublabel && (
-        <text x={x + w / 2} y={y + h / 2 + 9}
-          textAnchor="middle" fill={textSub} fontSize={7.5}
-          fontFamily="Barlow, sans-serif">
+        <text x={x + w / 2} y={y + h / 2 + sublabelOffset}
+          textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
+          fontFamily="Barlow, sans-serif"
+          textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
           {sublabel}
         </text>
       )}
@@ -69,11 +76,26 @@ function Arrow({
   )
 }
 
-function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
+type DiagramLabels = {
+  motor: string
+  motorSub: string
+  display: string
+  speedSensor: string
+  battery: string
+  charger: string
+  chargingPort: string
+  accessories: string
+  controller: string
+  torqueSensor: string
+  cadenceSensor: string
+  remote: string
+}
+
+function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; labels: DiagramLabels }) {
   const isMid = driveType === "mid"
 
   return (
-    <svg viewBox="0 0 640 360" className="w-full max-w-2xl" style={{ minHeight: 280 }}>
+    <svg viewBox="0 0 640 380" className="w-full max-w-2xl" style={{ minHeight: 320 }}>
       <defs>
         <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
           <polygon points="0 0, 6 2, 0 4" fill="#9ca3af" />
@@ -84,16 +106,16 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
       </defs>
 
       {/* Background grid */}
-      <rect width="640" height="360" fill="white" rx="4" />
+      <rect width="640" height="380" fill="white" rx="4" />
       <line x1="0" y1="180" x2="640" y2="180" stroke="#f3f4f6" strokeWidth="1" />
       <line x1="320" y1="0" x2="320" y2="360" stroke="#f3f4f6" strokeWidth="1" />
 
       {/* ─── BATTERY (left) ─── */}
-      <Block x={30} y={60} w={100} h={50} label="Battery" sublabel={isMid ? "System Power" : "36V / 48V"} active />
+      <Block x={28} y={42} w={142} h={86} label="Battery" sublabel={labels.battery} active large />
       {/* Charger below battery */}
-      <Block x={30} y={140} w={100} h={40} label="Charger" sublabel="CH-xx" active={false} />
+      <Block x={30} y={140} w={100} h={40} label="Charger" sublabel={labels.charger} active={false} />
       {/* Charging port */}
-      <Block x={30} y={205} w={100} h={40} label="Charge Port" sublabel="CP1/2/3" active={false} />
+      <Block x={30} y={205} w={100} h={40} label="Charge Port" sublabel={labels.chargingPort} active={false} />
 
       {/* Charger → Charging port arrow */}
       <Arrow x1={80} y1={180} x2={80} y2={205} color="#d1d5db" />
@@ -103,37 +125,37 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
       {isMid ? (
         <>
           {/* ─── MID-DRIVE: Battery → Motor ─── */}
-          <Arrow x1={130} y1={82} x2={240} y2={155} color="#008F36" label="Power" />
+          <Arrow x1={170} y1={82} x2={220} y2={145} color="#008F36" label="Power" />
 
           {/* Central motor block */}
-          <Block x={240} y={130} w={160} h={70} label="7100 / 7200 / 7600" sublabel="Mid-Drive Motor Unit" accent />
+          <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
           {/* Integrated sub-labels */}
           <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
           </text>
 
           {/* Speed sensor → Motor */}
-          <Block x={220} y={285} w={90} h={40} label="Speed Sensor" sublabel="SS1" active />
+          <Block x={195} y={270} w={150} h={78} label="Speed Sensor" sublabel={labels.speedSensor} active large />
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={480} y={30} w={100} h={44} label="Display" sublabel="D1 / D18 / D20" active />
-          <Arrow x1={480} y1={52} x2={400} y2={148} color="#008F36" label="HMI" />
-
+          <Block x={430} y={12} w={185} h={104} label="Display" sublabel={labels.display} active large />
+          <Arrow x1={430} y1={70} x2={405} y2={137} color="#008F36" label="HMI" />
+          
           {/* Remote → Display */}
-          <Block x={530} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2 / R3" active />
-          <Arrow x1={570} y1={110} x2={532} y2={74} color="#9ca3af" />
-
+          <Block x={470} y={122} w={145} h={96} label="Remote" sublabel={labels.remote} active large />
+          <Arrow x1={540} y1={122} x2={540} y2={116} color="#9ca3af" />
+          
           {/* Accessories → System Harness */}
-          <Block x={480} y={260} w={120} h={44} label="Accessories" sublabel="IoT · Lights · Throttle" active />
-          <Arrow x1={540} y1={260} x2={400} y2={200} color="#9ca3af" label="Harness" />
-
+          <Block x={430} y={232} w={185} h={104} label="Accessories" sublabel={labels.accessories} active large />
+          <Arrow x1={500} y1={238} x2={420} y2={208} color="#9ca3af" label="Harness" />
+          
           {/* Note */}
-          <rect x={20} y={310} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
-          <text x={320} y={327} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
+          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
             Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.
           </text>
-          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
             External controller and external sensors are not required.
           </text>
         </>
@@ -144,33 +166,33 @@ function SystemDiagramSVG({ driveType }: { driveType: "mid" | "hub" }) {
           <Arrow x1={130} y1={82} x2={220} y2={120} color="#008F36" label="Power" />
 
           {/* External Controller */}
-          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel="C1 / C2 / C3 / C4" accent />
+          <Block x={220} y={100} w={140} h={50} label="Controller" sublabel={labels.controller} accent />
 
           {/* Controller → Hub Motor */}
           <Arrow x1={360} y1={125} x2={440} y2={140} color="#008F36" label="Phase" />
-          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel="R900 / R400 / F131" active />
+          <Block x={440} y={120} w={120} h={55} label="Hub Motor" sublabel={labels.motorSub} active />
 
           {/* Torque/Cadence Sensor → Controller */}
-          <Block x={200} y={235} w={110} h={44} label="Torque Sensor" sublabel="TS1 (Required)" active />
+          <Block x={200} y={235} w={110} h={44} label="Torque Sensor" sublabel={labels.torqueSensor} active />
           <Arrow x1={255} y1={235} x2={275} y2={150} color="#008F36" />
 
-          <Block x={330} y={235} w={100} h={44} label="Cadence Sensor" sublabel="CS1" active />
+          <Block x={330} y={235} w={100} h={44} label="Cadence Sensor" sublabel={labels.cadenceSensor} active />
           <Arrow x1={380} y1={235} x2={340} y2={150} color="#9ca3af" />
 
           {/* Speed Sensor → Controller */}
-          <Block x={130} y={235} w={90} h={44} label="Speed Sensor" sublabel="SS1 (Required)" active />
+          <Block x={130} y={235} w={90} h={44} label="Speed Sensor" sublabel={labels.speedSensor} active />
           <Arrow x1={175} y1={235} x2={260} y2={150} color="#008F36" />
 
           {/* Display → Controller */}
-          <Block x={460} y={30} w={110} h={44} label="Display" sublabel="D1 / D18 / D20" active />
+          <Block x={460} y={30} w={110} h={44} label="Display" sublabel={labels.display} active />
           <Arrow x1={510} y1={74} x2={360} y2={125} color="#008F36" label="HMI" />
 
           {/* Remote → Display */}
-          <Block x={540} y={110} w={80} h={40} label="Remote" sublabel="R1 / R2" active />
+          <Block x={540} y={110} w={80} h={40} label="Remote" sublabel={labels.remote} active />
           <Arrow x1={570} y1={110} x2={572} y2={74} color="#9ca3af" />
 
           {/* Accessories → Controller */}
-          <Block x={460} y={230} w={120} h={44} label="Accessories" sublabel="IoT · Lights" active />
+          <Block x={460} y={230} w={120} h={44} label="Accessories" sublabel={labels.accessories} active />
           <Arrow x1={520} y1={230} x2={360} y2={150} color="#9ca3af" label="Harness" />
 
           {/* Note */}
@@ -238,10 +260,49 @@ export function Step9SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
 
+  const { motors } = useMotors()
+  const { displays } = useDisplays()
+  const { batteries } = useBatteries()
+
+  const motor = motors.find((m) => m.id === s.motorId) ?? null
+  const display = displays.find((d) => d.id === s.displayId) ?? null
+  const battery = batteries.find((b) => b.id === s.batteryId) ?? null
+  const charger = CHARGERS.find((c) => c.id === s.chargerId) ?? null
+  const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
+  const selectedAccessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
+
+  const labels: DiagramLabels = {
+    motor: motor?.model ?? "Motor Unit",
+    motorSub: driveType === "mid" ? "Mid-Drive Motor Unit" : "Hub Motor Unit",
+    display: display?.model ?? (s.skippedItems.includes("displayId") ? "Not Needed" : "—"),
+    speedSensor: s.skippedItems.includes("speedSensorId") ? "Not Needed" : s.speedSensorId ?? "—",
+    battery: battery?.model ?? (s.skippedItems.includes("batteryId") ? "Not Needed" : "System Power"),
+    charger: charger?.model ?? "—",
+    chargingPort: chargingPort?.model ?? "—",
+    accessories: selectedAccessories.length > 0 ? selectedAccessories.map((a) => a.name).join(" · ") : "None Selected",
+    controller: s.controllerId ?? "—",
+    torqueSensor: s.skippedItems.includes("torqueSensorId") ? "Not Needed" : s.torqueSensorId ?? "—",
+    cadenceSensor: s.cadenceSensorId ?? "—",
+    remote: "R1 / R2 / R3",
+  }
+
+  if (driveType === "mid") {
+    return (
+      <div>
+        <StepHeader
+          step={8}
+          title="System Diagram Overview"
+          subtitle="Interactive system architecture diagram based on your configuration. Select a connection below to inspect it, and edit cable lengths as needed."
+        />
+        <SystemDiagram />
+      </div>
+    )
+  }
+
   return (
     <div>
       <StepHeader
-        step={10}
+        step={8}
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />
@@ -250,14 +311,14 @@ export function Step9SystemDiagram() {
       <div className="border border-border bg-white p-4 mb-6 overflow-x-auto">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
-            System Architecture — {driveType === "mid" ? "Mid-Drive" : "Hub Motor"} · {s.voltagePlatform ?? "—"}V
+            System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
           </p>
           <div className="flex items-center gap-4 text-[10px] font-body text-muted-foreground">
             <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
             <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
           </div>
         </div>
-        <SystemDiagramSVG driveType={driveType} />
+        <SystemDiagramSVG driveType={driveType} labels={labels} />
       </div>
 
       {/* Cable length table */}

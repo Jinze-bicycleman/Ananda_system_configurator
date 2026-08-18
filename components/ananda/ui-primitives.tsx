@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { ReactNode } from "react"
+import { AlertTriangle } from "lucide-react"
 
 interface StepHeaderProps {
   step: number
@@ -48,15 +49,24 @@ interface TechSpecRowProps {
 }
 
 export function TechSpecRow({ label, value, unit, highlight }: TechSpecRowProps) {
+  const isMissing = value === null || value === undefined || value === ""
   return (
     <div className={cn(
       "flex items-center justify-between py-1.5 px-3 border-b border-border last:border-0",
-      highlight && "bg-primary/5"
+      highlight && !isMissing && "bg-primary/5",
+      isMissing && "bg-warning/5",
     )}>
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className={cn("text-sm font-sans font-bold", highlight ? "text-primary" : "text-foreground")}>
-        {value ?? "—"}{unit && value ? ` ${unit}` : ""}
-      </span>
+      {isMissing ? (
+        <span className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-warning">
+          <AlertTriangle className="w-3 h-3" />
+          Spec Missing
+        </span>
+      ) : (
+        <span className={cn("text-sm font-sans font-bold", highlight ? "text-primary" : "text-foreground")}>
+          {value}{unit ? ` ${unit}` : ""}
+        </span>
+      )}
     </div>
   )
 }

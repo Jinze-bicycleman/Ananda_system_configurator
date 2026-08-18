@@ -5,15 +5,13 @@ import { cn } from "@/lib/utils"
 const STEPS = [
   { n: 1, label: "Sell Region & Regulation" },
   { n: 2, label: "Bike Category" },
-  { n: 3, label: "Drive System" },
-  { n: 4, label: "Voltage Platform" },
-  { n: 5, label: "Motor Selection" },
-  { n: 6, label: "System Components" },
-  { n: 7, label: "Drivetrain" },
-  { n: 8, label: "Battery & Charger" },
-  { n: 9, label: "Accessories" },
-  { n: 10, label: "System Diagram" },
-  { n: 11, label: "Configuration Report" },
+  { n: 3, label: "Drive System & Voltage" },
+  { n: 4, label: "Package Selection" },
+  { n: 5, label: "Package Configuration" },
+  { n: 6, label: "Drivetrain" },
+  { n: 7, label: "Accessories" },
+  { n: 8, label: "System Diagram" },
+  { n: 9, label: "Configuration Report" },
 ]
 
 export function ProgressIndicator({ current, onStep }: { current: number; onStep: (n: number) => void }) {
