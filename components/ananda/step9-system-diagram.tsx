@@ -9,20 +9,22 @@ import { SystemDiagram } from "./system-diagram/system-diagram"
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
 
 function Block({
-  x, y, w = 100, h = 44, label, sublabel, active, accent, lime
+  x, y, w = 100, h = 44, label, sublabel, active, accent, lime, large
 }: {
   x: number; y: number; w?: number; h?: number
   label: string; sublabel?: string
-  active?: boolean; accent?: boolean; lime?: boolean
+  active?: boolean; accent?: boolean; lime?: boolean; large?: boolean
 }) {
   const bg = lime ? "#B4D600" : accent ? "#008F36" : active ? "#f0fdf4" : "#f9fafb"
   const border = lime ? "#8fa300" : accent ? "#006828" : active ? "#008F36" : "#d1d5db"
   const textMain = lime || accent ? "white" : active ? "#008F36" : "#374151"
   const textSub = lime || accent ? "rgba(255,255,255,0.8)" : "#9ca3af"
-  const enlargedLabel = label === "Display" || label === "Remote" || label === "Accessories"
+  const enlargedLabel = Boolean(large)
   const labelFontSize = enlargedLabel ? 30 : 10
-  const sublabelFontSize = enlargedLabel ? 28 : 7.5
-  const textWidth = Math.max(w - 12, 24)
+  const sublabelFontSize = enlargedLabel ? 20 : 7.5
+  const textWidth = Math.max(w - 16, 24)
+  const labelOffset = sublabel ? (enlargedLabel ? -16 : -labelFontSize * 0.35) : labelFontSize * 0.35
+  const sublabelOffset = enlargedLabel ? 18 : sublabelFontSize * 0.42
 
   return (
     <g>
@@ -38,14 +40,14 @@ function Block({
         />
       )}
       {/* Labels */}
-      <text x={x + w / 2} y={y + h / 2 + (sublabel ? -labelFontSize * 0.35 : labelFontSize * 0.35)}
+      <text x={x + w / 2} y={y + h / 2 + labelOffset}
         textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
         fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}
         textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
         {label}
       </text>
       {sublabel && (
-        <text x={x + w / 2} y={y + h / 2 + sublabelFontSize * 0.42}
+        <text x={x + w / 2} y={y + h / 2 + sublabelOffset}
           textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
           fontFamily="Barlow, sans-serif"
           textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
@@ -109,7 +111,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
       <line x1="320" y1="0" x2="320" y2="360" stroke="#f3f4f6" strokeWidth="1" />
 
       {/* ─── BATTERY (left) ─── */}
-      <Block x={30} y={60} w={100} h={50} label="Battery" sublabel={labels.battery} active />
+      <Block x={20} y={42} w={150} h={86} label="Battery" sublabel={labels.battery} active large />
       {/* Charger below battery */}
       <Block x={30} y={140} w={100} h={40} label="Charger" sublabel={labels.charger} active={false} />
       {/* Charging port */}
@@ -126,26 +128,26 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           <Arrow x1={130} y1={82} x2={240} y2={155} color="#008F36" label="Power" />
 
           {/* Central motor block */}
-          <Block x={240} y={130} w={160} h={70} label={labels.motor} sublabel={labels.motorSub} accent />
+          <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
           {/* Integrated sub-labels */}
           <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
           </text>
 
           {/* Speed sensor → Motor */}
-          <Block x={220} y={285} w={90} h={40} label="Speed Sensor" sublabel={labels.speedSensor} active />
+          <Block x={195} y={270} w={150} h={78} label="Speed Sensor" sublabel={labels.speedSensor} active large />
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={430} y={18} w={170} h={88} label="Display" sublabel={labels.display} active />
+          <Block x={420} y={12} w={200} h={104} label="Display" sublabel={labels.display} active large />
           <Arrow x1={430} y1={62} x2={400} y2={148} color="#008F36" label="HMI" />
           
           {/* Remote → Display */}
-          <Block x={480} y={120} w={140} h={86} label="Remote" sublabel={labels.remote} active />
+          <Block x={460} y={122} w={160} h={96} label="Remote" sublabel={labels.remote} active large />
           <Arrow x1={550} y1={120} x2={548} y2={106} color="#9ca3af" />
           
           {/* Accessories → System Harness */}
-          <Block x={405} y={238} w={215} h={88} label="Accessories" sublabel={labels.accessories} active />
+          <Block x={390} y={232} w={230} h={104} label="Accessories" sublabel={labels.accessories} active large />
           <Arrow x1={510} y1={238} x2={400} y2={200} color="#9ca3af" label="Harness" />
           
           {/* Note */}
