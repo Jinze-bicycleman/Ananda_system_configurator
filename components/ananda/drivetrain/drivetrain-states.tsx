@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle, Loader2, PackageSearch } from "lucide-react"
+import { AlertTriangle, Info, Loader2, PackageSearch } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function DrivetrainLoadingState() {
@@ -58,6 +58,15 @@ export function InlineError({ children, className }: { children: React.ReactNode
     <div className={cn("flex items-start gap-2.5 bg-destructive/10 border border-destructive/30 px-4 py-3", className)}>
       <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
       <p className="text-sm font-body text-destructive">{children}</p>
+    </div>
+  )
+}
+
+export function InlineInfo({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex items-start gap-2.5 bg-graphite/5 border border-graphite/20 px-4 py-3", className)}>
+      <Info className="w-4 h-4 text-graphite flex-shrink-0 mt-0.5" />
+      <p className="text-sm font-body text-graphite">{children}</p>
     </div>
   )
 }

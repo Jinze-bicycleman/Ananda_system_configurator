@@ -299,6 +299,7 @@ function requiresExplicitValidation(a: DrivetrainComponent, b: DrivetrainCompone
 
 export type CompatibilityContext = {
   motorTorqueNm?: number | null
+  motorType?: "mid_drive" | "hub" | null
   gvwKg?: number | null
   primaryRatio?: number | null
   isSpeedPedelec?: boolean
@@ -348,24 +349,45 @@ export function evaluateCompatibility(
     return { status: "red", messages: ["Drive type mismatch between selected components."] }
   }
 
-  // 4. Product family (belt system parts must share a family)
+  // 4. Product family — this field represents the same "system" concept across
+  // every category (e.g. "Shimano CUES / LINKGLIDE", "Gates CDX"), so an explicit
+  // mismatch between two known families is a genuine, known-rule failure.
   const beltCategories = new Set(["belt", "front_pulley", "rear_pulley"])
-  if (beltCategories.has(a.category) && beltCategories.has(b.category) && a.product_family && b.product_family) {
-    if (a.product_family !== b.product_family) {
-      return { status: "red", messages: [`Product family mismatch: ${a.product_family} vs ${b.product_family}.`] }
-    }
+  if (a.product_family && b.product_family && a.product_family !== b.product_family) {
+    return { status: "red", messages: [`Product family mismatch: ${a.product_family} vs ${b.product_family}.`] }
   }
 
-  // 5. Mounting interface
-  if (a.mounting_interface && b.mounting_interface && a.mounting_interface !== b.mounting_interface) {
-    return { status: "red", messages: [`Mounting interface mismatch: ${a.mounting_interface} vs ${b.mounting_interface}.`] }
-  }
+  // 5. Mounting interface is intentionally NOT compared directly between
+  // categories here. The field describes a different physical joint per
+  // category (e.g. a cassette's freehub spline vs. a chainring's crank
+  // interface), so a literal string comparison across categories is not
+  // meaningful and must never produce a false incompatibility. Explicit
+  // database relationships and the product-family check above are the
+  // source of truth for whether two parts actually mate.
 
-  // 6. Motor torque and paired GVW limits
-  for (const c of [a, b]) {
-    const result = passesTorqueGvw(c.id, ctx.motorTorqueNm ?? null, ctx.gvwKg ?? null, data.torqueLimits)
-    if (result.checked && !result.passed) {
-      return { status: "red", messages: [`${c.display_name ?? c.model ?? c.category} does not meet the paired motor torque / GVW limit.`] }
+  // 6. Motor torque and paired GVW limits — only meaningful for mid-drive
+  // motors, since a mid-drive motor's torque passes through this drivetrain.
+  // A hub motor drives the wheel directly and must never be checked here.
+  if (ctx.motorType === "mid_drive") {
+    for (const c of [a, b]) {
+      const hasLimitRows = data.torqueLimits.some((l) => l.component_id === c.id)
+      if (!hasLimitRows) continue
+      if (ctx.motorTorqueNm == null || ctx.gvwKg == null) {
+        push(
+          "amber",
+          `Motor torque and estimated GVW are required to verify ${c.display_name ?? c.model ?? c.category} against its published limits.`,
+        )
+        continue
+      }
+      const result = passesTorqueGvw(c.id, ctx.motorTorqueNm, ctx.gvwKg, data.torqueLimits)
+      if (result.checked && !result.passed) {
+        return {
+          status: "red",
+          messages: [
+            `${c.display_name ?? c.model ?? c.category} does not meet the paired motor torque / GVW limit (selected ${ctx.motorTorqueNm} Nm / ${ctx.gvwKg} kg).`,
+          ],
+        }
+      }
     }
   }
 
@@ -632,7 +654,7 @@ export function findBeltCandidates(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Transmission availability (computed from live catalogue only)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────��─────────────────────────────────────────────────────────────────────
 
 export type TransmissionType = "derailleur" | "internal_gear_hub" | "single_speed" | "gearbox"
 
@@ -782,7 +804,12 @@ export function buildBeltHubRecommendations(
   const empty: Record<RecommendationPosition, RecommendationCard | null> = { climbing: null, balanced: null, speed: null }
   if (!hubs.length || !frontPulleys.length || !rearPulleys.length) return empty
 
-  const passingHubs = hubs.filter((h) => passesTorqueGvw(h.id, ctx.motorTorqueNm ?? null, ctx.gvwKg ?? null, data.torqueLimits).passed)
+  // A hub motor's torque never passes through this transmission, so the
+  // torque/GVW limit only applies when a mid-drive motor is selected.
+  const passingHubs =
+    ctx.motorType === "mid_drive"
+      ? hubs.filter((h) => passesTorqueGvw(h.id, ctx.motorTorqueNm ?? null, ctx.gvwKg ?? null, data.torqueLimits).passed)
+      : hubs
   const rankable = passingHubs.filter((h) => h.minimum_primary_ratio != null)
   if (!rankable.length) return empty
 

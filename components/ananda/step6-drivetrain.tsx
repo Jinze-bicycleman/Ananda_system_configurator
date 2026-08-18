@@ -13,7 +13,7 @@ import { BeltFrameRequirements } from "./drivetrain/belt-frame-requirements"
 import { PerformanceDashboard } from "./drivetrain/performance-dashboard"
 import { SpeedCadenceGraph } from "./drivetrain/speed-cadence-graph"
 import { SpecDrawer } from "./drivetrain/spec-drawer"
-import { DrivetrainLoadingState, DrivetrainErrorState, InlineWarning, InlineError } from "./drivetrain/drivetrain-states"
+import { DrivetrainLoadingState, DrivetrainErrorState, InlineWarning, InlineError, InlineInfo } from "./drivetrain/drivetrain-states"
 import { Switch } from "@/components/ui/switch"
 import {
   useDrivetrainData,
@@ -42,6 +42,9 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   const [performanceLoading, setPerformanceLoading] = useState(false)
 
   const isMid = s.driveType === "mid"
+  // Prefer the selected motor's own recorded type; fall back to the drive-type
+  // selection from Step 3 if the motor hasn't loaded yet.
+  const motorType: "mid_drive" | "hub" = motor?.motor_type ?? (isMid ? "mid_drive" : "hub")
   const isSpeedPedelec = (s.regulation ?? "").toLowerCase().includes("speed") || (s.speedLimitKmh ?? 0) > 25
   const wheelSizeInch = s.wheelSize ? Number.parseFloat(s.wheelSize) || null : null
 
@@ -62,13 +65,14 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   const ctx: CompatibilityContext = useMemo(
     () => ({
       motorTorqueNm: motor?.torque_nm ?? null,
+      motorType,
       gvwKg: s.gvwKg,
       primaryRatio: s.frontTeeth && s.rearTeeth ? primaryRatio(s.frontTeeth, s.rearTeeth) : null,
       isSpeedPedelec,
       wheelSizeInch,
       frameBeltRequirementsMet,
     }),
-    [motor, s.gvwKg, s.frontTeeth, s.rearTeeth, isSpeedPedelec, wheelSizeInch, frameBeltRequirementsMet],
+    [motor, motorType, s.gvwKg, s.frontTeeth, s.rearTeeth, isSpeedPedelec, wheelSizeInch, frameBeltRequirementsMet],
   )
 
   const recommendations = useMemo(() => {
@@ -99,6 +103,19 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
       if (r.status === "red") worstColor = "red"
       else if (r.status === "amber" && worstColor !== "red") worstColor = "amber"
     }
+  }
+
+  // Motors are not modeled as drivetrain components, so they never appear in
+  // drivetrain_compatibility. For a mid-drive motor, its torque passes through
+  // this drivetrain and its physical interface has not been engineering
+  // verified against these specific components — flag that as an amber
+  // warning rather than silently ignoring it. A hub motor's torque never
+  // passes through the pedal drivetrain, so no warning is needed there.
+  if (motor && isMid && selectedComponents.length > 0) {
+    pairMessages.push(
+      `Motor-to-drivetrain interface requires engineering verification — ${motor.model} does not yet have a recorded compatibility relationship with the selected drivetrain components.`,
+    )
+    if (worstColor !== "red") worstColor = "amber"
   }
 
   // Sync computed warnings/errors into the store so hasDrivetrain() gates correctly
@@ -312,6 +329,15 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
           onSelectBelt={(id) => s.setField("selectedBeltId", id)}
           onField={(key, value) => s.setField(key as keyof AnandaConfig, value as never)}
         />
+      )}
+
+      {motor && !isMid && s.selectedComponentIds.length > 0 && (
+        <div className="mb-6">
+          <InlineInfo>
+            Hub-motor torque is independent of the pedal drivetrain. Only the human-powered chain or belt drivetrain,
+            component relationships, frame requirements and gearing are validated below.
+          </InlineInfo>
+        </div>
       )}
 
       {pairMessages.length > 0 && (
