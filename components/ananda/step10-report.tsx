@@ -1,20 +1,10 @@
 "use client"
 
-import { useAnandaStore } from "@/lib/ananda-store"
-import { aAccessories } from "@/lib/ananda-data"
-import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
-import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
+import { displayName } from "@/lib/ananda-drivetrain"
+import { useReportData, TRANSMISSION_LABEL } from "@/lib/ananda-report"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const TRANSMISSION_LABEL: Record<string, string> = {
-  derailleur: "Derailleur & Cassette",
-  internal_gear_hub: "Internal-Gear Hub",
-  cvt: "CVT",
-  single_speed: "Single Speed",
-  gearbox: "Gearbox",
-}
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -40,43 +30,31 @@ function Row({ label, value, highlight, warn }: { label: string; value: string; 
 }
 
 export function Step10Report() {
-  const s = useAnandaStore()
-
-  const { motors } = useMotors()
-  const { controllers } = useControllers()
-  const { displays } = useDisplays()
-  const { batteries } = useBatteries()
-  const { catalogue } = useDrivetrainData()
-
-  const motor = motors.find((m) => m.id === s.motorId) ?? null
-  const controller = controllers.find((c) => c.id === s.controllerId) ?? null
-  const display = displays.find((d) => d.id === s.displayId) ?? null
-  const battery = batteries.find((b) => b.id === s.batteryId) ?? null
-  const charger = CHARGERS.find((c) => c.id === s.chargerId) ?? null
-  const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
-  const accessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
-
-  const torqueSensorSkipped = s.skippedItems.includes("torqueSensorId")
-  const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
-  const batterySkipped = s.skippedItems.includes("batteryId")
-
-  const selectedDrivetrainComponents = s.selectedComponentIds
-    .map((id) => catalogue.find((c) => c.id === id))
-    .filter((c): c is NonNullable<typeof c> => Boolean(c))
-  const selectedBelt = s.selectedBeltId ? catalogue.find((c) => c.id === s.selectedBeltId) ?? null : null
-
-  let systemWeightKg = 0
-  if (motor?.weight_kg) systemWeightKg += motor.weight_kg
-  if (battery?.weight_kg) systemWeightKg += battery.weight_kg
-
-  const isMid = s.driveType === "mid"
+  const {
+    s,
+    motor,
+    controller,
+    display,
+    battery,
+    charger,
+    chargingPort,
+    accessories,
+    torqueSensorSkipped,
+    speedSensorSkipped,
+    batterySkipped,
+    selectedDrivetrainComponents,
+    selectedBelt,
+    systemWeightKg,
+    isMid,
+    cableRows,
+  } = useReportData()
 
   return (
     <div>
       <StepHeader
         step={9}
         title="Final Configuration Report"
-        subtitle="Complete system summary. Review all selections and drivetrain outputs before exporting or sharing."
+        subtitle="Complete system summary. Review all selections and drivetrain outputs, then download the PDF report below."
       />
 
       {/* ─── Project Context ─── */}
@@ -162,6 +140,35 @@ export function Step10Report() {
             ))}
           </div>
         )}
+      </ReportSection>
+
+      {/* ─── Cable & Harness Specification ─── */}
+      <ReportSection title="Cable & Harness Specification">
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-graphite text-white">
+                {["Connection", "Connector", "Pins", "Cable Type", "Length"].map((h) => (
+                  <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[10px]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cableRows.map((c, i) => (
+                <tr key={c.connection} className={i % 2 === 0 ? "bg-white" : "bg-surface"}>
+                  <td className="px-3 py-2 font-sans font-semibold text-foreground">{c.connection}</td>
+                  <td className="px-3 py-2 font-body text-muted-foreground">{c.connector}</td>
+                  <td className="px-3 py-2 font-sans font-bold text-foreground">{c.pins}</td>
+                  <td className="px-3 py-2 font-body text-muted-foreground">{c.cableType}</td>
+                  <td className="px-3 py-2 font-sans font-bold text-primary">{c.lengthM.toFixed(1)} m</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] font-body text-muted-foreground mt-3">
+          Cable lengths reflect the values set on the System Diagram step and are included in the downloadable PDF report.
+        </p>
       </ReportSection>
 
       {/* ─── Battery / Charger ─── */}
