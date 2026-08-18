@@ -77,17 +77,19 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
 
   // Recommendation cards are only meaningful for the two transmission types
   // that have a dedicated recommendation builder: derailleur (chain drive)
-  // and CVT (enviolo, on either chain or belt drive). Stepped internal-gear
-  // hubs (Shimano Nexus) and single-speed builds don't have a recommendation
-  // builder, so no cards are shown for those — showing derailleur-based cards
-  // there would misrepresent the selected transmission.
+  // and CVT (enviolo, belt drive only — see getAvailableTransmissionTypes:
+  // the catalogue has no compatibility data pairing enviolo hubs with a
+  // chain-side sprocket, so CVT is not offered on chain drive). Stepped
+  // internal-gear hubs (Shimano Nexus) and single-speed builds don't have a
+  // recommendation builder, so no cards are shown for those — showing
+  // derailleur-based cards there would misrepresent the selected transmission.
   const recommendations = useMemo(() => {
     const empty = { climbing: null, balanced: null, speed: null }
     if (!s.drivetrainType || !s.transmissionType || isLoading) return empty
     if (s.drivetrainType === "chain" && s.transmissionType === "derailleur") {
       return buildChainDerailleurRecommendations(data, ctx)
     }
-    if (s.transmissionType === "cvt") {
+    if (s.drivetrainType === "belt" && s.transmissionType === "cvt") {
       return buildBeltHubRecommendations(data, ctx)
     }
     return empty

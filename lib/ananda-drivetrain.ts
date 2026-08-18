@@ -690,7 +690,14 @@ export function getAvailableTransmissionTypes(catalogue: DrivetrainComponent[], 
   if (catalogue.some((c) => isSteppedInternalHub(c) && matchesDrive(c.drive_type))) {
     types.push("internal_gear_hub")
   }
-  if (catalogue.some((c) => isCvtHub(c) && matchesDrive(c.drive_type))) {
+  // CVT (enviolo) is belt-only: enviolo hubs are catalogued with drive_type
+  // "both" because the hub itself works on either drive, but the catalogue
+  // has no compatibility data pairing enviolo with a chain-side rear
+  // sprocket/chainring — only belt-side rear pulleys are validated. Until
+  // that data exists, CVT is restricted to belt drive so we never surface a
+  // transmission type we cannot build real recommendations or compatibility
+  // checks for.
+  if (driveType === "belt" && catalogue.some((c) => isCvtHub(c) && matchesDrive(c.drive_type))) {
     types.push("cvt")
   }
   if (hasCategory("rear_sprocket", matchesDrive)) {

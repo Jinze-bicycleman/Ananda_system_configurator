@@ -38,22 +38,14 @@ function getSlots(driveType: "chain" | "belt", transmissionType: string): Slot[]
       { key: "chain_guide", category: "chain_guide", label: "Chain Guide", optional: true },
     ]
   }
-  if (transmissionType === "cvt") {
-    const hub: Slot = { key: "hub", category: "internal_gear_hub", label: "CVT Hub", extraFilter: isCvtHub }
-    if (driveType === "belt") {
-      return [
-        hub,
-        { key: "front_pulley", category: "front_pulley", label: "Front Pulley" },
-        { key: "rear_pulley", category: "rear_pulley", label: "Rear Pulley" },
-        { key: "belt", category: "belt", label: "Belt" },
-        { key: "tensioner", category: "tensioner", label: "Tensioner", optional: true },
-      ]
-    }
+  // CVT (enviolo) is belt-only — see getAvailableTransmissionTypes in
+  // lib/ananda-drivetrain.ts for why chain-drive CVT is not offered.
+  if (driveType === "belt" && transmissionType === "cvt") {
     return [
-      hub,
-      { key: "chainring", category: "chainring", label: "Chainring" },
-      { key: "rear_sprocket", category: "rear_sprocket", label: "Rear Sprocket" },
-      { key: "chain", category: "chain", label: "Chain" },
+      { key: "hub", category: "internal_gear_hub", label: "CVT Hub", extraFilter: isCvtHub },
+      { key: "front_pulley", category: "front_pulley", label: "Front Pulley" },
+      { key: "rear_pulley", category: "rear_pulley", label: "Rear Pulley" },
+      { key: "belt", category: "belt", label: "Belt" },
       { key: "tensioner", category: "tensioner", label: "Tensioner", optional: true },
     ]
   }
