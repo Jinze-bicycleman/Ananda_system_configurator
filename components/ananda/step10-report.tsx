@@ -3,28 +3,16 @@
 import { useAnandaStore } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-function calcDrivetrain(
-  chainringT: number,
-  rearT: number,
-  cadenceRpm: number,
-  tyreCircumferenceMm: number | null,
-  motorTorqueNm: number | null,
-  driveType: "mid" | "hub" | null,
-) {
-  const gearRatio = chainringT / rearT
-  const wheelCircumM = (tyreCircumferenceMm ?? 2200) / 1000
-  const speedKmh = (cadenceRpm * gearRatio * wheelCircumM * 60) / 1000
-  const motorTorque = motorTorqueNm ?? 80
-  const onWheelTorque = driveType === "mid" ? motorTorque / gearRatio : motorTorque
-  return {
-    gearRatio: Math.round(gearRatio * 100) / 100,
-    speedKmh: Math.round(speedKmh * 10) / 10,
-    onWheelTorque: Math.round(onWheelTorque * 10) / 10,
-  }
+const TRANSMISSION_LABEL: Record<string, string> = {
+  derailleur: "Derailleur & Cassette",
+  internal_gear_hub: "Internal-Gear Hub",
+  single_speed: "Single Speed",
+  gearbox: "Gearbox",
 }
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -57,6 +45,7 @@ export function Step10Report() {
   const { controllers } = useControllers()
   const { displays } = useDisplays()
   const { batteries } = useBatteries()
+  const { catalogue } = useDrivetrainData()
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
   const controller = controllers.find((c) => c.id === s.controllerId) ?? null
@@ -70,17 +59,10 @@ export function Step10Report() {
   const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
   const batterySkipped = s.skippedItems.includes("batteryId")
 
-  const { gearRatio, speedKmh, onWheelTorque } = calcDrivetrain(
-    s.chainringTeeth,
-    s.rearSprocketTeeth,
-    s.cadenceRpm,
-    s.tyreCircumferenceMm,
-    motor?.torque_nm ?? null,
-    s.driveType,
-  )
-
-  const speedExceedsLimit = s.speedLimitKmh != null && speedKmh > s.speedLimitKmh
-  const usesDefaultCircumference = s.tyreCircumferenceMm == null
+  const selectedDrivetrainComponents = s.selectedComponentIds
+    .map((id) => catalogue.find((c) => c.id === id))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c))
+  const selectedBelt = s.selectedBeltId ? catalogue.find((c) => c.id === s.selectedBeltId) ?? null : null
 
   let systemWeightKg = 0
   if (motor?.weight_kg) systemWeightKg += motor.weight_kg
@@ -128,34 +110,55 @@ export function Step10Report() {
 
       {/* ─── Drivetrain ─── */}
       <ReportSection title="Drivetrain">
-        <Row label="Drivetrain Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} />
-        <Row label="Chainring Size" value={`${s.chainringTeeth}T`} />
-        <Row label="Rear Sprocket Size" value={`${s.rearSprocketTeeth}T`} />
-        <Row label="Selected Cadence" value={`${s.cadenceRpm} rpm`} />
-        <Row label="Gear Ratio" value={`${gearRatio.toFixed(2)} : 1`} highlight />
-        <Row label="Est. Max Speed" value={`${speedKmh.toFixed(1)} km/h`} warn={speedExceedsLimit} />
-        <Row label="Est. On-Wheel Torque" value={`${onWheelTorque.toFixed(1)} Nm`} />
+        <Row label="Drive Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} highlight />
+        <Row label="Transmission Type" value={s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—"} />
+        {s.frontTeeth != null && <Row label="Front (Chainring / Pulley)" value={`${s.frontTeeth}T`} />}
+        {s.rearTeeth != null && <Row label="Rear (Cassette / Hub / Pulley)" value={`${s.rearTeeth}T`} />}
+        {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
 
-        {usesDefaultCircumference && (
-          <p className="mb-3 text-xs text-muted-foreground">
-            Speed estimate uses the default 2200 mm tyre circumference because no measured value was entered.
-          </p>
+        {selectedDrivetrainComponents.length > 0 && (
+          <div className="pt-2">
+            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground mb-1.5 mt-2">
+              Selected Components
+            </p>
+            {selectedDrivetrainComponents.map((c) => (
+              <Row key={c.id} label={c.category.replace(/_/g, " ")} value={displayName(c)} />
+            ))}
+            {selectedBelt && <Row label="Belt" value={displayName(selectedBelt)} />}
+          </div>
+        )}
+
+        {s.selectedComponentIds.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">No drivetrain components have been selected yet.</p>
         )}
 
         <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
           <p className="text-xs font-body text-muted-foreground">
             {isMid
-              ? "Mid-drive motor torque passes through the drivetrain. Chainring and sprocket selection directly affect speed range, climbing torque and drivetrain load."
-              : "Hub motor torque is delivered directly at the wheel. Chainring and sprocket selection mainly affect rider cadence and pedalling comfort."}
+              ? "Mid-drive motor torque passes through the drivetrain. Gearing selection directly affects speed range, climbing torque and drivetrain load."
+              : "Hub motor torque is delivered directly at the wheel. Pedal drivetrain gearing mainly affects rider cadence and pedalling comfort."}
           </p>
         </div>
 
-        {speedExceedsLimit && (
-          <div className="mt-3 flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
-            <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-body text-warning-foreground">
-              Estimated drivetrain speed exceeds the selected speed limit ({s.speedLimitKmh} km/h). Final assistance cut-off must follow the selected regional regulation.
-            </p>
+        {s.drivetrainErrors.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {s.drivetrainErrors.map((msg, i) => (
+              <div key={i} className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 px-4 py-3">
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-body text-destructive">{msg}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {s.drivetrainErrors.length === 0 && s.drivetrainWarnings.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {s.drivetrainWarnings.map((msg, i) => (
+              <div key={i} className="flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
+                <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                <p className="text-sm font-body text-warning-foreground">{msg}</p>
+              </div>
+            ))}
           </div>
         )}
       </ReportSection>
@@ -201,7 +204,10 @@ export function Step10Report() {
           { ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped), label: "Pedal sensing configured" },
           { ok: !!s.speedSensorId || speedSensorSkipped, label: "Speed sensor configured" },
           { ok: !!s.batteryId || batterySkipped, label: "Battery configured" },
-          { ok: !!s.drivetrainType, label: "Drivetrain type selected" },
+          {
+            ok: Boolean(s.drivetrainType && s.transmissionType && s.selectedComponentIds.length > 0 && s.drivetrainErrors.length === 0),
+            label: "Drivetrain system configured",
+          },
         ].map(({ ok, label }) => (
           <div key={label} className="flex items-center gap-2 py-1.5 border-b border-border/40 last:border-0">
             {ok ? (

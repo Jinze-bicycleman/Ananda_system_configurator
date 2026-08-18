@@ -32,16 +32,16 @@ export function AnandaConfigurator() {
     hasDrivetrain(state), true, true, false,
   ], [state])
   const unlocked = complete.map((_, index) => index === 0 || complete[index - 1])
+  const openSection = (index: number) => { setOpen(index); state.setStep(index + 1); window.scrollTo({ top: 0, behavior: "smooth" }) }
+  const openStepNumber = (stepNumber: number) => { if (unlocked[stepNumber - 1]) openSection(stepNumber - 1) }
+  const goNext = () => { if (open < labels.length - 1 && complete[open]) openSection(open + 1) }
+  const goBack = () => { if (open > 0) openSection(open - 1) }
   const content = [
     <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />, <Step2DriveSystem key="drive" />,
     <Step4PackageSelection key="package" />, <Step5PackageConfiguration key="config" />,
-    <Step6DrivetrainSelection key="drivetrain" />, <Step8Accessories key="accessories" />,
+    <Step6DrivetrainSelection key="drivetrain" onEditStep={openStepNumber} />, <Step8Accessories key="accessories" />,
     <Step9SystemDiagram key="diagram" />, <Step10Report key="report" />,
   ]
-  const openSection = (index: number) => { if (unlocked[index]) { setOpen(index); state.setStep(index + 1); window.scrollTo({ top: 0, behavior: "smooth" }) } }
-  const openStepNumber = (stepNumber: number) => openSection(stepNumber - 1)
-  const goNext = () => { if (open < labels.length - 1 && complete[open]) openSection(open + 1) }
-  const goBack = () => { if (open > 0) openSection(open - 1) }
 
   if (!hydrated || !state.hasStarted) return <WelcomeScreen />
 

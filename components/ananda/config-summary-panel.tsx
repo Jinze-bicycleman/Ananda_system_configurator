@@ -82,7 +82,25 @@ export function ConfigSummaryPanel() {
 
         <Divider />
 
-        <Row label="Drivetrain" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} />
+        <Row
+          label="Drivetrain"
+          value={
+            s.drivetrainType
+              ? `${s.drivetrainType === "chain" ? "Chain" : "Belt"} · ${
+                  s.transmissionType === "derailleur"
+                    ? "Derailleur"
+                    : s.transmissionType === "internal_gear_hub"
+                      ? "Internal-Gear Hub"
+                      : s.transmissionType === "single_speed"
+                        ? "Single Speed"
+                        : s.transmissionType === "gearbox"
+                          ? "Gearbox"
+                          : "—"
+                }`
+              : "—"
+          }
+          warn={s.drivetrainErrors.length > 0}
+        />
         <Row label="Display" value={display ? display.model : "—"} />
         <Row label="Accessories" value={accessories.length > 0 ? `${accessories.length} selected` : "None"} />
 
@@ -136,11 +154,13 @@ function Row({
   label,
   value,
   highlight,
+  warn,
   badge,
 }: {
   label: string
   value: string
   highlight?: boolean
+  warn?: boolean
   badge?: "recommended" | "integrated"
 }) {
   return (
@@ -148,7 +168,12 @@ function Row({
       <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 flex-wrap justify-end">
         {badge && <StatusBadge variant={badge} />}
-        <span className={cn("text-[12px] font-sans font-semibold text-right leading-tight", highlight ? "text-primary" : "text-foreground")}>
+        <span
+          className={cn(
+            "text-[12px] font-sans font-semibold text-right leading-tight",
+            warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
+          )}
+        >
           {value}
         </span>
       </div>

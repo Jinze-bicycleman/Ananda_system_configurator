@@ -223,10 +223,10 @@ async function fetchDrivetrainData(): Promise<DrivetrainData> {
   }
 
   return {
-    catalogue: (catalogueResult.data ?? []).map((r) => normalizeComponent(r as Record<string, unknown>)),
-    compatibility: (compatibilityResult.data ?? []).map((r) => normalizeCompatibility(r as Record<string, unknown>)),
-    torqueLimits: (torqueLimitsResult.data ?? []).map((r) => normalizeTorqueLimit(r as Record<string, unknown>)),
-    rules: (rulesResult.data ?? []).map((r) => normalizeRule(r as Record<string, unknown>)),
+    catalogue: ((catalogueResult.data ?? []) as Record<string, unknown>[]).map((r) => normalizeComponent(r)),
+    compatibility: ((compatibilityResult.data ?? []) as Record<string, unknown>[]).map((r) => normalizeCompatibility(r)),
+    torqueLimits: ((torqueLimitsResult.data ?? []) as Record<string, unknown>[]).map((r) => normalizeTorqueLimit(r)),
+    rules: ((rulesResult.data ?? []) as Record<string, unknown>[]).map((r) => normalizeRule(r)),
   }
 }
 
