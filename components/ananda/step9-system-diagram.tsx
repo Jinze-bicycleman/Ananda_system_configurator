@@ -111,7 +111,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
       <line x1="320" y1="0" x2="320" y2="360" stroke="#f3f4f6" strokeWidth="1" />
 
       {/* ─── BATTERY (left) ─── */}
-      <Block x={20} y={42} w={150} h={86} label="Battery" sublabel={labels.battery} active large />
+      <Block x={28} y={42} w={142} h={86} label="Battery" sublabel={labels.battery} active large />
       {/* Charger below battery */}
       <Block x={30} y={140} w={100} h={40} label="Charger" sublabel={labels.charger} active={false} />
       {/* Charging port */}
@@ -125,7 +125,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
       {isMid ? (
         <>
           {/* ─── MID-DRIVE: Battery → Motor ─── */}
-          <Arrow x1={130} y1={82} x2={240} y2={155} color="#008F36" label="Power" />
+          <Arrow x1={170} y1={82} x2={220} y2={145} color="#008F36" label="Power" />
 
           {/* Central motor block */}
           <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
@@ -139,16 +139,16 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           <Arrow x1={265} y1={285} x2={290} y2={200} color="#008F36" />
 
           {/* Display → Motor */}
-          <Block x={420} y={12} w={200} h={104} label="Display" sublabel={labels.display} active large />
-          <Arrow x1={430} y1={62} x2={400} y2={148} color="#008F36" label="HMI" />
+          <Block x={430} y={12} w={185} h={104} label="Display" sublabel={labels.display} active large />
+          <Arrow x1={430} y1={70} x2={405} y2={137} color="#008F36" label="HMI" />
           
           {/* Remote → Display */}
-          <Block x={460} y={122} w={160} h={96} label="Remote" sublabel={labels.remote} active large />
-          <Arrow x1={550} y1={120} x2={548} y2={106} color="#9ca3af" />
+          <Block x={470} y={122} w={145} h={96} label="Remote" sublabel={labels.remote} active large />
+          <Arrow x1={540} y1={122} x2={540} y2={116} color="#9ca3af" />
           
           {/* Accessories → System Harness */}
-          <Block x={410} y={232} w={210} h={104} label="Accessories" sublabel={labels.accessories} active large />
-          <Arrow x1={510} y1={238} x2={400} y2={200} color="#9ca3af" label="Harness" />
+          <Block x={430} y={232} w={185} h={104} label="Accessories" sublabel={labels.accessories} active large />
+          <Arrow x1={500} y1={238} x2={420} y2={208} color="#9ca3af" label="Harness" />
           
           {/* Note */}
           <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
