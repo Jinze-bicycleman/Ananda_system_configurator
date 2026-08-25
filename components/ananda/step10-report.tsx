@@ -130,7 +130,7 @@ export function Step10Report() {
                   <p className="text-[10px] text-muted-foreground leading-tight">Target: {r.targetLabel}</p>
                 </div>
               </div>
-              <span className="shrink-0 text-[12px] font-sans font-bold text-graphite text-right">{r.currentLabel}</span>
+              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold text-graphite text-right leading-tight">{r.currentLabel}</span>
             </div>
           ))}
         </div>

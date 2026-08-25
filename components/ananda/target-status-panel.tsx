@@ -57,7 +57,7 @@ export function TargetStatusPanel() {
                 <p className="text-[10px] text-muted-foreground leading-tight">Target: {row.targetLabel}</p>
               </div>
             </div>
-            <span className="shrink-0 text-[11px] font-sans font-bold text-graphite text-right">{row.currentLabel}</span>
+            <span className="max-w-[42%] shrink-0 text-[11px] font-sans font-bold text-graphite text-right leading-tight">{row.currentLabel}</span>
           </div>
         ))}
       </div>

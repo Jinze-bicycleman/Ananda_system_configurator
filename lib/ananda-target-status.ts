@@ -92,7 +92,7 @@ export function computeTargetStatus({ s, motor, battery, display }: TargetStatus
     dimension: "Regulatory Compliance",
     level: "must",
     targetLabel: s.regulation ?? "No regulation set",
-    currentLabel: s.regulation ? "Inherited from Sell Region & Regulation — no impact from later selections" : "Not yet set",
+    currentLabel: s.regulation ? "Set — no impact from later selections" : "Not yet set",
     status: s.regulation ? "met" : "missing",
   })
 
