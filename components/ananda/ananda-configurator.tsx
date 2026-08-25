@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight, AlertTriangle, Download } from "lucide-react"
-import { useAnandaStore, hasDriveAndVoltage, hasMotor, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
+import { useAnandaStore, hasProductTargets, hasRecommendedSolution, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
 import { WelcomeScreen } from "./welcome-screen"
@@ -10,15 +10,15 @@ import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
 import { Step1ProjectContext } from "./step1-project-context"
 import { Step2BikeCategory } from "./step2-bike-category"
-import { Step2DriveSystem } from "./step2-drive-system"
-import { Step4PackageSelection } from "./step4-package-selection"
+import { Step3ProductTargets } from "./step3-product-targets"
+import { Step4RecommendedSolutions } from "./step4-recommended-solutions"
 import { Step5PackageConfiguration } from "./step5-package-configuration"
 import { Step6DrivetrainSelection } from "./step6-drivetrain"
 import { Step8Accessories } from "./step8-accessories"
 import { Step9SystemDiagram } from "./step9-system-diagram"
 import { Step10Report } from "./step10-report"
 
-const labels = ["Sell Region & Regulation", "Bike Category", "Drive System & Voltage", "Package Selection", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
+const labels = ["Sell Region & Regulation", "Bike Category", "Product Targets", "Recommended Solutions", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
@@ -40,7 +40,7 @@ export function AnandaConfigurator() {
   const complete = useMemo(() => [
     Boolean(state.sellRegion && state.regulation),
     Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm),
-    hasDriveAndVoltage(state), hasMotor(state), hasCoreComponents(state),
+    hasProductTargets(state), hasRecommendedSolution(state), hasCoreComponents(state),
     hasDrivetrain(state), true, true, false,
   ], [state])
   const unlocked = complete.map((_, index) => index === 0 || complete[index - 1])
@@ -70,8 +70,8 @@ export function AnandaConfigurator() {
   }
   const goBack = () => { if (open > 0) openSection(open - 1) }
   const content = [
-    <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />, <Step2DriveSystem key="drive" />,
-    <Step4PackageSelection key="package" />, <Step5PackageConfiguration key="config" />,
+    <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />, <Step3ProductTargets key="targets" />,
+    <Step4RecommendedSolutions key="solutions" />, <Step5PackageConfiguration key="config" />,
     <Step6DrivetrainSelection key="drivetrain" onEditStep={openStepNumber} />, <Step8Accessories key="accessories" />,
     <Step9SystemDiagram key="diagram" />, <Step10Report key="report" />,
   ]

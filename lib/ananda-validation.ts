@@ -42,12 +42,14 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
       break
     }
     case 2: {
-      if (!s.driveType) items.push({ message: "Select a drive system (mid-drive or hub).", targetId: "field-driveType" })
-      if (!s.voltagePlatform) items.push({ message: "Select a voltage platform.", targetId: "field-voltagePlatform" })
+      if (!s.productTargets.ambition.positioning) items.push({ message: "Choose a market positioning for Product Ambition.", targetId: "field-productTargets" })
+      else if (!s.productTargets.ambition.costPriority) items.push({ message: "Choose a cost priority for Product Ambition.", targetId: "field-productTargets" })
+      else if (s.productTargets.weight.targetKg == null && s.productTargets.weight.maxKg == null) items.push({ message: "Set a weight target or select a rider profile.", targetId: "field-weightTarget" })
+      else if (s.productTargets.performance.rangeTargetKm == null) items.push({ message: "Set a range target or select a rider profile.", targetId: "field-rangeTarget" })
       break
     }
     case 3: {
-      if (!(s.packageId && s.motorId)) items.push({ message: "Select a motor package.", targetId: "field-package" })
+      if (!s.selectedSolutionId) items.push({ message: "Select one of the recommended solutions.", targetId: "field-solutions" })
       break
     }
     case 4: {

@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils"
 const STEPS = [
   { n: 1, label: "Sell Region & Regulation" },
   { n: 2, label: "Bike Category" },
-  { n: 3, label: "Drive System & Voltage" },
-  { n: 4, label: "Package Selection" },
+  { n: 3, label: "Product Targets" },
+  { n: 4, label: "Recommended Solutions" },
   { n: 5, label: "Package Configuration" },
   { n: 6, label: "Drivetrain" },
   { n: 7, label: "Accessories" },
