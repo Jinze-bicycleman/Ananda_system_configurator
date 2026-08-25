@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useAnandaStore, type AnandaConfig } from "@/lib/ananda-store"
 import { useMotors } from "@/lib/ananda-packages"
+import { cn } from "@/lib/utils"
 import { StepHeader } from "./ui-primitives"
 import { DrivetrainSummary } from "./drivetrain/drivetrain-summary"
 import { DriveTypeCards } from "./drivetrain/drive-type-cards"
@@ -235,6 +236,17 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
     s.setField("gvwKg", Number.isFinite(parsed as number) ? parsed : null)
   }
 
+  const gvwSkipped = s.skippedItems.includes("gvwKg")
+  const toggleGvwSkip = () => {
+    if (gvwSkipped) {
+      s.setItemSkipped("gvwKg", false)
+    } else {
+      s.setItemSkipped("gvwKg", true)
+      setGvwInput("")
+      s.setField("gvwKg", null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div>
@@ -269,7 +281,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
 
       <div className="mb-6 max-w-xs">
         <label className="block text-xs font-sans font-bold uppercase tracking-wider text-graphite mb-2">
-          Estimated Gross Vehicle Weight (rider + bike + cargo)
+          Estimated System Weight (biker + bike + cargo)
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -277,25 +289,42 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
             value={gvwInput}
             onChange={(e) => setGvwInput(e.target.value)}
             onBlur={handleGvwBlur}
-            placeholder="e.g. 120"
-            className="w-full border border-border px-3 py-1.5 text-sm font-body focus:border-primary outline-none"
+            disabled={gvwSkipped}
+            placeholder={gvwSkipped ? "Skipped" : "e.g. 120"}
+            className="w-full border border-border px-3 py-1.5 text-sm font-body focus:border-primary outline-none disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted-foreground"
           />
           <span className="text-xs font-sans font-bold text-muted-foreground">kg</span>
+          <button
+            type="button"
+            onClick={toggleGvwSkip}
+            className={cn(
+              "shrink-0 whitespace-nowrap border px-2.5 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wider transition-colors",
+              gvwSkipped ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary",
+            )}
+          >
+            {gvwSkipped ? "Restore" : "Skip"}
+          </button>
         </div>
         <p className="mt-1 text-[11px] font-body text-muted-foreground">
-          Used to validate motor torque and GVW limits against paired drivetrain components.
+          {gvwSkipped
+            ? "Skipped — motor torque / system weight limits against paired drivetrain components will not be validated."
+            : "Used to validate motor torque and weight limits against paired drivetrain components."}
         </p>
       </div>
 
-      <DriveTypeCards catalogue={catalogue} selected={s.drivetrainType} onSelect={(t) => s.setDrivetrainType(t)} />
+      <div id="field-drivetrainType">
+        <DriveTypeCards catalogue={catalogue} selected={s.drivetrainType} onSelect={(t) => s.setDrivetrainType(t)} />
+      </div>
 
       {s.drivetrainType && (
-        <TransmissionTypePicker
-          catalogue={catalogue}
-          driveType={s.drivetrainType}
-          selected={s.transmissionType}
-          onSelect={(t) => s.setTransmissionType(t)}
-        />
+        <div id="field-transmissionType">
+          <TransmissionTypePicker
+            catalogue={catalogue}
+            driveType={s.drivetrainType}
+            selected={s.transmissionType}
+            onSelect={(t) => s.setTransmissionType(t)}
+          />
+        </div>
       )}
 
       {s.drivetrainType && s.transmissionType && (s.transmissionType === "derailleur" || s.transmissionType === "cvt") && (
@@ -310,18 +339,20 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
       )}
 
       {s.drivetrainType && s.transmissionType && (
-        <AdvancedConfiguration
-          data={data}
-          driveType={s.drivetrainType}
-          transmissionType={s.transmissionType}
-          selectedIds={s.selectedComponentIds}
-          onChangeSlot={handleSlotChange}
-          onCheckSpecs={(id) => {
-            const c = catalogue.find((x) => x.id === id)
-            if (c) setSpecComponent(c)
-          }}
-          ctx={ctx}
-        />
+        <div id="field-drivetrainComponents">
+          <AdvancedConfiguration
+            data={data}
+            driveType={s.drivetrainType}
+            transmissionType={s.transmissionType}
+            selectedIds={s.selectedComponentIds}
+            onChangeSlot={handleSlotChange}
+            onCheckSpecs={(id) => {
+              const c = catalogue.find((x) => x.id === id)
+              if (c) setSpecComponent(c)
+            }}
+            ctx={ctx}
+          />
+        </div>
       )}
 
       {s.drivetrainType === "belt" && s.transmissionType === "cvt" && (
@@ -355,18 +386,10 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
       )}
 
       {pairMessages.length > 0 && (
-        <div className="mb-8 space-y-2">
+        <div id="drivetrain-compatibility" className="mb-8 space-y-2">
           {worstColor === "red"
             ? pairMessages.map((m, i) => <InlineError key={i}>{m}</InlineError>)
             : pairMessages.map((m, i) => <InlineWarning key={i}>{m}</InlineWarning>)}
-          {worstColor === "amber" && (
-            <label className="flex items-center gap-2 pl-1">
-              <Switch checked={s.warningsAcknowledged} onCheckedChange={(v) => s.setField("warningsAcknowledged", v)} />
-              <span className="text-xs font-body text-muted-foreground">
-                I have reviewed these warnings and confirm the configuration should proceed.
-              </span>
-            </label>
-          )}
         </div>
       )}
 
@@ -388,6 +411,32 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
           />
           <SpeedCadenceGraph gearRows={performanceRows} enviolo={enviolo} speedLimitKmh={s.speedLimitKmh} />
         </>
+      )}
+
+      {worstColor === "amber" && s.drivetrainWarnings.length > 0 && (
+        <div
+          id="drivetrain-warnings-ack"
+          className={cn(
+            "mt-10 border-4 px-5 py-5 sm:px-6",
+            s.warningsAcknowledged ? "border-primary bg-primary/10" : "border-warning bg-warning",
+          )}
+        >
+          <label className="flex cursor-pointer items-start gap-4">
+            <Switch
+              checked={s.warningsAcknowledged}
+              onCheckedChange={(v) => s.setField("warningsAcknowledged", v)}
+              className="mt-1 shrink-0 scale-125"
+            />
+            <span
+              className={cn(
+                "text-base font-sans font-bold uppercase leading-snug tracking-wide sm:text-lg",
+                s.warningsAcknowledged ? "text-primary" : "text-graphite",
+              )}
+            >
+              I have reviewed these warnings and confirm the configuration should proceed.
+            </span>
+          </label>
+        </div>
       )}
 
       <SpecDrawer component={specComponent} onOpenChange={(open) => !open && setSpecComponent(null)} />

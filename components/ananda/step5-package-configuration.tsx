@@ -7,6 +7,7 @@ import {
   useDisplays,
   useBatteries,
   chargersForVoltage,
+  resolveImageUrl,
   CHARGING_PORTS,
   type ControllerRow,
   type HmiDisplayRow,
@@ -95,30 +96,24 @@ function ConfigRow({ itemKey, label, required, selected, skippable, skipped, onT
   const [expanded, setExpanded] = useState(false)
 
   return (
-    <section className="mb-8">
+    <section id={`config-${itemKey}`} className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <SectionLabel>{label}</SectionLabel>
         <div className="flex items-center gap-2">
           {required && !skipped && <StatusBadge variant="required" />}
           {skipped && <StatusBadge variant="not-required" label="Marked Not Needed" />}
-          {skippable && (
-            <button
-              onClick={onToggleSkip}
-              className={cn(
-                "flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider px-2 py-1 border transition-colors",
-                skipped ? "border-primary text-primary bg-primary/5" : "border-border text-muted-foreground hover:border-primary hover:text-primary",
-              )}
-            >
-              {skipped ? <RotateCcw className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-              {skipped ? "Restore" : "No Need"}
-            </button>
-          )}
         </div>
       </div>
 
       {skipped ? (
-        <div className="border border-border bg-surface px-4 py-3 text-sm font-body text-muted-foreground">
-          This component has been marked as not needed for this build.
+        <div className="flex items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
+          <p className="text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
+          <button
+            onClick={onToggleSkip}
+            className="flex shrink-0 items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+          >
+            <RotateCcw className="w-3 h-3" /> Restore
+          </button>
         </div>
       ) : (
         <>
@@ -157,6 +152,22 @@ function ConfigRow({ itemKey, label, required, selected, skippable, skipped, onT
                 </>
               ) : (
                 <EmptyOptionsNotice />
+              )}
+              {skippable && (
+                <button
+                  onClick={onToggleSkip}
+                  className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-surface"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
+                    <Ban className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-sans font-bold uppercase text-graphite">Not Needed</span>
+                    <span className="block text-xs font-body text-muted-foreground">
+                      Choose this option if this component isn&apos;t required for the build.
+                    </span>
+                  </span>
+                </button>
               )}
             </div>
           )}
@@ -231,7 +242,7 @@ export function Step5PackageConfiguration() {
               <OptionCard
                 key={c.id}
                 title={c.model}
-                imageUrl={c.image_url}
+                imageUrl={resolveImageUrl(c.image_url, c.image_path)}
                 specs={[
                   { label: "Rated Power", value: c.rated_power_w ? `${c.rated_power_w}W` : null },
                   { label: "Peak Current", value: c.peak_current_a ? `${c.peak_current_a}A` : null },
@@ -301,7 +312,7 @@ export function Step5PackageConfiguration() {
             <OptionCard
               key={d.id}
               title={d.model}
-              imageUrl={d.image_url}
+              imageUrl={resolveImageUrl(d.image_url, d.image_path)}
               specs={[
                 { label: "Size", value: d.size },
                 { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
@@ -342,7 +353,7 @@ export function Step5PackageConfiguration() {
             <OptionCard
               key={b.id}
               title={b.model}
-              imageUrl={b.image_url}
+              imageUrl={resolveImageUrl(b.image_url, b.image_path)}
               specs={[
                 { label: "Capacity", value: b.capacity_wh ? `${b.capacity_wh}Wh` : null },
                 { label: "Weight", value: b.weight_kg ? `${b.weight_kg}kg` : null },

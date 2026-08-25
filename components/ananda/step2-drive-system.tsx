@@ -47,7 +47,7 @@ export function Step2DriveSystem() {
         subtitle="Select the motor architecture and system voltage for this e-bike system. These determine the motor product list, controller requirement and system wiring."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="field-driveType" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {DRIVE_SYSTEMS.map(ds => {
           const selected = !ds.disabled && s.driveType === ds.id
           return (
@@ -138,7 +138,7 @@ export function Step2DriveSystem() {
         })}
       </div>
 
-      <div className="mt-10">
+      <div id="field-voltagePlatform" className="mt-10">
         <h3 className="mb-4 font-sans text-lg font-black uppercase tracking-tight text-graphite">Voltage Platform</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {VOLTAGE_PLATFORMS.map(vp => {

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
-import { usePackageMotors, useControllers, type MotorRow } from "@/lib/ananda-packages"
+import { usePackageMotors, useControllers, resolveImageUrl, type MotorRow } from "@/lib/ananda-packages"
 import { StepHeader, BigSpec, TechSpecRow } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { cn } from "@/lib/utils"
@@ -101,8 +101,8 @@ function PackageCard({ motor, selected, onSelect }: { motor: MotorRow; selected:
             <polygon points="180,0 300,0 300,180 120,180" fill={selected ? "#008F36" : "#f3f4f6"} opacity={selected ? "0.12" : "0.6"} />
           </svg>
         </div>
-        {motor.image_url ? (
-          <img src={motor.image_url || "/placeholder.svg"} alt={motor.model} className="relative z-10 max-h-36 object-contain" crossOrigin="anonymous" />
+        {resolveImageUrl(motor.image_url, motor.image_path) ? (
+          <img src={resolveImageUrl(motor.image_url, motor.image_path) as string} alt={motor.model} className="relative z-10 max-h-36 object-contain" crossOrigin="anonymous" />
         ) : (
           <div className="relative z-10 flex flex-col items-center justify-center gap-2 py-10">
             <ImageIcon className={cn("w-12 h-12", selected ? "text-primary/40" : "text-border")} />
@@ -184,23 +184,23 @@ export function Step4PackageSelection() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm font-sans text-muted-foreground">
+        <div id="field-package" className="flex items-center justify-center gap-2 py-16 text-sm font-sans text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading packages…
         </div>
       ) : error ? (
-        <div className="border-2 border-dashed border-warning/40 p-12 text-center">
+        <div id="field-package" className="border-2 border-dashed border-warning/40 p-12 text-center">
           <p className="text-sm font-sans font-semibold text-warning uppercase tracking-wider mb-2">Unable to Load Packages</p>
           <p className="text-sm font-body text-muted-foreground">There was a problem reading motor packages from the database. Please try again.</p>
         </div>
       ) : motors.length === 0 ? (
-        <div className="border-2 border-dashed border-border p-12 text-center">
+        <div id="field-package" className="border-2 border-dashed border-border p-12 text-center">
           <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-2">No Packages Available</p>
           <p className="text-sm font-body text-muted-foreground">
             No motor packages match the current combination of drive type and voltage platform. Please adjust your selection in the previous step.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div id="field-package" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {motors.map((m) => (
             <PackageCard
               key={m.id}

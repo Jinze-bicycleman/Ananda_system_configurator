@@ -11,7 +11,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ variant, label, className }: StatusBadgeProps) {
   const map: Record<StatusBadgeProps["variant"], { text: string; cls: string }> = {
     recommended:  { text: "Recommended",   cls: "bg-primary text-white" },
-    required:     { text: "Required",      cls: "bg-graphite text-white" },
+    required:     { text: "Required",      cls: "bg-destructive text-white" },
     optional:     { text: "Optional",      cls: "bg-white border border-border text-graphite-light" },
     integrated:   { text: "Integrated",    cls: "bg-lime text-graphite font-bold" },
     "not-required": { text: "Not Required", cls: "bg-white border border-border text-muted-foreground" },

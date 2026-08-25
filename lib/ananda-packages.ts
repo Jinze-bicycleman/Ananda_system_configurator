@@ -197,3 +197,15 @@ export const CHARGING_PORTS: ChargingPortOption[] = [
 export function chargersForVoltage(voltagePlatform: number | null) {
   return voltagePlatform ? CHARGERS.filter((c) => c.voltage_v === voltagePlatform) : []
 }
+
+// Product rows carry two possible image fields (`image_url`, `image_path`),
+// but data entry hasn't been consistent about which one holds a usable
+// absolute URL — some rows (e.g. DF130/DF237/DC240 displays) have a broken
+// relative placeholder in `image_url` while the real Supabase Storage URL is
+// in `image_path`. Prefer whichever field is actually a usable absolute URL.
+export function resolveImageUrl(...candidates: (string | null | undefined)[]): string | null {
+  for (const candidate of candidates) {
+    if (candidate && /^https?:\/\//i.test(candidate)) return candidate
+  }
+  return null
+}
