@@ -11,6 +11,8 @@ import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
+import { estimateRangeKm, costTierForMotorModel, COST_LABELS } from "@/lib/ananda-recommendation"
+import { computeTargetStatus, computeOverallFeasibility, computeChangeImpact } from "@/lib/ananda-target-status"
 
 export const TRANSMISSION_LABEL: Record<string, string> = {
   derailleur: "Derailleur & Cassette",
@@ -74,6 +76,15 @@ export function useReportData() {
     lengthM: s.cableLengths[c.connection] ?? c.defaultLength,
   }))
 
+  const targetStatusRows = computeTargetStatus({ s, motor, battery, display })
+  const feasibility = computeOverallFeasibility(targetStatusRows)
+  const currentCostLabel = motor ? COST_LABELS[costTierForMotorModel(motor.model)] : "—"
+  const changeImpact = computeChangeImpact(s, {
+    weightKg: systemWeightKg,
+    rangeKm: battery ? estimateRangeKm(battery.capacity_wh) : 0,
+    costLabel: currentCostLabel,
+  })
+
   return {
     s,
     motor,
@@ -91,6 +102,10 @@ export function useReportData() {
     systemWeightKg,
     isMid,
     cableRows,
+    targetStatusRows,
+    feasibility,
+    changeImpact,
+    currentCostLabel,
   }
 }
 
@@ -107,7 +122,7 @@ function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
  */
 export async function generateReportPdf(data: ReportData) {
   const { jsPDF } = await import("jspdf")
-  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows } = data
+  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, currentCostLabel } = data
 
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -200,6 +215,74 @@ export async function generateReportPdf(data: ReportData) {
   doc.setTextColor(...muted)
   doc.text(`Generated ${new Date().toLocaleString()}`, marginX, y)
   y += 22
+
+  // ─── Overall Feasibility ───
+  const feasibilityLabel = feasibility === "go" ? "GO" : feasibility === "conditional_go" ? "CONDITIONAL GO" : "NO-GO"
+  sectionTitle("Overall Feasibility")
+  row("Feasibility Assessment", feasibilityLabel)
+  row("Selected Solution", s.selectedSolutionId ? s.selectedSolutionId.replace("_", " ").toUpperCase() : "—")
+  row("Current Cost Level", currentCostLabel)
+
+  // ─── Product Target Summary ───
+  sectionTitle("Product Target Summary")
+  row("Weight Target", s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set")
+  row(
+    "Torque Target",
+    s.productTargets.performance.torqueTargetNm != null
+      ? `≥ ${s.productTargets.performance.torqueTargetNm} Nm (${s.productTargets.performance.torqueLevel})`
+      : "No target set",
+  )
+  row(
+    "Range Target",
+    s.productTargets.performance.rangeTargetKm != null
+      ? `≥ ${s.productTargets.performance.rangeTargetKm} km (${s.productTargets.performance.rangeLevel})`
+      : "No target set",
+  )
+  row("Market Positioning", s.productTargets.ambition.positioning ?? "—")
+  row("Cost Priority", s.productTargets.ambition.costPriority ?? "—")
+
+  // ─── Requirement Satisfaction Matrix ───
+  sectionTitle("Requirement Satisfaction Matrix")
+  const matrixColX = [marginX, marginX + 160, marginX + 300, marginX + 430]
+  tableHeader(["Dimension", "Target", "Current", "Status"], matrixColX)
+  targetStatusRows.forEach((r, i) => {
+    tableRow(
+      [r.dimension, r.targetLabel, r.currentLabel, r.status.replace("_", " ").toUpperCase()],
+      matrixColX,
+      i % 2 === 1,
+    )
+  })
+
+  // ─── Recommended Configuration & Rationale ───
+  sectionTitle("Recommended Configuration & Rationale")
+  row("Motor", motor ? motor.model : "—")
+  row("Battery", battery ? battery.model : "—")
+  row("Display", display ? display.model : "—")
+  paragraph(
+    s.selectedSolutionId
+      ? "This configuration was selected from the ranked recommendations generated against the Product Targets on Step 3."
+      : "No recommended solution has been applied yet — components below reflect manual configuration.",
+  )
+
+  // ─── Unmet Requirements ───
+  const unmetRows = targetStatusRows.filter((r) => r.status === "not_met" || r.status === "missing")
+  sectionTitle("Unmet Requirements")
+  if (unmetRows.length === 0) {
+    paragraph("All defined requirements are currently met by the selected configuration.")
+  } else {
+    for (const r of unmetRows) paragraph(`${r.dimension}: target ${r.targetLabel}, current ${r.currentLabel}.`)
+  }
+
+  // ─── Risks, Conditions & Assumptions ───
+  sectionTitle("Risks, Conditions & Assumptions")
+  paragraph("Configuration is compatible with the selected regulation based on rated power and speed limit inputs.")
+  paragraph("Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.")
+  paragraph("Range and cost-tier figures are heuristic estimates derived from battery capacity and motor model, not final priced or lab-tested values.")
+  if (changeImpact.weight) {
+    paragraph(
+      `Since the recommended solution was applied: weight ${changeImpact.weight[0].toFixed(1)} kg → ${changeImpact.weight[1].toFixed(1)} kg, range ${changeImpact.range?.[0]} km → ${changeImpact.range?.[1]} km, cost level ${changeImpact.cost?.[0]} → ${changeImpact.cost?.[1]}.`,
+    )
+  }
 
   // ─── Project Context ───
   sectionTitle("Project Context")

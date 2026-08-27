@@ -3,8 +3,21 @@
 import { displayName } from "@/lib/ananda-drivetrain"
 import { useReportData, TRANSMISSION_LABEL } from "@/lib/ananda-report"
 import { StepHeader, SectionLabel } from "./ui-primitives"
-import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
+import { AlertTriangle, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+const FEASIBILITY_LABEL: Record<"go" | "conditional_go" | "no_go", { label: string; cls: string }> = {
+  go: { label: "Go", cls: "bg-primary/10 text-primary border-primary/30" },
+  conditional_go: { label: "Conditional Go", cls: "bg-warning/10 text-warning-foreground border-warning/30" },
+  no_go: { label: "No-Go", cls: "bg-destructive/10 text-destructive border-destructive/30" },
+}
+
+const STATUS_DOT: Record<string, string> = {
+  met: "bg-primary",
+  conditional: "bg-warning",
+  not_met: "bg-destructive",
+  missing: "bg-border",
+}
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -47,7 +60,14 @@ export function Step10Report() {
     systemWeightKg,
     isMid,
     cableRows,
+    targetStatusRows,
+    feasibility,
+    changeImpact,
+    currentCostLabel,
   } = useReportData()
+
+  const feasibilityInfo = FEASIBILITY_LABEL[feasibility]
+  const unmetRows = targetStatusRows.filter((r) => r.status === "not_met" || r.status === "missing")
 
   return (
     <div>
@@ -56,6 +76,136 @@ export function Step10Report() {
         title="Final Configuration Report"
         subtitle="Complete system summary. Review all selections and drivetrain outputs, then download the PDF report below."
       />
+
+      {/* ─── Overall Feasibility ─── */}
+      <div className={cn("mb-5 flex items-center justify-between border-2 px-5 py-4", feasibilityInfo.cls)}>
+        <div>
+          <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em]">Overall Feasibility</p>
+          <p className="mt-1 text-2xl font-sans font-black uppercase tracking-tight">{feasibilityInfo.label}</p>
+        </div>
+        <p className="max-w-xs text-right text-xs font-body leading-relaxed opacity-80">
+          {feasibility === "go"
+            ? "All Must-have and Target requirements are currently met."
+            : feasibility === "conditional_go"
+              ? "Must-haves are met, but one or more Target requirements are not fully satisfied."
+              : "One or more Must-have requirements are not met by the current configuration."}
+        </p>
+      </div>
+
+      {/* ─── Product Target Summary ─── */}
+      <ReportSection title="Product Target Summary">
+        <Row
+          label="Weight Target"
+          value={s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set"}
+        />
+        <Row
+          label="Torque Target"
+          value={
+            s.productTargets.performance.torqueTargetNm != null
+              ? `≥ ${s.productTargets.performance.torqueTargetNm} Nm (${s.productTargets.performance.torqueLevel})`
+              : "No target set"
+          }
+        />
+        <Row
+          label="Range Target"
+          value={
+            s.productTargets.performance.rangeTargetKm != null
+              ? `≥ ${s.productTargets.performance.rangeTargetKm} km (${s.productTargets.performance.rangeLevel})`
+              : "No target set"
+          }
+        />
+        <Row label="Market Positioning" value={s.productTargets.ambition.positioning ?? "—"} />
+        <Row label="Cost Priority" value={s.productTargets.ambition.costPriority ?? "—"} />
+      </ReportSection>
+
+      {/* ─── Requirement Satisfaction Matrix ─── */}
+      <ReportSection title="Requirement Satisfaction Matrix">
+        <div className="space-y-1.5">
+          {targetStatusRows.map((r) => (
+            <div key={r.dimension} className="flex items-start justify-between gap-3 border-b border-border/40 py-1.5 last:border-0">
+              <div className="flex items-start gap-2 min-w-0">
+                <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", STATUS_DOT[r.status])} />
+                <div className="min-w-0">
+                  <p className="text-[12px] font-sans font-semibold text-foreground leading-tight">{r.dimension}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Target: {r.targetLabel}</p>
+                </div>
+              </div>
+              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold text-graphite text-right leading-tight">{r.currentLabel}</span>
+            </div>
+          ))}
+        </div>
+      </ReportSection>
+
+      {/* ─── Recommended Configuration & Rationale ─── */}
+      <ReportSection title="Recommended Configuration & Rationale">
+        <Row label="Selected Solution" value={s.selectedSolutionId ? s.selectedSolutionId.replace("_", " ").toUpperCase() : "—"} />
+        <Row label="Motor" value={motor ? motor.model : "—"} />
+        <Row label="Battery" value={battery ? battery.model : "—"} />
+        <Row label="Display" value={display ? display.model : "—"} />
+        <Row label="Current Cost Level" value={currentCostLabel} />
+        <p className="mt-2 text-xs font-body text-muted-foreground">
+          {s.selectedSolutionId
+            ? "This configuration was selected from the ranked recommendations generated against the Product Targets on Step 3."
+            : "No recommended solution has been applied yet — components below reflect manual configuration."}
+        </p>
+        {changeImpact.weight && changeImpact.range && changeImpact.cost && (
+          <div className="mt-3 space-y-1.5 border-t border-border pt-3">
+            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">Since Recommendation Applied</p>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="text-muted-foreground">Weight</span>
+              <span className="flex items-center gap-1.5 font-sans font-bold">
+                {changeImpact.weight[0].toFixed(1)} kg <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.weight[1].toFixed(1)} kg
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="text-muted-foreground">Range</span>
+              <span className="flex items-center gap-1.5 font-sans font-bold">
+                {changeImpact.range[0]} km <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.range[1]} km
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="text-muted-foreground">Cost Level</span>
+              <span className="flex items-center gap-1.5 font-sans font-bold">
+                {changeImpact.cost[0]} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.cost[1]}
+              </span>
+            </div>
+          </div>
+        )}
+      </ReportSection>
+
+      {/* ─── Unmet Requirements ─── */}
+      <ReportSection title="Unmet Requirements">
+        {unmetRows.length === 0 ? (
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            <p className="text-sm font-body text-foreground">All defined requirements are currently met by the selected configuration.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {unmetRows.map((r) => (
+              <div key={r.dimension} className="flex items-start gap-2 border border-warning/30 bg-warning/10 px-3 py-2">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <p className="text-xs font-body text-warning-foreground/90">
+                  <span className="font-semibold text-foreground">{r.dimension}:</span> target {r.targetLabel}, current {r.currentLabel}.
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </ReportSection>
+
+      {/* ─── Risks, Conditions & Assumptions ─── */}
+      <ReportSection title="Risks, Conditions & Assumptions">
+        <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
+          Configuration is compatible with the selected regulation based on rated power and speed limit inputs.
+        </p>
+        <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
+          Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.
+        </p>
+        <p className="text-xs font-body leading-relaxed text-muted-foreground">
+          Range and cost-tier figures are heuristic estimates derived from battery capacity and motor model, not final priced or lab-tested values.
+        </p>
+      </ReportSection>
 
       {/* ─── Project Context ─── */}
       <ReportSection title="Project Context">

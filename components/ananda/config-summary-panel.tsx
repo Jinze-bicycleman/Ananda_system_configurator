@@ -1,13 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "./status-badge"
+import { TargetStatusPanel } from "./target-status-panel"
 import { AlertTriangle, CheckCircle2, Weight, Zap } from "lucide-react"
 
 export function ConfigSummaryPanel() {
+  const [tab, setTab] = useState<"summary" | "status">("summary")
   const s = useAnandaStore()
 
   const { motors } = useMotors()
@@ -47,13 +50,37 @@ export function ConfigSummaryPanel() {
       {/* Top green border stripe */}
       <div className="h-1 bg-primary" />
 
-      {/* Header */}
-      <div className="px-4 py-3 bg-surface border-b border-border flex items-center justify-between">
-        <span className="text-[11px] font-sans font-black uppercase tracking-[0.2em] text-graphite">Configuration Summary</span>
-        {complete ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
+      {/* Tab switcher */}
+      <div className="flex border-b border-border">
+        <button
+          type="button"
+          onClick={() => setTab("summary")}
+          className={cn(
+            "flex-1 px-3 py-2.5 text-[11px] font-sans font-black uppercase tracking-[0.15em] transition-colors",
+            tab === "summary" ? "bg-surface text-graphite border-b-2 border-primary" : "text-muted-foreground hover:text-graphite",
+          )}
+        >
+          Summary
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("status")}
+          className={cn(
+            "flex-1 px-3 py-2.5 text-[11px] font-sans font-black uppercase tracking-[0.15em] transition-colors",
+            tab === "status" ? "bg-surface text-graphite border-b-2 border-primary" : "text-muted-foreground hover:text-graphite",
+          )}
+        >
+          Target Status
+        </button>
       </div>
 
+      {tab === "status" ? (
+        <TargetStatusPanel />
+      ) : (
       <div className="p-4 space-y-3 text-[12px]">
+        <div className="flex items-center justify-end -mt-1 mb-1">
+          {complete ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
+        </div>
         <Row label="Sell Market" value={s.sellRegion ?? "—"} />
         <Row label="Regulation" value={s.regulation ?? "—"} />
         <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
@@ -144,6 +171,7 @@ export function ConfigSummaryPanel() {
           </>
         )}
       </div>
+      )}
     </aside>
   )
 }
