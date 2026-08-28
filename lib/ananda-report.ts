@@ -8,11 +8,12 @@
 
 import { useAnandaStore, type AnandaConfig } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
-import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { estimateRangeKm, costTierForMotorModel, COST_LABELS } from "@/lib/ananda-recommendation"
 import { computeTargetStatus, computeOverallFeasibility, computeChangeImpact } from "@/lib/ananda-target-status"
+import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
 export const TRANSMISSION_LABEL: Record<string, string> = {
   derailleur: "Derailleur & Cassette",
@@ -38,6 +39,7 @@ export function useReportData() {
   const { displays } = useDisplays()
   const { batteries } = useBatteries()
   const { catalogue } = useDrivetrainData()
+  const { modes: assistModes } = useMotorAssistModes(s.motorId)
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
   const controller = controllers.find((c) => c.id === s.controllerId) ?? null
@@ -85,6 +87,44 @@ export function useReportData() {
     costLabel: currentCostLabel,
   })
 
+  // Climbing Ability — mirrors the Step 6 panel exactly, using the
+  // committed store values (frontTeeth/largestRearTeeth/rider inputs) so the
+  // report and PDF never drift from what the user configured on Step 6.
+  const motorType: MotorType | null = motor
+    ? motor.motor_type === "hub"
+      ? "hub"
+      : motor.motor_type === "mid_drive"
+        ? "mid_drive"
+        : isMid
+          ? "mid_drive"
+          : "hub"
+    : null
+  const wheelSizeInch = s.wheelSize ? Number.parseFloat(s.wheelSize) || null : null
+  const wheelRadiusMetres = resolveWheelRadiusMetres(s.tyreCircumferenceMm, wheelSizeInch)
+  const activeAssistMode = assistModes.find((m) => m.mode_key === s.climbingAssistanceModeKey) ?? assistModes[0] ?? null
+  const pedalEffortPreset = PEDAL_EFFORT_PRESETS.find((p) => p.key === s.climbingPedalEffortKey) ?? PEDAL_EFFORT_PRESETS[1]
+  const climbingResult: ClimbingAbilityResult | null =
+    motorType && activeAssistMode
+      ? computeClimbingAbility({
+          motorType,
+          motorMaxTorqueNm: motor?.torque_nm ?? null,
+          riderPedalTorqueNm: pedalEffortPreset.torqueNm,
+          assistanceMultiplier: activeAssistMode.assistance_multiplier,
+          frontChainringTeeth: s.frontTeeth,
+          largestRearTeeth: s.largestRearTeeth,
+          riderWeightKg: s.climbingRiderWeightKg,
+          bikeWeightKg: 25,
+          wheelRadiusMetres,
+          drivetrainEfficiency: motor?.drivetrain_efficiency ?? null,
+        })
+      : null
+  const climbing = {
+    result: climbingResult,
+    riderWeightKg: s.climbingRiderWeightKg,
+    assistanceModeLabel: activeAssistMode?.display_label ?? "—",
+    pedalEffortLabel: pedalEffortPreset.label,
+  }
+
   return {
     s,
     motor,
@@ -102,12 +142,13 @@ export function useReportData() {
     systemWeightKg,
     isMid,
     cableRows,
-    targetStatusRows,
-    feasibility,
-    changeImpact,
-    currentCostLabel,
+  targetStatusRows,
+  feasibility,
+  changeImpact,
+  currentCostLabel,
+  climbing,
   }
-}
+  }
 
 export type ReportData = ReturnType<typeof useReportData>
 
@@ -122,7 +163,7 @@ function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
  */
 export async function generateReportPdf(data: ReportData) {
   const { jsPDF } = await import("jspdf")
-  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, currentCostLabel } = data
+  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, currentCostLabel, climbing } = data
 
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -315,8 +356,9 @@ export async function generateReportPdf(data: ReportData) {
   sectionTitle("Drivetrain")
   row("Drive Type", s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—")
   row("Transmission Type", s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—")
-  if (s.frontTeeth != null) row("Front (Chainring / Pulley)", `${s.frontTeeth}T`)
-  if (s.rearTeeth != null) row("Rear (Cassette / Hub / Pulley)", `${s.rearTeeth}T`)
+  if (s.frontTeeth != null) row("Front Chainring / Pulley", `${s.frontTeeth}T`)
+  if (s.rearTeeth != null) row("Smallest Rear Sprocket", `${s.rearTeeth}T`)
+  if (s.largestRearTeeth != null) row("Largest Rear Sprocket", `${s.largestRearTeeth}T`)
   if (s.gvwKg != null) row("Estimated GVW", `${s.gvwKg} kg`)
   if (selectedDrivetrainComponents.length > 0) {
     for (const c of selectedDrivetrainComponents) {
@@ -344,6 +386,29 @@ export async function generateReportPdf(data: ReportData) {
   if (accessories.length > 0) {
     sectionTitle("Accessories")
     for (const a of accessories) row(a.category.toUpperCase(), a.name)
+  }
+
+  // ─── Climbing Ability ───
+  sectionTitle("Climbing Ability")
+  row("Rider Weight", `${climbing.riderWeightKg} kg`)
+  row("Assistance Mode", climbing.assistanceModeLabel)
+  row("Pedal Effort", climbing.pedalEffortLabel)
+  if (!climbing.result) {
+    paragraph("N/A — motor, drivetrain gearing and wheel circumference must be configured to estimate climbing ability.")
+  } else if (climbing.result.status === "missing-data") {
+    paragraph(`N/A — missing ${climbing.result.missingFields.join(", ")}.`)
+  } else {
+    row("Motor-Assist Torque", `${(Math.round(climbing.result.assistance.motorTorqueDeliveredNm * 10) / 10)} Nm`)
+    row("Total Wheel Torque", `${(Math.round(climbing.result.totalWheelTorqueNm * 10) / 10)} Nm`)
+    if (climbing.result.status === "exceeded") {
+      paragraph("The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.")
+    } else {
+      row("Maximum Theoretical Grade", `${(climbing.result.gradePercent as number).toFixed(1)}%`)
+      if (climbing.result.scenario) row("Comparable To", climbing.result.scenario.label)
+    }
+    paragraph(
+      "Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal limits, tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and rider technique.",
+    )
   }
 
   // ─── Cable & Harness Specification ───

@@ -64,6 +64,7 @@ export function Step10Report() {
     feasibility,
     changeImpact,
     currentCostLabel,
+    climbing,
   } = useReportData()
 
   const feasibilityInfo = FEASIBILITY_LABEL[feasibility]
@@ -241,8 +242,9 @@ export function Step10Report() {
       <ReportSection title="Drivetrain">
         <Row label="Drive Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} highlight />
         <Row label="Transmission Type" value={s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—"} />
-        {s.frontTeeth != null && <Row label="Front (Chainring / Pulley)" value={`${s.frontTeeth}T`} />}
-        {s.rearTeeth != null && <Row label="Rear (Cassette / Hub / Pulley)" value={`${s.rearTeeth}T`} />}
+        {s.frontTeeth != null && <Row label="Front Chainring / Pulley" value={`${s.frontTeeth}T`} />}
+        {s.rearTeeth != null && <Row label="Smallest Rear Sprocket" value={`${s.rearTeeth}T`} />}
+        {s.largestRearTeeth != null && <Row label="Largest Rear Sprocket" value={`${s.largestRearTeeth}T`} />}
         {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
 
         {selectedDrivetrainComponents.length > 0 && (
