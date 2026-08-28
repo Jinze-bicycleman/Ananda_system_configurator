@@ -2,6 +2,7 @@
 
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useRecommendations, type RecommendedSolution } from "@/lib/ananda-recommendation"
+import { chargersForVoltage, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { StepHeader, BigSpec } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { AdvancedDriveOverride } from "./recommendation/advanced-drive-override"
@@ -36,6 +37,58 @@ function RequirementList({ solution }: { solution: RecommendedSolution }) {
   )
 }
 
+// Renders a value with the spec's required "Data unavailable" fallback —
+// never a bare 0, empty string, or placeholder engineering value.
+function SpecRow({ label, value }: { label: string; value: string | number | null | undefined }) {
+  const isMissing = value == null || value === ""
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1">
+      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className={cn("text-sm font-sans font-bold tabular-nums text-right", isMissing ? "italic text-muted-foreground" : "text-graphite")}>
+        {isMissing ? "Data unavailable" : value}
+      </span>
+    </div>
+  )
+}
+
+function MotorSpecPanel({ solution }: { solution: RecommendedSolution }) {
+  const m = solution.motor
+  return (
+    <div className="border border-border bg-surface p-3">
+      <p className="mb-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Motor</p>
+      <SpecRow label="Model" value={m.model} />
+      <SpecRow label="Motor Type" value={m.motor_type === "mid_drive" ? "Mid-Drive" : m.motor_type === "hub" ? "Hub-Drive" : m.motor_type} />
+      <SpecRow label="Weight" value={m.weight_kg != null ? `${m.weight_kg} kg` : null} />
+      <SpecRow label="Max Torque" value={m.torque_nm != null ? `${m.torque_nm} Nm` : null} />
+      <SpecRow label="Rated Power" value={m.rated_power_w != null ? `${m.rated_power_w} W` : null} />
+      <SpecRow label="Crank / Mount Interface" value={m.mounting_interface ?? m.shaft_interface} />
+      <SpecRow label="Voltage" value={m.voltage_v != null ? `${m.voltage_v}V` : null} />
+    </div>
+  )
+}
+
+function BatterySpecPanel({ solution }: { solution: RecommendedSolution }) {
+  const b = solution.battery
+  const dims = b.length_mm != null && b.width_mm != null && b.height_mm != null ? `${b.length_mm} × ${b.width_mm} × ${b.height_mm} mm` : null
+  const comms = b.communication_protocols?.length ? b.communication_protocols.join(", ") : b.communication_protocol
+  return (
+    <div className="border border-border bg-surface p-3">
+      <p className="mb-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Battery</p>
+      <SpecRow label="Model" value={b.model} />
+      <SpecRow label="Weight" value={b.weight_kg != null ? `${b.weight_kg} kg` : null} />
+      {/* Dimensions must be visually prominent — customers need to check frame fit. */}
+      <div className="my-1.5 flex items-baseline justify-between gap-3 border-y border-dashed border-border py-1.5">
+        <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Dimensions (L × W × H)</span>
+        <span className={cn("text-base font-sans font-black tabular-nums text-right", dims ? "text-graphite" : "italic text-muted-foreground")}>
+          {dims ?? "Data unavailable"}
+        </span>
+      </div>
+      <SpecRow label="Capacity" value={b.capacity_wh != null ? `${b.capacity_wh} Wh` : null} />
+      <SpecRow label="Communication" value={comms} />
+    </div>
+  )
+}
+
 function SolutionCard({
   solution,
   isPrimary,
@@ -66,10 +119,7 @@ function SolutionCard({
       </div>
 
       <div className="p-4">
-        <h3 className={cn("text-xl font-sans font-black uppercase tracking-tight", selected ? "text-primary" : "text-graphite")}>
-          {solution.motor.model} · {solution.motor.voltage_v}V
-        </h3>
-        <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">{solution.rationale}</p>
+        <p className="text-xs font-body leading-relaxed text-muted-foreground">{solution.rationale}</p>
 
         <div className="mt-4 flex items-center justify-around border border-border bg-surface py-3">
           <BigSpec value={solution.weightKg} unit="kg" label="Weight" />
@@ -79,11 +129,15 @@ function SolutionCard({
           <BigSpec value={solution.torqueNm} unit="Nm" label="Torque" />
         </div>
 
+        {/* Two equal, first-class specification panels: Motor and Battery
+            are peers here, not a headline motor with battery as an
+            afterthought text row. */}
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+          <MotorSpecPanel solution={solution} />
+          <BatterySpecPanel solution={solution} />
+        </div>
+
         <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div className="border border-border px-2 py-1.5">
-            <p className="text-muted-foreground uppercase tracking-wider">Battery</p>
-            <p className="font-sans font-bold text-graphite">{solution.battery.model}</p>
-          </div>
           <div className="border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Display</p>
             <p className="font-sans font-bold text-graphite">{solution.display?.model ?? "—"}</p>
@@ -95,6 +149,10 @@ function SolutionCard({
           <div className="border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Integration</p>
             <p className="font-sans font-bold text-graphite">{solution.tradeoffs.integration}</p>
+          </div>
+          <div className="border border-border px-2 py-1.5">
+            <p className="text-muted-foreground uppercase tracking-wider">Est. Range</p>
+            <p className="font-sans font-bold text-graphite">{solution.rangeKm} km</p>
           </div>
         </div>
 
@@ -123,15 +181,23 @@ export function Step4RecommendedSolutions() {
   const { solutions, noSolutionReason, isLoading } = useRecommendations()
 
   const applySolution = (solution: RecommendedSolution) => {
+    const voltage = solution.motor.voltage_v as 36 | 48 | 52
+    // Charger/charging-port catalogues are small fixed lists (one entry per
+    // voltage for chargers, no voltage distinction for ports) — the single
+    // voltage-compatible charger and the platform-standard port are the
+    // "highest-ranked compatible product" for components the recommendation
+    // engine doesn't itself rank.
+    const recommendedChargerId = chargersForVoltage(voltage)[0]?.id ?? null
+    const recommendedPortId = CHARGING_PORTS[0]?.id ?? null
     s.applyRecommendedSolution(solution.id, {
       driveType: "mid",
-      voltagePlatform: solution.motor.voltage_v as 36 | 48 | 52,
+      voltagePlatform: voltage,
       motorId: solution.motor.id,
       controllerId: null,
       displayId: solution.display?.id ?? null,
       batteryId: solution.battery.id,
-      chargerId: null,
-      chargingPortId: null,
+      chargerId: recommendedChargerId,
+      chargingPortId: recommendedPortId,
       baseline: { weightKg: solution.weightKg, rangeKm: solution.rangeKm, costLabel: solution.costLabel },
     })
   }

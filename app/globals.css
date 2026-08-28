@@ -55,9 +55,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Barlow Condensed', 'Barlow', sans-serif;
-  --font-body: 'Barlow', 'Inter', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: 'Geist', 'Geist Fallback', sans-serif;
+  --font-body: 'Geist', 'Geist Fallback', sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -102,11 +102,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Barlow', 'Inter', sans-serif;
+    @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+    @apply font-sans;
   }
 }
 

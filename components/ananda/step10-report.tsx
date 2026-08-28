@@ -35,7 +35,7 @@ function Row({ label, value, highlight, warn }: { label: string; value: string; 
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={cn("text-[12px] font-sans font-semibold text-right", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
+      <span className={cn("text-[12px] font-sans font-semibold text-right tabular-nums", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
         {value}
       </span>
     </div>
@@ -64,6 +64,7 @@ export function Step10Report() {
     feasibility,
     changeImpact,
     currentCostLabel,
+    climbing,
   } = useReportData()
 
   const feasibilityInfo = FEASIBILITY_LABEL[feasibility]
@@ -127,10 +128,10 @@ export function Step10Report() {
                 <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", STATUS_DOT[r.status])} />
                 <div className="min-w-0">
                   <p className="text-[12px] font-sans font-semibold text-foreground leading-tight">{r.dimension}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Target: {r.targetLabel}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">Target: {r.targetLabel}</p>
                 </div>
               </div>
-              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold text-graphite text-right leading-tight">{r.currentLabel}</span>
+              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold tabular-nums text-graphite text-right leading-tight">{r.currentLabel}</span>
             </div>
           ))}
         </div>
@@ -241,8 +242,9 @@ export function Step10Report() {
       <ReportSection title="Drivetrain">
         <Row label="Drive Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} highlight />
         <Row label="Transmission Type" value={s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—"} />
-        {s.frontTeeth != null && <Row label="Front (Chainring / Pulley)" value={`${s.frontTeeth}T`} />}
-        {s.rearTeeth != null && <Row label="Rear (Cassette / Hub / Pulley)" value={`${s.rearTeeth}T`} />}
+        {s.frontTeeth != null && <Row label="Front Chainring / Pulley" value={`${s.frontTeeth}T`} />}
+        {s.rearTeeth != null && <Row label="Smallest Rear Sprocket" value={`${s.rearTeeth}T`} />}
+        {s.largestRearTeeth != null && <Row label="Largest Rear Sprocket" value={`${s.largestRearTeeth}T`} />}
         {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
 
         {selectedDrivetrainComponents.length > 0 && (
@@ -292,6 +294,50 @@ export function Step10Report() {
         )}
       </ReportSection>
 
+      {/* ─── Climbing Ability ─── */}
+      <ReportSection title="Climbing Ability">
+        <Row label="Rider Weight" value={`${climbing.riderWeightKg} kg`} />
+        <Row label="Assistance Mode" value={climbing.assistanceModeLabel} />
+        <Row label="Pedal Effort" value={climbing.pedalEffortLabel} />
+
+        {!climbing.result ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Motor, drivetrain gearing and wheel circumference must be configured to estimate climbing ability.
+          </p>
+        ) : climbing.result.status === "missing-data" ? (
+          <div className="mt-3 flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
+            <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <p className="text-sm font-body text-warning-foreground">
+              Missing {climbing.result.missingFields.join(", ")} — climbing ability cannot be estimated.
+            </p>
+          </div>
+        ) : (
+          <>
+            <Row label="Motor-Assist Torque" value={`${Math.round(climbing.result.assistance.motorTorqueDeliveredNm * 10) / 10} Nm`} />
+            <Row label="Total Wheel Torque" value={`${Math.round(climbing.result.totalWheelTorqueNm * 10) / 10} Nm`} />
+            {climbing.result.status === "exceeded" ? (
+              <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
+                <p className="text-xs font-body text-muted-foreground">
+                  The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Row label="Maximum Theoretical Grade" value={`${climbing.result.gradePercent?.toFixed(1)}%`} highlight />
+                {climbing.result.scenario && <Row label="Comparable To" value={climbing.result.scenario.label} />}
+              </>
+            )}
+            <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
+              <p className="text-xs font-body text-muted-foreground">
+                Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal
+                limits, tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and
+                rider technique.
+              </p>
+            </div>
+          </>
+        )}
+      </ReportSection>
+
       {/* ─── Cable & Harness Specification ─── */}
       <ReportSection title="Cable & Harness Specification">
         <div className="overflow-x-auto -mx-1">
@@ -316,7 +362,7 @@ export function Step10Report() {
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] font-body text-muted-foreground mt-3">
+        <p className="text-xs font-body leading-relaxed text-muted-foreground mt-3">
           Cable lengths reflect the values set on the System Diagram step and are included in the downloadable PDF report.
         </p>
       </ReportSection>
@@ -346,9 +392,9 @@ export function Step10Report() {
           {battery?.weight_kg && <Row label="Battery" value={`${battery.weight_kg} kg`} />}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border">
             <span className="text-[11px] font-sans font-black uppercase tracking-wider text-graphite">Total (Motor + Battery)</span>
-            <span className="text-lg font-sans font-black text-primary">{systemWeightKg.toFixed(1)} kg</span>
+            <span className="text-lg font-sans font-black tabular-nums text-primary">{systemWeightKg.toFixed(1)} kg</span>
           </div>
-          <p className="text-[10px] font-body text-muted-foreground mt-2">
+          <p className="text-xs font-body leading-relaxed text-muted-foreground mt-2">
             Weight estimate includes motor and battery only. Accessories, sensors, and ancillary components are not included in this total.
           </p>
         </ReportSection>

@@ -33,6 +33,7 @@ export type MotorRow = {
   sensor_description: string | null
   shaft_interface: string | null
   mounting_interface: string | null
+  drivetrain_efficiency: number | null
 }
 
 export type ControllerRow = {
@@ -85,6 +86,10 @@ export type BatteryRow = {
   size: string | null
   voltage_v: number
   communication_protocol: string | null
+  communication_protocols: string[] | null
+  length_mm: number | null
+  width_mm: number | null
+  height_mm: number | null
   image_url: string | null
   image_path: string | null
   datasheet_url: string | null
@@ -94,7 +99,7 @@ export type BatteryRow = {
 }
 
 const MOTOR_COLUMNS =
-  "id, model, motor_type, torque_nm, rated_power_w, peak_power_w, weight_kg, size, voltage_v, controller_requirement, pedal_sensing, communication_protocol, image_url, image_path, datasheet_url, short_description, is_recommended, is_active, sort_order, rpm, max_efficiency, noise_grade_db, waterproof, color, construction, light_drive_capacity, sensor_description, shaft_interface, mounting_interface"
+  "id, model, motor_type, torque_nm, rated_power_w, peak_power_w, weight_kg, size, voltage_v, controller_requirement, pedal_sensing, communication_protocol, image_url, image_path, datasheet_url, short_description, is_recommended, is_active, sort_order, rpm, max_efficiency, noise_grade_db, waterproof, color, construction, light_drive_capacity, sensor_description, shaft_interface, mounting_interface, drivetrain_efficiency"
 
 const CONTROLLER_COLUMNS =
   "id, model, compatible_motor_type, voltage_v, rated_power_w, peak_power_w, rated_current_a, peak_current_a, communication_protocol, connection_type, size, weight_kg, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
@@ -103,7 +108,7 @@ const HMI_COLUMNS =
   "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const BATTERY_COLUMNS =
-  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 async function fetchMotors(): Promise<MotorRow[]> {
   const supabase = createClient()
@@ -208,4 +213,81 @@ export function resolveImageUrl(...candidates: (string | null | undefined)[]): s
     if (candidate && /^https?:\/\//i.test(candidate)) return candidate
   }
   return null
+}
+
+// Motor-specific assistance modes (Eco/Trail/Sport/Turbo/Boost multipliers),
+// used by the Climbing Ability panel. Falls back to the seeded 1x-5x
+// defaults if a motor has no rows (should not normally happen post-seed).
+export type MotorAssistModeRow = {
+  id: string
+  motor_id: string
+  mode_key: string
+  display_label: string
+  assistance_multiplier: number
+  sort_order: number
+}
+
+const DEFAULT_ASSIST_MODES: Omit<MotorAssistModeRow, "id" | "motor_id">[] = [
+  { mode_key: "eco", display_label: "Eco", assistance_multiplier: 1.0, sort_order: 10 },
+  { mode_key: "trail", display_label: "Trail", assistance_multiplier: 2.0, sort_order: 20 },
+  { mode_key: "sport", display_label: "Sport", assistance_multiplier: 3.0, sort_order: 30 },
+  { mode_key: "turbo", display_label: "Turbo", assistance_multiplier: 4.0, sort_order: 40 },
+  { mode_key: "boost", display_label: "Boost", assistance_multiplier: 5.0, sort_order: 50 },
+]
+
+async function fetchMotorAssistModes(motorId: string): Promise<MotorAssistModeRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("motor_assist_modes")
+    .select("id, motor_id, mode_key, display_label, assistance_multiplier, sort_order")
+    .eq("motor_id", motorId)
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as MotorAssistModeRow[]
+}
+
+export function useMotorAssistModes(motorId: string | null) {
+  const { data, isLoading, error } = useSWR<MotorAssistModeRow[]>(
+    motorId ? ["ananda-motor-assist-modes", motorId] : null,
+    () => fetchMotorAssistModes(motorId as string),
+  )
+  const modes =
+    data && data.length > 0
+      ? data
+      : motorId
+        ? DEFAULT_ASSIST_MODES.map((m, i) => ({ ...m, id: `default-${i}`, motor_id: motorId }))
+        : []
+  return { modes, isLoading, error }
+}
+
+// Preset cable-length options for the mid-drive System Diagram connections
+// (battery-to-motor, sensors, display, remote, accessories).
+export type CableLengthOptionRow = {
+  id: string
+  connection_key: string
+  length_mm: number
+  label: string | null
+  is_default: boolean
+  sort_order: number
+}
+
+async function fetchCableLengthOptions(): Promise<CableLengthOptionRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("cable_length_options")
+    .select("id, connection_key, length_mm, label, is_default, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as CableLengthOptionRow[]
+}
+
+export function useCableLengthOptions() {
+  const { data, isLoading, error } = useSWR<CableLengthOptionRow[]>("ananda-cable-length-options", fetchCableLengthOptions)
+  return { options: data ?? [], isLoading, error }
+}
+
+export function cableLengthOptionsFor(options: CableLengthOptionRow[], connectionKey: string) {
+  return options.filter((o) => o.connection_key === connectionKey)
 }

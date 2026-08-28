@@ -38,7 +38,7 @@ export function DrivetrainSummary({ onEditStep }: { onEditStep: (stepNumber: num
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 px-5 py-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 px-5 py-4">
         <SummaryItem label="Bike Category" value={s.bikeCategory ?? "—"} />
         <SummaryItem label="Motor Package" value={motor?.model ?? "—"} />
         <SummaryItem label="Motor Type" value={s.driveType === "mid" ? "Mid-Drive" : s.driveType === "hub" ? "Hub-Drive" : "—"} />

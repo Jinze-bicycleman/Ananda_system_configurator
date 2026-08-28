@@ -5,6 +5,9 @@ import { ArrowLeft, ArrowRight, AlertTriangle, Download } from "lucide-react"
 import { useAnandaStore, hasProductTargets, hasRecommendedSolution, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
+import { useMotors, useBatteries, useDisplays, useControllers } from "@/lib/ananda-packages"
+import { getPackageModifications } from "@/lib/ananda-package-diff"
+import { PackageChangeDialog } from "./package-change-dialog"
 import { WelcomeScreen } from "./welcome-screen"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
@@ -58,12 +61,32 @@ export function AnandaConfigurator() {
   }
   const openSection = (index: number) => { setOpen(index); setAttemptedNext(false); state.setStep(index + 1); window.scrollTo({ top: 0, behavior: "smooth" }) }
   const openStepNumber = (stepNumber: number) => { if (unlocked[stepNumber - 1]) openSection(stepNumber - 1) }
+
+  // Step 5 (index 4) is "Package Configuration" — before leaving it, diff the
+  // live selections against the recommended (Best Match) baseline captured
+  // when the Step 4 solution was applied, and block navigation with a
+  // confirmation dialog if the user has deviated from any recommendation.
+  const PACKAGE_CONFIG_STEP_INDEX = 4
+  const { motors } = useMotors()
+  const { batteries } = useBatteries()
+  const { displays } = useDisplays()
+  const { controllers } = useControllers()
+  const [changeDialogOpen, setChangeDialogOpen] = useState(false)
+  const packageModifications = useMemo(
+    () => (open === PACKAGE_CONFIG_STEP_INDEX ? getPackageModifications(state, { motors, batteries, displays, controllers }) : []),
+    [open, state, motors, batteries, displays, controllers],
+  )
+
   const goNext = () => {
     if (open >= labels.length - 1) return
     if (!complete[open]) {
       setAttemptedNext(true)
       const items = getIncompleteItems(open, state)
       scrollToTarget(items[0]?.targetId ?? null)
+      return
+    }
+    if (open === PACKAGE_CONFIG_STEP_INDEX && packageModifications.length > 0) {
+      setChangeDialogOpen(true)
       return
     }
     openSection(open + 1)
@@ -140,6 +163,12 @@ export function AnandaConfigurator() {
           </main><aside className="hidden xl:block"><ConfigSummaryPanel /></aside></div></div>
         </div>
       </div>
+      <PackageChangeDialog
+        open={changeDialogOpen}
+        onOpenChange={setChangeDialogOpen}
+        modifications={packageModifications}
+        onConfirm={() => openSection(open + 1)}
+      />
     </div>
   )
 }
