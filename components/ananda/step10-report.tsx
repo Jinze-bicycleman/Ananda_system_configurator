@@ -294,6 +294,50 @@ export function Step10Report() {
         )}
       </ReportSection>
 
+      {/* ─── Climbing Ability ─── */}
+      <ReportSection title="Climbing Ability">
+        <Row label="Rider Weight" value={`${climbing.riderWeightKg} kg`} />
+        <Row label="Assistance Mode" value={climbing.assistanceModeLabel} />
+        <Row label="Pedal Effort" value={climbing.pedalEffortLabel} />
+
+        {!climbing.result ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Motor, drivetrain gearing and wheel circumference must be configured to estimate climbing ability.
+          </p>
+        ) : climbing.result.status === "missing-data" ? (
+          <div className="mt-3 flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
+            <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <p className="text-sm font-body text-warning-foreground">
+              Missing {climbing.result.missingFields.join(", ")} — climbing ability cannot be estimated.
+            </p>
+          </div>
+        ) : (
+          <>
+            <Row label="Motor-Assist Torque" value={`${Math.round(climbing.result.assistance.motorTorqueDeliveredNm * 10) / 10} Nm`} />
+            <Row label="Total Wheel Torque" value={`${Math.round(climbing.result.totalWheelTorqueNm * 10) / 10} Nm`} />
+            {climbing.result.status === "exceeded" ? (
+              <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
+                <p className="text-xs font-body text-muted-foreground">
+                  The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Row label="Maximum Theoretical Grade" value={`${climbing.result.gradePercent?.toFixed(1)}%`} highlight />
+                {climbing.result.scenario && <Row label="Comparable To" value={climbing.result.scenario.label} />}
+              </>
+            )}
+            <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
+              <p className="text-xs font-body text-muted-foreground">
+                Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal
+                limits, tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and
+                rider technique.
+              </p>
+            </div>
+          </>
+        )}
+      </ReportSection>
+
       {/* ─── Cable & Harness Specification ─── */}
       <ReportSection title="Cable & Harness Specification">
         <div className="overflow-x-auto -mx-1">
