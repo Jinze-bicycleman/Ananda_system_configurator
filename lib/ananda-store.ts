@@ -48,9 +48,18 @@ export interface AnandaConfig {
   gearSystem: string | null
   transmissionType: "derailleur" | "internal_gear_hub" | "cvt" | "single_speed" | "gearbox" | null
   selectedComponentIds: string[]
+  // Tooth-count-driven drivetrain configuration (Step 6). `frontTeeth` is the
+  // front chainring; `rearTeeth`/`largestRearTeeth` are the smallest/largest
+  // rear sprocket. Only these three integers are required going forward.
   frontTeeth: number | null
   rearTeeth: number | null
+  largestRearTeeth: number | null
   selectedBeltId: string | null
+  // Climbing Ability panel (Step 6) inputs — preserved across navigation.
+  climbingRiderWeightKg: number
+  climbingAssistanceModeKey: string
+  climbingPedalEffortKey: "relaxed" | "normal" | "hard"
+  climbingCustomPedalTorqueNm: number | null
   centerDistanceMm: number | null
   adjustmentMm: number | null
   drivetrainEfficiency: number
@@ -125,8 +134,9 @@ const defaultState: AnandaConfig = {
   remoteId: null, skippedItems: [], drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
   cadenceRpm: 80, gearRatio: null, estimatedSpeedKmh: null,
   estimatedOnWheelTorqueNm: null, gearSystem: null,
-  transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null,
+  transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, largestRearTeeth: null,
   selectedBeltId: null, centerDistanceMm: null, adjustmentMm: null, drivetrainEfficiency: 0.95,
+  climbingRiderWeightKg: 75, climbingAssistanceModeKey: "eco", climbingPedalEffortKey: "normal", climbingCustomPedalTorqueNm: null,
   drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false, gvwKg: null,
   frameHasBeltOpening: null, beltAlternateInstallationApproved: false, tensioningMethod: null,
   frameStiffnessVerified: null, frontPulleyClearanceVerified: false, rearPulleyClearanceVerified: false,
@@ -264,13 +274,19 @@ const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
 export const hasCoreComponents = (state: AnandaConfig) =>
   hasMotor(state) && packageItemKeys(state.driveType).every((key) => isItemSatisfied(state, key))
 
+// Drivetrain configuration now only requires three positive-integer tooth
+// counts (front chainring, smallest/largest rear sprocket) — no branded
+// chain/cassette/derailleur selection. See lib/ananda-climbing.ts for the
+// validation rule (smallest <= largest).
 export const hasDrivetrain = (state: AnandaConfig) =>
   Boolean(
-    state.drivetrainType &&
-      state.transmissionType &&
-      state.selectedComponentIds.length > 0 &&
-      state.drivetrainErrors.length === 0 &&
-      (state.drivetrainWarnings.length === 0 || state.warningsAcknowledged),
+    state.frontTeeth != null &&
+      state.frontTeeth > 0 &&
+      state.rearTeeth != null &&
+      state.rearTeeth > 0 &&
+      state.largestRearTeeth != null &&
+      state.largestRearTeeth > 0 &&
+      state.rearTeeth <= state.largestRearTeeth,
   )
 export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId) || state.skippedItems.includes("batteryId")
 export const hasAccessories = (_state: AnandaConfig) => true
