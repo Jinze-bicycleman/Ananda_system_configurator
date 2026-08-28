@@ -54,10 +54,10 @@ export function TargetStatusPanel() {
               <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", STATUS_DOT[row.status])} />
               <div className="min-w-0">
                 <p className="text-[11px] font-sans font-semibold text-foreground leading-tight">{row.dimension}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">Target: {row.targetLabel}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug">Target: {row.targetLabel}</p>
               </div>
             </div>
-            <span className="max-w-[42%] shrink-0 text-[11px] font-sans font-bold text-graphite text-right leading-tight">{row.currentLabel}</span>
+            <span className="max-w-[42%] shrink-0 text-[11px] font-sans font-bold tabular-nums text-graphite text-right leading-tight">{row.currentLabel}</span>
           </div>
         ))}
       </div>
@@ -83,7 +83,7 @@ function ImpactRow({ label, before, after }: { label: string; before: string; af
   return (
     <div className="flex items-center justify-between">
       <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-1.5 text-[11px] font-sans font-bold">
+      <span className="flex items-center gap-1.5 text-[11px] font-sans font-bold tabular-nums">
         <span className="text-muted-foreground">{before}</span>
         <ArrowRight className="h-3 w-3 text-muted-foreground" />
         <span className={changed ? "text-primary" : "text-graphite"}>{after}</span>

@@ -293,7 +293,7 @@ function InheritedField({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-sans font-bold text-graphite">{value}</p>
+      <p className="text-sm font-sans font-bold tabular-nums text-graphite">{value}</p>
     </div>
   )
 }

@@ -35,7 +35,7 @@ function Row({ label, value, highlight, warn }: { label: string; value: string; 
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={cn("text-[12px] font-sans font-semibold text-right", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
+      <span className={cn("text-[12px] font-sans font-semibold text-right tabular-nums", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
         {value}
       </span>
     </div>
@@ -127,10 +127,10 @@ export function Step10Report() {
                 <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", STATUS_DOT[r.status])} />
                 <div className="min-w-0">
                   <p className="text-[12px] font-sans font-semibold text-foreground leading-tight">{r.dimension}</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Target: {r.targetLabel}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">Target: {r.targetLabel}</p>
                 </div>
               </div>
-              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold text-graphite text-right leading-tight">{r.currentLabel}</span>
+              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold tabular-nums text-graphite text-right leading-tight">{r.currentLabel}</span>
             </div>
           ))}
         </div>
@@ -316,7 +316,7 @@ export function Step10Report() {
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] font-body text-muted-foreground mt-3">
+        <p className="text-xs font-body leading-relaxed text-muted-foreground mt-3">
           Cable lengths reflect the values set on the System Diagram step and are included in the downloadable PDF report.
         </p>
       </ReportSection>
@@ -346,9 +346,9 @@ export function Step10Report() {
           {battery?.weight_kg && <Row label="Battery" value={`${battery.weight_kg} kg`} />}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border">
             <span className="text-[11px] font-sans font-black uppercase tracking-wider text-graphite">Total (Motor + Battery)</span>
-            <span className="text-lg font-sans font-black text-primary">{systemWeightKg.toFixed(1)} kg</span>
+            <span className="text-lg font-sans font-black tabular-nums text-primary">{systemWeightKg.toFixed(1)} kg</span>
           </div>
-          <p className="text-[10px] font-body text-muted-foreground mt-2">
+          <p className="text-xs font-body leading-relaxed text-muted-foreground mt-2">
             Weight estimate includes motor and battery only. Accessories, sensors, and ancillary components are not included in this total.
           </p>
         </ReportSection>

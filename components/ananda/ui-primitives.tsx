@@ -63,7 +63,7 @@ export function TechSpecRow({ label, value, unit, highlight }: TechSpecRowProps)
           Spec Missing
         </span>
       ) : (
-        <span className={cn("text-sm font-sans font-bold", highlight ? "text-primary" : "text-foreground")}>
+        <span className={cn("text-sm font-sans font-bold tabular-nums", highlight ? "text-primary" : "text-foreground")}>
           {value}{unit ? ` ${unit}` : ""}
         </span>
       )}
@@ -81,7 +81,7 @@ export function BigSpec({ value, unit, label }: BigSpecProps) {
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-end gap-1 leading-none">
-        <span className="text-3xl font-sans font-black text-graphite">{value ?? "—"}</span>
+        <span className="text-3xl font-sans font-black tabular-nums text-graphite">{value ?? "—"}</span>
         <span className="text-base font-sans font-bold text-primary mb-0.5">{unit}</span>
       </div>
       <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground mt-1">{label}</span>

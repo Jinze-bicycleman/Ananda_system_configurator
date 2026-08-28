@@ -140,7 +140,7 @@ export function ConfigSummaryPanel() {
             <div className="flex items-center gap-2 pt-1">
               <Weight className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Est. System Weight</span>
-              <span className="ml-auto text-sm font-sans font-black text-graphite">{totalKg.toFixed(1)} kg</span>
+              <span className="ml-auto text-sm font-sans font-black tabular-nums text-graphite">{totalKg.toFixed(1)} kg</span>
             </div>
           </>
         )}
@@ -200,7 +200,7 @@ function Row({
         {badge && <StatusBadge variant={badge} />}
         <span
           className={cn(
-            "text-[12px] font-sans font-semibold text-right leading-tight",
+            "text-[12px] font-sans font-semibold text-right leading-tight tabular-nums",
             warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
           )}
         >
