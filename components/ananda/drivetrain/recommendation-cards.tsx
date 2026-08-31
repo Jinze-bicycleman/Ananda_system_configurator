@@ -25,12 +25,12 @@ export function RecommendationCards({
   return (
     <div className="mb-8">
       <SectionLabel>Recommended Setups</SectionLabel>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="responsive-product-grid">
         {positions.map((pos) => {
           const card = recommendations[pos]
           if (!card) {
             return (
-              <div key={pos} className="border border-dashed border-border bg-surface p-5 flex flex-col">
+              <div key={pos} className="product-card border border-dashed border-border bg-surface p-5">
                 <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   {pos === "climbing" ? "Climbing / Cargo" : pos === "balanced" ? "Balanced / Urban" : "Speed / Trekking"}
                 </p>
@@ -43,26 +43,26 @@ export function RecommendationCards({
           const meta = STATUS_META[card.compatibilityStatus]
           const StatusIcon = meta.icon
           return (
-            <div key={pos} className="border border-border bg-white overflow-hidden flex flex-col">
-              <div className="h-1 bg-primary" />
-              <div className="p-5 flex-1 flex flex-col">
+            <div key={pos} className="product-card border border-border bg-white">
+              <div className="h-1 shrink-0 bg-primary" />
+              <div className="flex flex-1 flex-col p-5 min-w-0">
                 <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-primary mb-1">{card.label}</p>
                 <p className="text-sm font-sans font-bold text-graphite mb-3">
                   {card.transmissionType === "derailleur" ? "Derailleur & Cassette" : "CVT (Continuously Variable)"}
                 </p>
 
-                <div className="space-y-1 mb-3 text-xs font-body">
-                  <div className="flex justify-between">
+                <div className="space-y-1.5 mb-3 text-xs font-body">
+                  <div className="spec-row">
                     <span className="text-muted-foreground">Front</span>
-                    <span className="font-semibold text-foreground text-right">{displayName(card.front)}</span>
+                    <span className="spec-value font-semibold text-foreground">{displayName(card.front)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="spec-row">
                     <span className="text-muted-foreground">Rear</span>
-                    <span className="font-semibold text-foreground text-right">{displayName(card.rear)}</span>
+                    <span className="spec-value font-semibold text-foreground">{displayName(card.rear)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="spec-row">
                     <span className="text-muted-foreground">Gear Range</span>
-                    <span className="font-semibold text-foreground">{card.gearRangeLabel}</span>
+                    <span className="spec-value font-semibold text-foreground">{card.gearRangeLabel}</span>
                   </div>
                 </div>
 

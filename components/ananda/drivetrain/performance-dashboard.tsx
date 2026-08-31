@@ -7,10 +7,10 @@ import type { CompatibilityColor, DrivetrainPerformanceRow, EnvioloBoundary } fr
 
 function Stat({ label, value, unit, warning }: { label: string; value: string; unit?: string; warning?: boolean }) {
   return (
-    <div className={cn("border p-3", warning ? "border-warning/40 bg-warning/5" : "border-border bg-white")}>
+    <div className={cn("min-w-0 border p-3", warning ? "border-warning/40 bg-warning/5" : "border-border bg-white")}>
       <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
-      <div className="flex items-end gap-1">
-        <span className={cn("text-xl font-sans font-black", warning ? "text-warning" : "text-graphite")}>{value}</span>
+      <div className="flex flex-wrap items-end gap-1">
+        <span className={cn("text-xl font-sans font-black wrap-anywhere", warning ? "text-warning" : "text-graphite")}>{value}</span>
         {unit && <span className="text-xs font-sans font-bold text-primary mb-0.5">{unit}</span>}
       </div>
     </div>
@@ -84,10 +84,10 @@ export function PerformanceDashboard({
   return (
     <div className="mb-8">
       <SectionLabel>Performance Dashboard</SectionLabel>
-      <div className="border border-border bg-white overflow-hidden">
+      <div className="border border-border bg-white">
         <div className="h-1 bg-primary" />
-        <div className="p-5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+        <div className="min-w-0 p-5">
+          <div className="grid grid-cols-2 gap-3 mb-4 sm:[grid-template-columns:repeat(auto-fit,minmax(9rem,1fr))]">
             <Stat label="Primary Ratio" value={primaryRatioValue != null ? primaryRatioValue.toFixed(2) : "—"} unit=":1" />
             <Stat
               label="Gear Range"

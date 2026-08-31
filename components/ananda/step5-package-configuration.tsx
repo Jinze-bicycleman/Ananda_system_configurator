@@ -129,12 +129,12 @@ function ConfigRow({
       id={`config-${itemKey}`}
       className={cn("mb-6 border", emphasize ? "border-2 border-primary/40 bg-primary/[0.02] p-4" : "border-transparent")}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SectionLabel>{label}</SectionLabel>
           {emphasize && <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Core Component</span>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {required && !skipped && <StatusBadge variant="required" />}
           {skipped && <StatusBadge variant="not-required" label="Marked Not Needed" />}
           <button
@@ -150,8 +150,8 @@ function ConfigRow({
       </div>
 
       {skipped ? (
-        <div className="flex items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
-          <p className="text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
+          <p className="min-w-0 text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
           <button
             onClick={onToggleSkip}
             className="flex shrink-0 items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
@@ -319,7 +319,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {compatibleBatteries.map((b: BatteryRow) => (
             <OptionCard
               key={b.id}
@@ -358,7 +358,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {displays.map((d: HmiDisplayRow) => (
             <OptionCard
               key={d.id}
@@ -413,7 +413,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="product-option-grid">
           {compatibleChargers.map((c: ChargerOption) => (
             <OptionCard
               key={c.id}
@@ -442,7 +442,7 @@ export function Step5PackageConfiguration() {
         onToggleExpanded={() => toggleExpanded("chargingPortId")}
         selectedSummary={selectedPort && <p className="text-sm font-sans font-bold uppercase text-primary">{selectedPort.model}</p>}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {CHARGING_PORTS.map((p: ChargingPortOption) => (
             <OptionCard
               key={p.id}
@@ -479,7 +479,7 @@ export function Step5PackageConfiguration() {
             )
           }
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="product-option-grid">
             {compatibleControllers.map((c: ControllerRow) => (
               <OptionCard
                 key={c.id}
