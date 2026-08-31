@@ -73,7 +73,7 @@ export function Step10Report() {
   return (
     <div>
       <StepHeader
-        step={9}
+        step={8}
         title="Final Configuration Report"
         subtitle="Complete system summary. Review all selections and drivetrain outputs, then download the PDF report below."
       />
@@ -294,7 +294,7 @@ export function Step10Report() {
         )}
       </ReportSection>
 
-      {/* ─── Climbing Ability ─── */}
+      {/* ─── Climbing Ability ──��� */}
       <ReportSection title="Climbing Ability">
         <Row label="Rider Weight" value={`${climbing.riderWeightKg} kg`} />
         <Row label="Assistance Mode" value={climbing.assistanceModeLabel} />

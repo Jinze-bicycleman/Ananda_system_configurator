@@ -213,7 +213,7 @@ export function Step4RecommendedSolutions() {
   return (
     <div>
       <StepHeader
-        step={4}
+        step={3}
         title="Recommended Solutions"
         subtitle="Based on your Product Targets, here are three ranked configurations. Pick one to carry forward — you can fine-tune every component in Package Configuration."
       />

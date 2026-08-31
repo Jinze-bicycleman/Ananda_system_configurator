@@ -76,7 +76,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   return (
     <div>
       <StepHeader
-        step={6}
+        step={5}
         title="Drivetrain & Climbing"
         subtitle="Enter the gearing on your bike and see the resulting speed range, cadence and climbing ability with the selected motor."
       />
