@@ -84,9 +84,9 @@ export function Step3ProductTargets() {
   return (
     <div>
       <StepHeader
-        step={3}
-        title="Product Targets"
-        subtitle="Define what this e-bike system needs to achieve before we recommend a configuration. These targets drive the Recommended Solutions in the next step."
+        step={2}
+        title="Rider Profile & Product Targets"
+        subtitle="Choose the bicycle application that best matches the rider, and define what this e-bike system needs to achieve. These targets drive the Recommended Solutions in the next step."
       />
 
       {/* Inherited constraints — read-only context from Step 1 & 2 */}
