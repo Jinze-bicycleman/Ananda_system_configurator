@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react"
 import { AlertTriangle, Info } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 import { SectionLabel, TechSpecRow } from "../ui-primitives"
 import { ClimbingSlopeVisual } from "./climbing-slope-visual"
 import {
@@ -119,48 +119,50 @@ export function ClimbingAbilityPanel({
         {modesLoading ? (
           <div className="h-9 w-full animate-pulse bg-muted" />
         ) : (
-          <ToggleGroup
-            type="single"
-            value={activeMode?.mode_key}
-            onValueChange={(v) => v && onAssistanceModeChange(v)}
-            className="w-full flex-wrap justify-start gap-1.5"
-            aria-label="Assistance mode"
-          >
+          <div className="choice-group" role="group" aria-label="Assistance mode">
             {modes.map((m) => (
-              <ToggleGroupItem
+              <button
                 key={m.mode_key}
-                value={m.mode_key}
-                className="border border-border data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary text-sm font-body"
+                type="button"
+                onClick={() => onAssistanceModeChange(m.mode_key)}
+                aria-pressed={activeMode?.mode_key === m.mode_key}
+                className={cn(
+                  "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
+                  activeMode?.mode_key === m.mode_key
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-graphite hover:border-primary/40",
+                )}
               >
-                {m.display_label}
-                <span className="ml-1 text-xs tabular-nums text-muted-foreground">{m.assistance_multiplier.toFixed(1)}×</span>
-              </ToggleGroupItem>
+                <span className="text-sm font-body leading-tight">{m.display_label}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">{m.assistance_multiplier.toFixed(1)}×</span>
+              </button>
             ))}
-          </ToggleGroup>
+          </div>
         )}
       </div>
 
       {/* Pedal effort */}
       <div className="flex flex-col gap-2">
         <span className="text-sm font-sans font-semibold text-graphite">Rider pedalling effort</span>
-        <ToggleGroup
-          type="single"
-          value={pedalEffortKey}
-          onValueChange={(v) => v && onPedalEffortChange(v as PedalEffortKey)}
-          className="w-full flex-wrap justify-start gap-1.5"
-          aria-label="Rider pedalling effort"
-        >
+        <div className="choice-group" role="group" aria-label="Rider pedalling effort">
           {PEDAL_EFFORT_PRESETS.map((p) => (
-            <ToggleGroupItem
+            <button
               key={p.key}
-              value={p.key}
-              className="border border-border data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary text-sm font-body"
+              type="button"
+              onClick={() => onPedalEffortChange(p.key)}
+              aria-pressed={pedalEffortKey === p.key}
+              className={cn(
+                "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
+                pedalEffortKey === p.key
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-graphite hover:border-primary/40",
+              )}
             >
-              {p.label}
-              <span className="ml-1 text-xs tabular-nums text-muted-foreground">{p.torqueNm} Nm</span>
-            </ToggleGroupItem>
+              <span className="text-sm font-body leading-tight">{p.label}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">{p.torqueNm} Nm</span>
+            </button>
           ))}
-        </ToggleGroup>
+        </div>
       </div>
 
       {/* Live output */}
