@@ -290,7 +290,7 @@ export function Step9SystemDiagram() {
     return (
       <div>
         <StepHeader
-          step={8}
+          step={7}
           title="System Diagram Overview"
           subtitle="Interactive system architecture diagram based on your configuration. Select a connection below to inspect it, and edit cable lengths as needed."
         />
@@ -302,7 +302,7 @@ export function Step9SystemDiagram() {
   return (
     <div>
       <StepHeader
-        step={8}
+        step={7}
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />

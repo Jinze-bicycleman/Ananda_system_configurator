@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight, AlertTriangle, Download, PanelRightOpen } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useAnandaStore, hasProductTargets, hasRecommendedSolution, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
+import {
+  useAnandaStore,
+  hasBikeCategory,
+  hasProductTargets,
+  hasRecommendedSolution,
+  hasCoreComponents,
+  hasDrivetrain,
+} from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
 import { useMotors, useBatteries, useDisplays, useControllers } from "@/lib/ananda-packages"
@@ -13,7 +20,6 @@ import { WelcomeScreen } from "./welcome-screen"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
 import { Step1ProjectContext } from "./step1-project-context"
-import { Step2BikeCategory } from "./step2-bike-category"
 import { Step3ProductTargets } from "./step3-product-targets"
 import { Step4RecommendedSolutions } from "./step4-recommended-solutions"
 import { Step5PackageConfiguration } from "./step5-package-configuration"
@@ -22,14 +28,14 @@ import { Step8Accessories } from "./step8-accessories"
 import { Step9SystemDiagram } from "./step9-system-diagram"
 import { Step10Report } from "./step10-report"
 
-const labels = ["Sell Region & Regulation", "Bike Category", "Product Targets", "Recommended Solutions", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
+const labels = ["Sell Region & Regulation", "Rider Profile & Targets", "Recommended Solutions", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
-  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), 8))
-  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), 8)) }, [state.currentStep])
+  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), 7))
+  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), 7)) }, [state.currentStep])
   const reportData = useReportData()
   const [downloadingReport, setDownloadingReport] = useState(false)
   const handleDownloadReport = async () => {
@@ -43,8 +49,8 @@ export function AnandaConfigurator() {
 
   const complete = useMemo(() => [
     Boolean(state.sellRegion && state.regulation),
-    Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm),
-    hasProductTargets(state), hasRecommendedSolution(state), hasCoreComponents(state),
+    Boolean(hasBikeCategory(state) && hasProductTargets(state)),
+    hasRecommendedSolution(state), hasCoreComponents(state),
     hasDrivetrain(state), true, true, false,
   ], [state])
   const unlocked = complete.map((_, index) => index === 0 || complete[index - 1])
@@ -67,7 +73,7 @@ export function AnandaConfigurator() {
   // live selections against the recommended (Best Match) baseline captured
   // when the Step 4 solution was applied, and block navigation with a
   // confirmation dialog if the user has deviated from any recommendation.
-  const PACKAGE_CONFIG_STEP_INDEX = 4
+  const PACKAGE_CONFIG_STEP_INDEX = 3
   const { motors } = useMotors()
   const { batteries } = useBatteries()
   const { displays } = useDisplays()
@@ -94,7 +100,7 @@ export function AnandaConfigurator() {
   }
   const goBack = () => { if (open > 0) openSection(open - 1) }
   const content = [
-    <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />, <Step3ProductTargets key="targets" />,
+    <Step1ProjectContext key="sell-region" />, <Step3ProductTargets key="targets" />,
     <Step4RecommendedSolutions key="solutions" />, <Step5PackageConfiguration key="config" />,
     <Step6DrivetrainSelection key="drivetrain" onEditStep={openStepNumber} />, <Step8Accessories key="accessories" />,
     <Step9SystemDiagram key="diagram" />, <Step10Report key="report" />,

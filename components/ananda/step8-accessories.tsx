@@ -19,7 +19,7 @@ export function Step8Accessories() {
   return (
     <div>
       <StepHeader
-        step={7}
+        step={6}
         title="Accessories"
         subtitle="Select optional accessories for the system. All items show technical specifications and weight only. Toggle to add or remove."
       />

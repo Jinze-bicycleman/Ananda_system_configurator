@@ -36,23 +36,22 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
       break
     }
     case 1: {
-      if (!s.bikeCategory) items.push({ message: "Choose a bike category.", targetId: "field-bikeCategory" })
-      if (!s.wheelSize) items.push({ message: "Select a wheel size.", targetId: "field-wheelSize" })
+      // Bike Category (rider profile) and Product Targets were merged into a
+      // single step — validate both sets of requirements together.
+      if (!s.bikeCategory) items.push({ message: "Choose a rider profile / bike category.", targetId: "field-bikeCategory" })
+      else if (!s.wheelSize) items.push({ message: "Select a wheel size.", targetId: "field-wheelSize" })
       else if (!s.tyreCircumferenceMm) items.push({ message: "Enter or look up a tyre circumference.", targetId: "field-wheelSize" })
-      break
-    }
-    case 2: {
-      if (!s.productTargets.ambition.positioning) items.push({ message: "Choose a market positioning for Product Ambition.", targetId: "field-productTargets" })
+      else if (!s.productTargets.ambition.positioning) items.push({ message: "Choose a market positioning for Product Ambition.", targetId: "field-productTargets" })
       else if (!s.productTargets.ambition.costPriority) items.push({ message: "Choose a cost priority for Product Ambition.", targetId: "field-productTargets" })
       else if (s.productTargets.weight.targetKg == null && s.productTargets.weight.maxKg == null) items.push({ message: "Set a weight target or select a rider profile.", targetId: "field-weightTarget" })
       else if (s.productTargets.performance.rangeTargetKm == null) items.push({ message: "Set a range target or select a rider profile.", targetId: "field-rangeTarget" })
       break
     }
-    case 3: {
+    case 2: {
       if (!s.selectedSolutionId) items.push({ message: "Select one of the recommended solutions.", targetId: "field-solutions" })
       break
     }
-    case 4: {
+    case 3: {
       for (const key of packageItemKeys(s.driveType)) {
         if (!isItemSatisfied(s, key)) {
           const label = CORE_COMPONENT_LABELS[key] ?? String(key)
@@ -61,7 +60,7 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
       }
       break
     }
-    case 5: {
+    case 4: {
       if (!s.drivetrainType) {
         items.push({ message: "Select a drivetrain type (chain or belt).", targetId: "field-drivetrainType" })
       } else if (!s.transmissionType) {

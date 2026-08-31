@@ -251,7 +251,7 @@ export function Step5PackageConfiguration() {
   return (
     <div>
       <StepHeader
-        step={5}
+        step={4}
         title="Package Configuration"
         subtitle="Fine-tune the components bundled with your selected package. Each item defaults to the Best Match recommendation, can be customised from compatible alternatives, or marked as not needed where allowed."
       />

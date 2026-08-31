@@ -31,7 +31,7 @@ export function DrivetrainSummary({ onEditStep }: { onEditStep: (stepNumber: num
             <Pencil className="w-3 h-3" /> Edit Bike
           </button>
           <button
-            onClick={() => onEditStep(5)}
+            onClick={() => onEditStep(4)}
             className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary hover:underline"
           >
             <Pencil className="w-3 h-3" /> Edit Motor Package
