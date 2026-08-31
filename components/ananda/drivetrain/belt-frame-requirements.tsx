@@ -183,12 +183,12 @@ export function BeltFrameRequirements({
                   key={c.belt.id}
                   onClick={() => onSelectBelt(c.belt.id)}
                   className={cn(
-                    "w-full flex items-center justify-between border p-3 text-left transition-colors",
+                    "w-full flex flex-wrap items-center justify-between gap-2 border p-3 text-left transition-colors",
                     selectedBeltId === c.belt.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
                   )}
                 >
-                  <span className="text-xs font-sans font-semibold text-graphite">{c.belt.display_name ?? c.belt.model}</span>
-                  <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-warning">{c.label}</span>
+                  <span className="min-w-0 text-xs font-sans font-semibold text-graphite">{c.belt.display_name ?? c.belt.model}</span>
+                  <span className="shrink-0 text-[10px] font-sans font-bold uppercase tracking-wider text-warning">{c.label}</span>
                 </button>
               ))}
             </div>

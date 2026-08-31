@@ -43,11 +43,11 @@ function OptionCard({
     <div
       onClick={onSelect}
       className={cn(
-        "relative cursor-pointer border-2 overflow-hidden transition-all",
+        "product-card relative cursor-pointer border-2 transition-all",
         selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
       )}
     >
-      <div className={cn("h-1 w-full", selected ? "bg-primary" : "bg-border")} />
+      <div className={cn("h-1 w-full shrink-0", selected ? "bg-primary" : "bg-border")} />
       {isBestMatch && (
         <div className="absolute left-2 top-2 z-10">
           <StatusBadge variant="recommended" label="Best Match" />
@@ -58,18 +58,20 @@ function OptionCard({
           <CheckCircle2 className="w-3 h-3 text-white" />
         </div>
       )}
-      <div className={cn("relative flex items-center justify-center h-24 overflow-hidden", selected ? "bg-primary/5" : "bg-surface")}>
+      <div className={cn("relative flex shrink-0 items-center justify-center h-24 overflow-hidden", selected ? "bg-primary/5" : "bg-surface")}>
         {imageUrl ? (
           <img src={imageUrl || "/placeholder.svg"} alt={title} className="relative z-10 max-h-16 object-contain" crossOrigin="anonymous" />
         ) : (
           <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />
         )}
       </div>
-      <div className="p-3">
-        <p className={cn("text-sm font-sans font-bold uppercase mb-1", selected ? "text-primary" : "text-graphite")}>{title}</p>
+      <div className="min-w-0 p-3">
+        <p className={cn("text-sm font-sans font-bold uppercase mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
         {specs.length > 0 && (
-          <div className="border border-border rounded-sm overflow-hidden">
-            {specs.map((sp) => sp.value != null && <TechSpecRow key={sp.label} label={sp.label} value={sp.value} />)}
+          <div className="min-w-0 border border-border rounded-sm">
+            {specs.map((sp) => sp.value != null && (
+              <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
+            ))}
           </div>
         )}
       </div>
@@ -127,12 +129,12 @@ function ConfigRow({
       id={`config-${itemKey}`}
       className={cn("mb-6 border", emphasize ? "border-2 border-primary/40 bg-primary/[0.02] p-4" : "border-transparent")}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SectionLabel>{label}</SectionLabel>
           {emphasize && <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Core Component</span>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {required && !skipped && <StatusBadge variant="required" />}
           {skipped && <StatusBadge variant="not-required" label="Marked Not Needed" />}
           <button
@@ -148,8 +150,8 @@ function ConfigRow({
       </div>
 
       {skipped ? (
-        <div className="flex items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
-          <p className="text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
+          <p className="min-w-0 text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
           <button
             onClick={onToggleSkip}
             className="flex shrink-0 items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
@@ -277,7 +279,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {compatibleMotors.map((m: MotorRow) => (
             <OptionCard
               key={m.id}
@@ -317,7 +319,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {compatibleBatteries.map((b: BatteryRow) => (
             <OptionCard
               key={b.id}
@@ -356,7 +358,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {displays.map((d: HmiDisplayRow) => (
             <OptionCard
               key={d.id}
@@ -411,7 +413,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="product-option-grid">
           {compatibleChargers.map((c: ChargerOption) => (
             <OptionCard
               key={c.id}
@@ -440,7 +442,7 @@ export function Step5PackageConfiguration() {
         onToggleExpanded={() => toggleExpanded("chargingPortId")}
         selectedSummary={selectedPort && <p className="text-sm font-sans font-bold uppercase text-primary">{selectedPort.model}</p>}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {CHARGING_PORTS.map((p: ChargingPortOption) => (
             <OptionCard
               key={p.id}
@@ -477,7 +479,7 @@ export function Step5PackageConfiguration() {
             )
           }
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="product-option-grid">
             {compatibleControllers.map((c: ControllerRow) => (
               <OptionCard
                 key={c.id}

@@ -38,7 +38,7 @@ export function DriveTypeCards({
   onSelect: (type: "chain" | "belt") => void
 }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div className="mb-8 grid grid-cols-1 gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr))]">
       {(["chain", "belt"] as const).map((type) => {
         const meta = DRIVE_TYPE_META[type]
         const isSelected = selected === type
@@ -48,11 +48,11 @@ export function DriveTypeCards({
           <div
             key={type}
             className={cn(
-              "relative border-2 overflow-hidden transition-all",
+              "relative min-w-0 border-2 transition-all",
               isSelected ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/40",
             )}
           >
-            <div className={cn("h-1.5 w-full", isSelected ? "bg-primary" : "bg-border")} />
+            <div className={cn("h-1.5 w-full shrink-0", isSelected ? "bg-primary" : "bg-border")} />
             {isSelected && (
               <div className="absolute top-3 right-3">
                 <div className="bg-primary rounded-full p-1">

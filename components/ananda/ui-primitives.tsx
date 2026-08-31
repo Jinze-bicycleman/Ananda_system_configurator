@@ -46,27 +46,72 @@ interface TechSpecRowProps {
   value: string | number | null | undefined
   unit?: string
   highlight?: boolean
+  /** Use for long descriptive values (e.g. port type descriptions) where a
+   * right-aligned two-column layout would look cramped — the label sits
+   * above the value instead. */
+  stacked?: boolean
 }
 
-export function TechSpecRow({ label, value, unit, highlight }: TechSpecRowProps) {
+export function TechSpecRow({ label, value, unit, highlight, stacked }: TechSpecRowProps) {
   const isMissing = value === null || value === undefined || value === ""
   return (
     <div className={cn(
-      "flex items-center justify-between py-1.5 px-3 border-b border-border last:border-0",
+      stacked ? "long-spec-row" : "spec-row",
+      "py-1.5 px-3 border-b border-border last:border-0",
       highlight && !isMissing && "bg-primary/5",
       isMissing && "bg-warning/5",
     )}>
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
       {isMissing ? (
         <span className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-warning">
-          <AlertTriangle className="w-3 h-3" />
+          <AlertTriangle className="w-3 h-3 shrink-0" />
           Spec Missing
         </span>
       ) : (
-        <span className={cn("text-sm font-sans font-bold tabular-nums", highlight ? "text-primary" : "text-foreground")}>
+        <span className={cn(
+          "text-sm font-sans font-bold tabular-nums",
+          stacked ? "text-left wrap-anywhere" : "text-right whitespace-nowrap",
+          highlight ? "text-primary" : "text-foreground",
+        )}>
           {value}{unit ? ` ${unit}` : ""}
         </span>
       )}
+    </div>
+  )
+}
+
+interface ChoiceGroupProps<T extends string> {
+  options: { id: T; label: string; disabled?: boolean }[]
+  value: T | null
+  onChange: (id: T) => void
+  className?: string
+}
+
+// Reusable segmented / choice-button group (Value · Mainstream · Premium,
+// Must Have · Target · Nice to Have, etc). Buttons wrap onto the next row
+// instead of compressing below a readable width, and never overlap a
+// neighboring button's text.
+export function ChoiceGroup<T extends string>({ options, value, onChange, className }: ChoiceGroupProps<T>) {
+  return (
+    <div className={cn("choice-group", className)}>
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          disabled={opt.disabled}
+          onClick={() => onChange(opt.id)}
+          className={cn(
+            "border-2 px-3 py-2 text-center text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+            opt.disabled
+              ? "cursor-not-allowed border-border text-muted-foreground opacity-50"
+              : value === opt.id
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-border text-graphite hover:border-primary/40",
+          )}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   )
 }

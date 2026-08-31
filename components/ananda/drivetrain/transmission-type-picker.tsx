@@ -39,7 +39,7 @@ export function TransmissionTypePicker({
   return (
     <div className="mb-8">
       <SectionLabel>Choose Transmission Type</SectionLabel>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="responsive-product-grid">
         {available.map((type) => {
           const meta = TRANSMISSION_META[type]
           const isSelected = selected === type
@@ -48,7 +48,7 @@ export function TransmissionTypePicker({
               key={type}
               onClick={() => onSelect(type)}
               className={cn(
-                "relative text-left border p-4 transition-all",
+                "relative min-w-0 text-left border p-4 transition-all",
                 isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
               )}
             >

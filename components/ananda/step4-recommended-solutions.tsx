@@ -38,15 +38,17 @@ function RequirementList({ solution }: { solution: RecommendedSolution }) {
 }
 
 // Renders a value with the spec's required "Data unavailable" fallback —
-// never a bare 0, empty string, or placeholder engineering value.
+// never a bare 0, empty string, or placeholder engineering value. Label and
+// value both wrap and align from the top, so long product IDs, dimensions,
+// and protocol lists never clip or overlap.
 function SpecRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   const isMissing = value == null || value === ""
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className={cn("text-sm font-sans font-bold tabular-nums text-right", isMissing ? "italic text-muted-foreground" : "text-graphite")}>
+    <div className="spec-row py-1">
+      <dt className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className={cn("spec-value text-sm font-sans font-bold tabular-nums", isMissing ? "italic text-muted-foreground" : "text-graphite")}>
         {isMissing ? "Data unavailable" : value}
-      </span>
+      </dd>
     </div>
   )
 }
@@ -54,15 +56,17 @@ function SpecRow({ label, value }: { label: string; value: string | number | nul
 function MotorSpecPanel({ solution }: { solution: RecommendedSolution }) {
   const m = solution.motor
   return (
-    <div className="border border-border bg-surface p-3">
+    <div className="min-w-0 border border-border bg-surface p-3">
       <p className="mb-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Motor</p>
-      <SpecRow label="Model" value={m.model} />
-      <SpecRow label="Motor Type" value={m.motor_type === "mid_drive" ? "Mid-Drive" : m.motor_type === "hub" ? "Hub-Drive" : m.motor_type} />
-      <SpecRow label="Weight" value={m.weight_kg != null ? `${m.weight_kg} kg` : null} />
-      <SpecRow label="Max Torque" value={m.torque_nm != null ? `${m.torque_nm} Nm` : null} />
-      <SpecRow label="Rated Power" value={m.rated_power_w != null ? `${m.rated_power_w} W` : null} />
-      <SpecRow label="Crank / Mount Interface" value={m.mounting_interface ?? m.shaft_interface} />
-      <SpecRow label="Voltage" value={m.voltage_v != null ? `${m.voltage_v}V` : null} />
+      <dl className="divide-y divide-border/60">
+        <SpecRow label="Model" value={m.model} />
+        <SpecRow label="Motor Type" value={m.motor_type === "mid_drive" ? "Mid-Drive" : m.motor_type === "hub" ? "Hub-Drive" : m.motor_type} />
+        <SpecRow label="Weight" value={m.weight_kg != null ? `${m.weight_kg} kg` : null} />
+        <SpecRow label="Max Torque" value={m.torque_nm != null ? `${m.torque_nm} Nm` : null} />
+        <SpecRow label="Rated Power" value={m.rated_power_w != null ? `${m.rated_power_w} W` : null} />
+        <SpecRow label="Crank / Mount Interface" value={m.mounting_interface ?? m.shaft_interface} />
+        <SpecRow label="Voltage" value={m.voltage_v != null ? `${m.voltage_v}V` : null} />
+      </dl>
     </div>
   )
 }
@@ -72,19 +76,23 @@ function BatterySpecPanel({ solution }: { solution: RecommendedSolution }) {
   const dims = b.length_mm != null && b.width_mm != null && b.height_mm != null ? `${b.length_mm} × ${b.width_mm} × ${b.height_mm} mm` : null
   const comms = b.communication_protocols?.length ? b.communication_protocols.join(", ") : b.communication_protocol
   return (
-    <div className="border border-border bg-surface p-3">
+    <div className="min-w-0 border border-border bg-surface p-3">
       <p className="mb-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Battery</p>
-      <SpecRow label="Model" value={b.model} />
-      <SpecRow label="Weight" value={b.weight_kg != null ? `${b.weight_kg} kg` : null} />
-      {/* Dimensions must be visually prominent — customers need to check frame fit. */}
-      <div className="my-1.5 flex items-baseline justify-between gap-3 border-y border-dashed border-border py-1.5">
-        <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Dimensions (L × W × H)</span>
-        <span className={cn("text-base font-sans font-black tabular-nums text-right", dims ? "text-graphite" : "italic text-muted-foreground")}>
-          {dims ?? "Data unavailable"}
-        </span>
-      </div>
-      <SpecRow label="Capacity" value={b.capacity_wh != null ? `${b.capacity_wh} Wh` : null} />
-      <SpecRow label="Communication" value={comms} />
+      <dl className="divide-y divide-border/60">
+        <SpecRow label="Model" value={b.model} />
+        <SpecRow label="Weight" value={b.weight_kg != null ? `${b.weight_kg} kg` : null} />
+        {/* Dimensions must be visually prominent — customers need to check
+            frame fit. Stacked, not right-aligned, so the full value is
+            always readable regardless of card width. */}
+        <div className="long-spec-row border-y border-dashed border-border py-1.5">
+          <dt className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Dimensions (L × W × H)</dt>
+          <dd className={cn("text-base font-sans font-black tabular-nums wrap-anywhere", dims ? "text-graphite" : "italic text-muted-foreground")}>
+            {dims ?? "Data unavailable"}
+          </dd>
+        </div>
+        <SpecRow label="Capacity" value={b.capacity_wh != null ? `${b.capacity_wh} Wh` : null} />
+        <SpecRow label="Communication" value={comms} />
+      </dl>
     </div>
   )
 }
@@ -103,7 +111,7 @@ function SolutionCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col border-2 overflow-hidden transition-all",
+        "solution-card product-card relative flex flex-col border-2 transition-all",
         selected ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/40",
       )}
     >
@@ -118,7 +126,7 @@ function SolutionCard({
         )}
       </div>
 
-      <div className="p-4">
+      <div className="min-w-0 p-4">
         <p className="text-xs font-body leading-relaxed text-muted-foreground">{solution.rationale}</p>
 
         <div className="mt-4 flex items-center justify-around border border-border bg-surface py-3">
@@ -132,25 +140,25 @@ function SolutionCard({
         {/* Two equal, first-class specification panels: Motor and Battery
             are peers here, not a headline motor with battery as an
             afterthought text row. */}
-        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="solution-specifications mt-3">
           <MotorSpecPanel solution={solution} />
           <BatterySpecPanel solution={solution} />
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-          <div className="border border-border px-2 py-1.5">
+          <div className="min-w-0 border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Display</p>
-            <p className="font-sans font-bold text-graphite">{solution.display?.model ?? "—"}</p>
+            <p className="font-sans font-bold text-graphite wrap-anywhere">{solution.display?.model ?? "—"}</p>
           </div>
-          <div className="border border-border px-2 py-1.5">
+          <div className="min-w-0 border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Cost Tier</p>
-            <p className="font-sans font-bold text-graphite">{solution.costLabel}</p>
+            <p className="font-sans font-bold text-graphite wrap-anywhere">{solution.costLabel}</p>
           </div>
-          <div className="border border-border px-2 py-1.5">
+          <div className="min-w-0 border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Integration</p>
-            <p className="font-sans font-bold text-graphite">{solution.tradeoffs.integration}</p>
+            <p className="font-sans font-bold text-graphite wrap-anywhere">{solution.tradeoffs.integration}</p>
           </div>
-          <div className="border border-border px-2 py-1.5">
+          <div className="min-w-0 border border-border px-2 py-1.5">
             <p className="text-muted-foreground uppercase tracking-wider">Est. Range</p>
             <p className="font-sans font-bold text-graphite">{solution.rangeKm} km</p>
           </div>
@@ -221,7 +229,7 @@ export function Step4RecommendedSolutions() {
           <p className="mx-auto max-w-md text-sm font-body text-muted-foreground">{noSolutionReason}</p>
         </div>
       ) : (
-        <div id="field-solutions" className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div id="field-solutions" className="responsive-product-grid">
           {solutions.map((solution) => (
             <SolutionCard
               key={solution.id}

@@ -13,37 +13,9 @@ import {
   type TorqueBand,
   type FunctionLevel,
 } from "@/lib/ananda-product-targets"
-import { StepHeader, SectionLabel } from "./ui-primitives"
+import { StepHeader, SectionLabel, ChoiceGroup } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronDown, Settings2 } from "lucide-react"
-
-function SegmentedControl<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: { id: T; label: string }[]
-  value: T | null
-  onChange: (id: T) => void
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {options.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          onClick={() => onChange(opt.id)}
-          className={cn(
-            "border-2 px-2 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
-            value === opt.id ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
-          )}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 const FUNCTION_LEVELS: { id: FunctionLevel; label: string }[] = [
   { id: "must", label: "Must Have" },
@@ -62,16 +34,16 @@ function FunctionRow({
   onChange: (level: FunctionLevel) => void
 }) {
   return (
-    <div className="flex flex-col gap-2 border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
       <span className="text-sm font-sans font-semibold text-graphite">{label}</span>
-      <div className="grid grid-cols-2 gap-1.5 sm:flex sm:gap-1.5">
+      <div className="choice-group sm:w-auto sm:justify-end">
         {FUNCTION_LEVELS.map((lvl) => (
           <button
             key={lvl.id}
             type="button"
             onClick={() => onChange(lvl.id)}
             className={cn(
-              "border px-2 py-1 text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
+              "border px-2 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
               value === lvl.id ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
             )}
           >
@@ -110,7 +82,7 @@ export function Step3ProductTargets() {
       {/* Rider profile presets */}
       <div id="field-productTargets" className="mb-8">
         <SectionLabel>Rider Profile (Quick Assessment)</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))]">
           {RIDER_PROFILES.map((preset) => {
             const selected = t.presetId === preset.id
             return (
@@ -119,7 +91,7 @@ export function Step3ProductTargets() {
                 type="button"
                 onClick={() => s.setProductTarget(applyRiderProfile(preset))}
                 className={cn(
-                  "relative border-2 p-4 text-left transition-all",
+                  "relative min-w-0 border-2 p-4 text-left transition-all",
                   selected ? "border-primary bg-primary/5 shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
                 )}
               >
@@ -139,10 +111,10 @@ export function Step3ProductTargets() {
       </div>
 
       {/* Weight / Range / Torque bands */}
-      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div id="field-weightTarget">
+      <div className="mb-8 grid grid-cols-1 gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
+        <div id="field-weightTarget" className="min-w-0">
           <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">System Weight</p>
-          <SegmentedControl
+          <ChoiceGroup
             options={(Object.keys(WEIGHT_BANDS) as WeightBand[]).map((id) => ({ id, label: WEIGHT_BANDS[id].label.split(" (")[0] }))}
             value={t.weight.band}
             onChange={(band) => {
@@ -151,9 +123,9 @@ export function Step3ProductTargets() {
             }}
           />
         </div>
-        <div id="field-rangeTarget">
+        <div id="field-rangeTarget" className="min-w-0">
           <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Range</p>
-          <SegmentedControl
+          <ChoiceGroup
             options={(Object.keys(RANGE_BANDS) as RangeBand[]).map((id) => ({ id, label: RANGE_BANDS[id].label.split(" (")[0] }))}
             value={t.performance.rangeBand}
             onChange={(band) => {
@@ -162,9 +134,9 @@ export function Step3ProductTargets() {
             }}
           />
         </div>
-        <div id="field-torqueTarget">
+        <div id="field-torqueTarget" className="min-w-0">
           <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Torque</p>
-          <SegmentedControl
+          <ChoiceGroup
             options={(Object.keys(TORQUE_BANDS) as TorqueBand[]).map((id) => ({ id, label: TORQUE_BANDS[id].label.split(" (")[0] }))}
             value={t.performance.torqueBand}
             onChange={(band) => {
@@ -189,10 +161,10 @@ export function Step3ProductTargets() {
       {/* Product ambition */}
       <div className="mb-8">
         <SectionLabel>Product Ambition</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
+        <div className="grid grid-cols-1 gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
+          <div className="min-w-0">
             <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Market Positioning</p>
-            <SegmentedControl
+            <ChoiceGroup
               options={[
                 { id: "value" as const, label: "Value" },
                 { id: "mainstream" as const, label: "Mainstream" },
@@ -202,9 +174,9 @@ export function Step3ProductTargets() {
               onChange={(positioning) => s.setProductTarget({ ambition: { positioning } })}
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Cost Priority</p>
-            <SegmentedControl
+            <ChoiceGroup
               options={[
                 { id: "lowest_cost" as const, label: "Lowest Cost" },
                 { id: "balanced" as const, label: "Balanced" },
@@ -214,7 +186,7 @@ export function Step3ProductTargets() {
               onChange={(costPriority) => s.setProductTarget({ ambition: { costPriority } })}
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Differentiation</p>
             <select
               value={t.ambition.differentiation ?? ""}
@@ -291,9 +263,9 @@ export function Step3ProductTargets() {
 
 function InheritedField({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-sans font-bold tabular-nums text-graphite">{value}</p>
+      <p className="text-sm font-sans font-bold tabular-nums text-graphite wrap-anywhere">{value}</p>
     </div>
   )
 }

@@ -21,9 +21,9 @@ export function DrivetrainSummary({ onEditStep }: { onEditStep: (stepNumber: num
   return (
     <div className="border border-border bg-white overflow-hidden mb-6">
       <div className="h-1 bg-primary" />
-      <div className="flex items-center justify-between px-5 py-3 bg-surface border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 bg-surface border-b border-border">
         <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">Inherited Configuration</p>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onEditStep(2)}
             className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary hover:underline"

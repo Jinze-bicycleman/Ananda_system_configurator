@@ -132,7 +132,7 @@ export function AdvancedConfiguration({
                 {slot.label}
                 {slot.optional && <span className="ml-1 text-muted-foreground/60">(Optional)</span>}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
                 {options.map((option) => {
                   const results = priorComponents.map((p) => evaluateCompatibility(option, p, ctx, data))
                   const status = results.some((r) => r.status === "red")

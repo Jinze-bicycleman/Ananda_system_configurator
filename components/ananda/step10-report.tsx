@@ -21,21 +21,21 @@ const STATUS_DOT: Record<string, string> = {
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border border-border bg-white overflow-hidden mb-5">
-      <div className="h-1 bg-primary" />
-      <div className="px-5 py-3 bg-surface border-b border-border">
+    <div className="mb-5 min-w-0 border border-border bg-white">
+      <div className="h-1 shrink-0 bg-primary" />
+      <div className="border-b border-border bg-surface px-5 py-3">
         <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">{title}</p>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="min-w-0 p-5">{children}</div>
     </div>
   )
 }
 
 function Row({ label, value, highlight, warn }: { label: string; value: string; highlight?: boolean; warn?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
-      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={cn("text-[12px] font-sans font-semibold text-right tabular-nums", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
+    <div className="spec-row py-1.5 border-b border-border/40 last:border-0">
+      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className={cn("spec-value text-[12px] font-sans font-semibold tabular-nums", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
         {value}
       </span>
     </div>
@@ -79,12 +79,12 @@ export function Step10Report() {
       />
 
       {/* ─── Overall Feasibility ─── */}
-      <div className={cn("mb-5 flex items-center justify-between border-2 px-5 py-4", feasibilityInfo.cls)}>
-        <div>
+      <div className={cn("mb-5 flex flex-wrap items-center justify-between gap-4 border-2 px-5 py-4", feasibilityInfo.cls)}>
+        <div className="min-w-0">
           <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em]">Overall Feasibility</p>
           <p className="mt-1 text-2xl font-sans font-black uppercase tracking-tight">{feasibilityInfo.label}</p>
         </div>
-        <p className="max-w-xs text-right text-xs font-body leading-relaxed opacity-80">
+        <p className="max-w-xs min-w-0 text-xs font-body leading-relaxed opacity-80 sm:text-right">
           {feasibility === "go"
             ? "All Must-have and Target requirements are currently met."
             : feasibility === "conditional_go"
