@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, ArrowRight, AlertTriangle, Download } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertTriangle, Download, PanelRightOpen } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useAnandaStore, hasProductTargets, hasRecommendedSolution, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
@@ -106,15 +107,35 @@ export function AnandaConfigurator() {
       <header className="sticky top-0 z-50 border-b border-graphite-light bg-graphite">
         <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center bg-primary"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none"><path d="M13 3 4 14h7v7l9-11h-7z" fill="white" /></svg></div><div><span className="font-sans text-base font-black uppercase tracking-widest text-white">Ananda</span><span className="ml-2 hidden font-sans text-sm text-white/40 sm:inline">E-Drive System Configurator</span></div></div>
-          <div className="flex items-center gap-3"><span className="font-sans text-xs uppercase tracking-wider text-white/50">{complete.filter(Boolean).length} / {labels.length} complete</span><div className="h-1 w-20 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-primary transition-all" style={{ width: `${(complete.filter(Boolean).length / labels.length) * 100}%` }} /></div></div>
+          <div className="flex items-center gap-3">
+            <span className="hidden font-sans text-xs uppercase tracking-wider text-white/50 sm:inline">{complete.filter(Boolean).length} / {labels.length} complete</span>
+            <div className="hidden h-1 w-20 overflow-hidden rounded-full bg-white/10 sm:block"><div className="h-full bg-primary transition-all" style={{ width: `${(complete.filter(Boolean).length / labels.length) * 100}%` }} /></div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 border border-white/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-primary hover:text-white 2xl:hidden"
+                >
+                  <PanelRightOpen className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Summary</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full max-w-sm overflow-y-auto p-0 sm:max-w-md">
+                <SheetHeader className="border-b border-border px-4 py-3">
+                  <SheetTitle className="text-sm uppercase tracking-wider">Configuration Summary</SheetTitle>
+                </SheetHeader>
+                <div className="p-4"><ConfigSummaryPanel /></div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
-      <div className="flex flex-1">
-        <div className="hidden shrink-0 border-r border-white/10 bg-graphite lg:block lg:w-56 xl:w-64"><div className="sticky top-14"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div></div>
-        <div className="min-w-0 flex-1"><div className="sticky top-14 z-40 border-b border-white/10 bg-graphite lg:hidden"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div>
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8"><div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_260px]"><main>
+      <div className="flex min-w-0 flex-1">
+        <div className="hidden min-w-0 shrink-0 border-r border-white/10 bg-graphite lg:block lg:w-56 xl:w-64"><div className="sticky top-14"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div></div>
+        <div className="min-w-0 max-w-full flex-1"><div className="sticky top-14 z-40 border-b border-white/10 bg-graphite lg:hidden"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div>
+          <div className="mx-auto max-w-7xl min-w-0 px-4 py-6 sm:px-6 lg:px-8"><div className="grid min-w-0 items-start gap-8 2xl:grid-cols-[minmax(0,1fr)_260px]"><main className="min-w-0 max-w-full">
             <div className="mb-5"><p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">ANANDA / CONFIGURATION WORKFLOW</p><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Complete one stage at a time. Later stages unlock when prerequisites are ready.</p></div>
-            <section className="border border-primary/50 bg-card"><div className="p-4 sm:p-6">
+            <section className="min-w-0 max-w-full border border-primary/50 bg-card"><div className="min-w-0 p-4 sm:p-6">
               {incompleteItems.length > 0 && (
                 <div className="mb-6 border-2 border-destructive bg-destructive/10 p-4">
                   <div className="flex items-start gap-3">
@@ -160,7 +181,7 @@ export function AnandaConfigurator() {
                 )}
               </div>
             </div></section>
-          </main><aside className="hidden xl:block"><ConfigSummaryPanel /></aside></div></div>
+          </main><aside className="hidden min-w-0 2xl:block"><ConfigSummaryPanel /></aside></div></div>
         </div>
       </div>
       <PackageChangeDialog

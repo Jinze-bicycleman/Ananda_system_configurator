@@ -43,11 +43,11 @@ function OptionCard({
     <div
       onClick={onSelect}
       className={cn(
-        "relative cursor-pointer border-2 overflow-hidden transition-all",
+        "product-card relative cursor-pointer border-2 transition-all",
         selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
       )}
     >
-      <div className={cn("h-1 w-full", selected ? "bg-primary" : "bg-border")} />
+      <div className={cn("h-1 w-full shrink-0", selected ? "bg-primary" : "bg-border")} />
       {isBestMatch && (
         <div className="absolute left-2 top-2 z-10">
           <StatusBadge variant="recommended" label="Best Match" />
@@ -58,18 +58,20 @@ function OptionCard({
           <CheckCircle2 className="w-3 h-3 text-white" />
         </div>
       )}
-      <div className={cn("relative flex items-center justify-center h-24 overflow-hidden", selected ? "bg-primary/5" : "bg-surface")}>
+      <div className={cn("relative flex shrink-0 items-center justify-center h-24 overflow-hidden", selected ? "bg-primary/5" : "bg-surface")}>
         {imageUrl ? (
           <img src={imageUrl || "/placeholder.svg"} alt={title} className="relative z-10 max-h-16 object-contain" crossOrigin="anonymous" />
         ) : (
           <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />
         )}
       </div>
-      <div className="p-3">
-        <p className={cn("text-sm font-sans font-bold uppercase mb-1", selected ? "text-primary" : "text-graphite")}>{title}</p>
+      <div className="min-w-0 p-3">
+        <p className={cn("text-sm font-sans font-bold uppercase mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
         {specs.length > 0 && (
-          <div className="border border-border rounded-sm overflow-hidden">
-            {specs.map((sp) => sp.value != null && <TechSpecRow key={sp.label} label={sp.label} value={sp.value} />)}
+          <div className="min-w-0 border border-border rounded-sm">
+            {specs.map((sp) => sp.value != null && (
+              <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
+            ))}
           </div>
         )}
       </div>
@@ -277,7 +279,7 @@ export function Step5PackageConfiguration() {
           )
         }
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="product-option-grid">
           {compatibleMotors.map((m: MotorRow) => (
             <OptionCard
               key={m.id}

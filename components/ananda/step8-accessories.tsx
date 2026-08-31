@@ -37,7 +37,7 @@ export function Step8Accessories() {
                 </span>
               </SectionLabel>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="product-option-grid">
                 {items.map(acc => {
                   const selected = s.accessoryIds.includes(acc.id)
                   return (
@@ -45,7 +45,7 @@ export function Step8Accessories() {
                       key={acc.id}
                       onClick={() => s.toggleAccessory(acc.id)}
                       className={cn(
-                        "relative text-left border-2 overflow-hidden transition-all p-0",
+                        "product-card relative text-left border-2 transition-all p-0",
                         selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40"
                       )}
                     >
@@ -71,7 +71,7 @@ export function Step8Accessories() {
                         <Icon className={cn("w-7 h-7 relative z-10", selected ? "text-primary" : "text-border")} />
                       </div>
 
-                      <div className="p-3">
+                      <div className="min-w-0 p-3">
                         <p className={cn(
                           "text-sm font-sans font-bold uppercase leading-tight mb-1",
                           selected ? "text-primary" : "text-graphite"
@@ -79,9 +79,9 @@ export function Step8Accessories() {
                           {acc.name}
                         </p>
                         <p className="text-[11px] font-body text-muted-foreground leading-snug mb-2">{acc.description}</p>
-                        <div className="flex items-center justify-between">
+                        <div className="mt-auto flex items-center justify-between gap-2">
                           <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground">Weight</span>
-                          <span className="text-xs font-sans font-bold text-foreground">
+                          <span className="whitespace-nowrap text-xs font-sans font-bold text-foreground">
                             {acc.weightKg ? `${acc.weightKg} kg` : "—"}
                           </span>
                         </div>

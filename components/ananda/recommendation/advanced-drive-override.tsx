@@ -48,7 +48,7 @@ export function AdvancedDriveOverride() {
 
           <div className="mb-4">
             <p className="mb-2 text-[11px] font-sans font-bold uppercase tracking-wider text-graphite">Drive Type</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-wrap gap-3">
               {DRIVE_SYSTEMS.map((ds) => {
                 const selected = s.advancedDriveType === ds.id
                 return (
@@ -58,7 +58,7 @@ export function AdvancedDriveOverride() {
                     disabled={ds.disabled}
                     onClick={() => s.setAdvancedOverride(selected ? null : ds.id, s.advancedVoltagePlatform)}
                     className={cn(
-                      "flex items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-sm font-sans font-semibold transition-colors",
+                      "flex min-w-0 flex-1 basis-40 items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-sm font-sans font-semibold transition-colors",
                       ds.disabled
                         ? "cursor-not-allowed border-border text-muted-foreground opacity-50"
                         : selected
@@ -77,7 +77,7 @@ export function AdvancedDriveOverride() {
 
           <div className="mb-4">
             <p className="mb-2 text-[11px] font-sans font-bold uppercase tracking-wider text-graphite">Voltage Platform</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-wrap gap-3">
               {VOLTAGE_PLATFORMS.map((v) => {
                 const selected = s.advancedVoltagePlatform === v
                 return (
@@ -86,7 +86,7 @@ export function AdvancedDriveOverride() {
                     type="button"
                     onClick={() => s.setAdvancedOverride(s.advancedDriveType, selected ? null : v)}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 border-2 px-3 py-2.5 text-sm font-sans font-bold transition-colors",
+                      "flex min-w-0 flex-1 basis-24 items-center justify-center gap-1.5 border-2 px-3 py-2.5 text-sm font-sans font-bold transition-colors",
                       selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
                     )}
                   >
