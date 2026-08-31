@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, ChevronDown, Search, Settings2 } from "lucide-react"
+import { Bluetooth, CheckCircle2, ChevronDown, Lightbulb, MapPin, Search, Settings2, ShieldCheck } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
 import {
@@ -46,17 +46,22 @@ const FUNCTION_LEVELS: { id: FunctionLevel; label: string }[] = [
 ]
 
 function FunctionRow({
+  icon: Icon,
   label,
   value,
   onChange,
-}: {
+  }: {
+  icon: typeof Bluetooth
   label: string
   value: FunctionLevel
   onChange: (level: FunctionLevel) => void
-}) {
+  }) {
   return (
     <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
-      <span className="text-sm font-sans font-semibold text-graphite">{label}</span>
+      <span className="flex min-w-0 items-center gap-2 text-sm font-sans font-semibold text-graphite">
+    <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+    <span>{label}</span>
+  </span>
       <div className="choice-group sm:w-auto sm:justify-end">
         {FUNCTION_LEVELS.map((lvl) => (
           <button
@@ -191,10 +196,10 @@ export function Step3ProductTargets() {
       <div className="mb-8">
         <SectionLabel>Functions & Connectivity</SectionLabel>
         <div className="space-y-2">
-          <FunctionRow label="Bluetooth" value={t.functions.bluetooth} onChange={(level) => s.setProductTarget({ functions: { bluetooth: level } })} />
-          <FunctionRow label="GPS Tracking" value={t.functions.gps} onChange={(level) => s.setProductTarget({ functions: { gps: level } })} />
-          <FunctionRow label="Anti-Theft" value={t.functions.antiTheft} onChange={(level) => s.setProductTarget({ functions: { antiTheft: level } })} />
-          <FunctionRow label="Lights" value={t.functions.lights} onChange={(level) => s.setProductTarget({ functions: { lights: level } })} />
+          <FunctionRow icon={Bluetooth} label="Bluetooth" value={t.functions.bluetooth} onChange={(level) => s.setProductTarget({ functions: { bluetooth: level } })} />
+          <FunctionRow icon={MapPin} label="GPS Tracking" value={t.functions.gps} onChange={(level) => s.setProductTarget({ functions: { gps: level } })} />
+          <FunctionRow icon={ShieldCheck} label="Anti-Theft" value={t.functions.antiTheft} onChange={(level) => s.setProductTarget({ functions: { antiTheft: level } })} />
+          <FunctionRow icon={Lightbulb} label="Lights" value={t.functions.lights} onChange={(level) => s.setProductTarget({ functions: { lights: level } })} />
         </div>
       </div>
 
