@@ -7,7 +7,13 @@ import { useMotors, useDisplays, useBatteries } from "@/lib/ananda-packages"
 import { aRemotes } from "@/lib/ananda-data"
 import { componentPoints, calloutAnchors, CABLE_SPECS, type ComponentKey } from "@/lib/ananda-system-diagram"
 
-const DIAGRAM_VIEWBOX = "0 0 1000 610"
+// The viewBox is wider than the image itself so callout labels have real
+// margin space to grow into on both sides without clipping past the SVG's
+// own coordinate bounds (which — unlike a plain overflow: hidden container —
+// permanently crops any content placed outside it, regardless of viewport size).
+const DIAGRAM_VIEWBOX = "-150 0 1300 610"
+const BACKGROUND_X = -150
+const BACKGROUND_W = 1300
 const IMAGE_X = 120
 const IMAGE_Y = 52
 const IMAGE_W = 760
@@ -117,7 +123,7 @@ export function SystemDiagram() {
             accessory harness component locations, with the five cable connections between them.
           </desc>
 
-          <rect x="0" y="0" width="1000" height="610" fill="var(--card)" />
+          <rect x={BACKGROUND_X} y="0" width={BACKGROUND_W} height="610" fill="var(--card)" />
 
           <image
             href="/images/ananda-m7100-bicycle.png"
@@ -174,7 +180,7 @@ export function SystemDiagram() {
                   <text
                     key={i}
                     x={anchor.x}
-                    y={anchor.y + 12 * (i + 1)}
+                    y={anchor.y + 22 + i * 20}
                     textAnchor={anchor.anchor}
                     fontSize={20}
                     fill="var(--muted-foreground)"

@@ -24,11 +24,11 @@ export const componentPoints: Record<ComponentKey, { x: number; y: number }> = {
 // remote upper-left, display upper-right, accessory harness left, battery
 // and speed sensor right, motor lower-right.
 export const calloutAnchors: Record<ComponentKey, { x: number; y: number; anchor: "start" | "end" }> = {
-  remote: { x: 18, y: 22, anchor: "start" },
-  display: { x: 982, y: 22, anchor: "end" },
+  remote: { x: -50, y: 22, anchor: "start" },
+  display: { x: 1020, y: 22, anchor: "end" },
   accessory: { x: 112, y: 236, anchor: "end" },
-  battery: { x: 892, y: 296, anchor: "start" },
-  speedSensor: { x: 892, y: 400, anchor: "start" },
+  battery: { x: 900, y: 296, anchor: "start" },
+  speedSensor: { x: 900, y: 400, anchor: "start" },
   motor: { x: 760, y: 566, anchor: "start" },
 }
 
