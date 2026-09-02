@@ -2,9 +2,10 @@
 
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
-import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { SystemDiagram } from "./system-diagram/system-diagram"
+import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
 
@@ -215,21 +216,22 @@ function CableTable() {
   const s = useAnandaStore()
   const driveKey = s.driveType ?? "mid"
   const presets = cablePresets[driveKey] ?? cablePresets.mid
+  const { cables, options, extensionOptions } = useCableCatalog()
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-xs border-collapse">
+      <table className="w-full min-w-[860px] text-xs border-collapse">
         <thead>
           <tr className="bg-graphite text-white">
-            {["Connection", "Connector", "Pins", "Cable Type", "Length (m)"].map(h => (
+            {["Connection", "Connector", "Pins", "Cable Type", "Cable (catalog)", "Length", "Extension cable"].map(h => (
               <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[11px]">{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {presets.map((p, i) => {
-            const stored = s.cableLengths[p.connection]
-            const val = stored !== undefined ? stored : p.defaultLength
+            const assignedCable = assignCable(cables, i)
+            const lengthOptions = assignedCable ? connectionCableLengthOptionsFor(options, assignedCable.id) : []
             return (
               <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-surface"}>
                 <td className="px-3 py-2 font-sans font-semibold text-foreground">{p.connection}</td>
@@ -237,13 +239,13 @@ function CableTable() {
                 <td className="px-3 py-2 font-sans font-bold text-foreground">{p.pins}</td>
                 <td className="px-3 py-2 font-body text-muted-foreground">{p.cableType}</td>
                 <td className="px-3 py-2">
-                  <input
-                    type="number"
-                    min={0.1} max={5} step={0.1}
-                    value={val}
-                    onChange={e => s.setCableLength(p.connection, Number(e.target.value))}
-                    className="w-20 border border-border px-2 py-1 text-xs font-sans font-bold focus:outline-none focus:border-primary"
-                  />
+                  <CableCatalogInfo cable={assignedCable} />
+                </td>
+                <td className="px-3 py-2">
+                  <CableLengthSelect connection={p.connection} lengthOptions={lengthOptions} />
+                </td>
+                <td className="px-3 py-2">
+                  <ExtensionCableControl connection={p.connection} extensionOptions={extensionOptions} />
                 </td>
               </tr>
             )

@@ -291,3 +291,93 @@ export function useCableLengthOptions() {
 export function cableLengthOptionsFor(options: CableLengthOptionRow[], connectionKey: string) {
   return options.filter((o) => o.connection_key === connectionKey)
 }
+
+// Cable specification catalog for Step 7's "Cable Specification" table — a
+// small set of example connection cable products (Cable A/B/C/D), each with
+// its own connector model, pin count and IPX rating, plus a set of
+// selectable lengths per cable. Backs the length dropdown so cable lengths
+// are chosen from real catalog data instead of freehand numeric entry.
+export type ConnectionCableRow = {
+  id: string
+  name: string
+  connector_model: string
+  pin_count: number
+  ipx_rating: string
+  is_active: boolean
+  sort_order: number
+}
+
+export type ConnectionCableLengthOptionRow = {
+  id: string
+  cable_id: string
+  length_mm: number
+  label: string
+  is_active: boolean
+  sort_order: number
+}
+
+export type ExtensionCableLengthOptionRow = {
+  id: string
+  length_mm: number
+  label: string
+  is_active: boolean
+  sort_order: number
+}
+
+async function fetchConnectionCables(): Promise<ConnectionCableRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("connection_cables")
+    .select("id, name, connector_model, pin_count, ipx_rating, is_active, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as ConnectionCableRow[]
+}
+
+async function fetchConnectionCableLengthOptions(): Promise<ConnectionCableLengthOptionRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("connection_cable_length_options")
+    .select("id, cable_id, length_mm, label, is_active, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as ConnectionCableLengthOptionRow[]
+}
+
+async function fetchExtensionCableLengthOptions(): Promise<ExtensionCableLengthOptionRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("extension_cable_length_options")
+    .select("id, length_mm, label, is_active, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as ExtensionCableLengthOptionRow[]
+}
+
+export function useConnectionCables() {
+  const { data, isLoading, error } = useSWR<ConnectionCableRow[]>("ananda-connection-cables", fetchConnectionCables)
+  return { cables: data ?? [], isLoading, error }
+}
+
+export function useConnectionCableLengthOptions() {
+  const { data, isLoading, error } = useSWR<ConnectionCableLengthOptionRow[]>(
+    "ananda-connection-cable-length-options",
+    fetchConnectionCableLengthOptions,
+  )
+  return { options: data ?? [], isLoading, error }
+}
+
+export function useExtensionCableLengthOptions() {
+  const { data, isLoading, error } = useSWR<ExtensionCableLengthOptionRow[]>(
+    "ananda-extension-cable-length-options",
+    fetchExtensionCableLengthOptions,
+  )
+  return { options: data ?? [], isLoading, error }
+}
+
+export function connectionCableLengthOptionsFor(options: ConnectionCableLengthOptionRow[], cableId: string) {
+  return options.filter((o) => o.cable_id === cableId)
+}
