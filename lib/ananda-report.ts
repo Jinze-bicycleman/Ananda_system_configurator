@@ -29,6 +29,8 @@ export interface CableRow {
   pins: number
   cableType: string
   lengthM: number
+  /** Optional extension cable length (m), only present if the user added one for this connection. */
+  extensionLengthM: number | null
 }
 
 export function useReportData() {
@@ -76,6 +78,7 @@ export function useReportData() {
     pins: c.pins,
     cableType: c.cableType,
     lengthM: s.cableLengths[c.connection] ?? c.defaultLength,
+    extensionLengthM: s.extensionCableLengths[c.connection] ?? null,
   }))
 
   const targetStatusRows = computeTargetStatus({ s, motor, battery, display })
@@ -413,11 +416,18 @@ export async function generateReportPdf(data: ReportData) {
 
   // ─── Cable & Harness Specification ───
   sectionTitle("Cable & Harness Specification")
-  const cableColX = [marginX, marginX + 190, marginX + 300, marginX + 335, marginX + 430]
-  tableHeader(["Connection", "Connector", "Pins", "Cable Type", "Length (m)"], cableColX)
+  const cableColX = [marginX, marginX + 160, marginX + 260, marginX + 290, marginX + 380, marginX + 460]
+  tableHeader(["Connection", "Connector", "Pins", "Cable Type", "Length (m)", "Extension"], cableColX)
   cableRows.forEach((c, i) => {
     tableRow(
-      [c.connection, c.connector, String(c.pins), c.cableType, `${c.lengthM.toFixed(1)} m`],
+      [
+        c.connection,
+        c.connector,
+        String(c.pins),
+        c.cableType,
+        `${c.lengthM.toFixed(1)} m`,
+        c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—",
+      ],
       cableColX,
       i % 2 === 1,
     )

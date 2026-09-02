@@ -85,6 +85,10 @@ export interface AnandaConfig {
   chargingPortId: string | null
   accessoryIds: string[]
   cableLengths: Record<string, number>
+  // Optional extension cable length (metres), keyed by the same connection
+  // name as `cableLengths`. Absent/undefined means no extension was added —
+  // the extension cable is always optional.
+  extensionCableLengths: Record<string, number>
   currentStep: number
   hasStarted: boolean
 }
@@ -119,6 +123,8 @@ export interface AnandaActions {
   setItemSkipped: (key: string, skipped: boolean) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number) => void
+  /** Sets the optional extension cable length for a connection; pass `null` to remove it (back to no extension). */
+  setExtensionCableLength: (connection: string, length: number | null) => void
   setDrivetrainType: (drivetrainType: "chain" | "belt") => void
   setTransmissionType: (transmissionType: AnandaConfig["transmissionType"]) => void
   resetDrivetrainDownstream: (from: "type" | "transmission" | "components") => void
@@ -149,7 +155,7 @@ const defaultState: AnandaConfig = {
   beltlineVerified: false,
   crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
-  accessoryIds: [], cableLengths: {}, currentStep: 1, hasStarted: false,
+  accessoryIds: [], cableLengths: {}, extensionCableLengths: {}, currentStep: 1, hasStarted: false,
 }
 
 function normalizePersisted(input: Partial<AnandaConfig> & Record<string, unknown>): Partial<AnandaConfig> {
@@ -228,6 +234,14 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
+      setExtensionCableLength: (connection, length) => set((state) => {
+        if (length === null) {
+          const next = { ...state.extensionCableLengths }
+          delete next[connection]
+          return { extensionCableLengths: next }
+        }
+        return { extensionCableLengths: { ...state.extensionCableLengths, [connection]: length } }
+      }),
       setDrivetrainType: (drivetrainType) => set((state) => ({
         ...state, drivetrainType, transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null,
         selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false,
@@ -255,8 +269,8 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       name: "ananda-edrive-config-v1",
       merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
       partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
+        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
+        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
         return rest
       },
     },

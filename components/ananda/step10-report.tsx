@@ -294,7 +294,7 @@ export function Step10Report() {
         )}
       </ReportSection>
 
-      {/* ─── Climbing Ability ──��� */}
+      {/* ─── Climbing Ability ──����� */}
       <ReportSection title="Climbing Ability">
         <Row label="Rider Weight" value={`${climbing.riderWeightKg} kg`} />
         <Row label="Assistance Mode" value={climbing.assistanceModeLabel} />
@@ -344,7 +344,7 @@ export function Step10Report() {
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-graphite text-white">
-                {["Connection", "Connector", "Pins", "Cable Type", "Length"].map((h) => (
+                {["Connection", "Connector", "Pins", "Cable Type", "Length", "Extension"].map((h) => (
                   <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[10px]">{h}</th>
                 ))}
               </tr>
@@ -357,6 +357,9 @@ export function Step10Report() {
                   <td className="px-3 py-2 font-sans font-bold text-foreground">{c.pins}</td>
                   <td className="px-3 py-2 font-body text-muted-foreground">{c.cableType}</td>
                   <td className="px-3 py-2 font-sans font-bold text-primary">{c.lengthM.toFixed(1)} m</td>
+                  <td className="px-3 py-2 font-body text-muted-foreground">
+                    {c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>

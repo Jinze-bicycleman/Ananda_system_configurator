@@ -3,9 +3,10 @@
 import { useState } from "react"
 import { Info, Loader2 } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
-import { useMotors, useDisplays, useBatteries } from "@/lib/ananda-packages"
+import { useMotors, useDisplays, useBatteries, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
 import { aRemotes } from "@/lib/ananda-data"
 import { componentPoints, calloutAnchors, CABLE_SPECS, type ComponentKey } from "@/lib/ananda-system-diagram"
+import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "@/components/ananda/cable-spec-controls"
 
 // The viewBox is wider than the image itself so callout labels have real
 // margin space to grow into on both sides without clipping past the SVG's
@@ -215,20 +216,21 @@ export function SystemDiagram() {
 }
 
 function CableSpecTable({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string | null) => void }) {
-  const s = useAnandaStore()
+  const { cables, options, extensionOptions } = useCableCatalog()
 
   return (
     <div className="mb-6">
       <p className="mb-2 text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">Cable Specification</p>
       <p className="mb-3 text-xs font-body text-muted-foreground">
-        Edit cable lengths to match your frame layout. These values carry through to the final configuration report.
+        Choose a length for each connection from the catalog below and optionally add an extension cable. These values
+        carry through to the final configuration report.
       </p>
       <div className="overflow-x-auto border border-border">
-        <table className="w-full min-w-[640px] text-xs border-collapse">
-          <caption className="sr-only">Cable connections, connectors and editable lengths for the system diagram</caption>
+        <table className="w-full min-w-[860px] text-xs border-collapse">
+          <caption className="sr-only">Cable connections, connectors and selectable lengths for the system diagram</caption>
           <thead>
             <tr className="bg-graphite text-white">
-              {["Connection", "Connector", "Pins", "Cable type", "Length (m)"].map((h) => (
+              {["Connection", "Connector", "Pins", "Cable type", "Cable (catalog)", "Length", "Extension cable"].map((h) => (
                 <th key={h} scope="col" className="px-3 py-2 text-left text-[11px] font-sans font-bold uppercase tracking-wider">
                   {h}
                 </th>
@@ -238,8 +240,8 @@ function CableSpecTable({ selectedId, onSelect }: { selectedId: string | null; o
           <tbody>
             {CABLE_SPECS.map((cable, i) => {
               const isSelected = selectedId === cable.id
-              const length = s.cableLengths[cable.connection] ?? cable.defaultLength
-              const inputId = `cable-length-${cable.id}`
+              const assignedCable = assignCable(cables, i)
+              const lengthOptions = assignedCable ? connectionCableLengthOptionsFor(options, assignedCable.id) : []
               return (
                 <tr
                   key={cable.id}
@@ -269,28 +271,14 @@ function CableSpecTable({ selectedId, onSelect }: { selectedId: string | null; o
                   <td className="px-3 py-2 font-body text-muted-foreground">{cable.connector}</td>
                   <td className="px-3 py-2 font-sans font-bold text-foreground">{cable.pins}</td>
                   <td className="px-3 py-2 font-body text-muted-foreground">{cable.cableType}</td>
-                  <td className="px-3 py-2">
-                    <label htmlFor={inputId} className="sr-only">
-                      Length in metres for {cable.connection}
-                    </label>
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        id={inputId}
-                        type="number"
-                        min={0.1}
-                        step={0.1}
-                        value={length}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const value = Number(e.target.value)
-                          if (!Number.isNaN(value) && value > 0) {
-                            s.setCableLength(cable.connection, value)
-                          }
-                        }}
-                        className="w-20 border border-border px-2 py-1 text-xs font-sans font-bold focus:outline-none focus:border-primary"
-                      />
-                      <span className="text-[11px] font-body text-muted-foreground">m</span>
-                    </div>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <CableCatalogInfo cable={assignedCable} />
+                  </td>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <CableLengthSelect connection={cable.connection} lengthOptions={lengthOptions} />
+                  </td>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <ExtensionCableControl connection={cable.connection} extensionOptions={extensionOptions} />
                   </td>
                 </tr>
               )
