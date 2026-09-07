@@ -135,12 +135,17 @@ export function ClimbingAbilityPanel({
                 aria-pressed={activeMode?.mode_key === m.mode_key}
                 className={cn(
                   "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
+                  m.mode_key === "eco" && "bg-[rgba(69,221,102,0.64)]",
+                  m.mode_key === "trail" && "bg-[rgba(0,59,244,0.95)]",
+                  m.mode_key === "sport" && "bg-[rgba(244,210,3,0.97)]",
+                  m.mode_key === "turbo" && "bg-[rgba(232,160,0,0.96)]",
+                  m.mode_key === "boost" && "bg-[rgba(238,39,0,0.93)]",
                   activeMode?.mode_key === m.mode_key
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-primary text-primary"
                     : "border-border text-graphite hover:border-primary/40",
                 )}
               >
-                <span className="text-sm font-body leading-tight">{m.display_label}</span>
+                <span className="text-sm font-body leading-tight">{m.mode_key === "trail" ? "Tour" : m.display_label}</span>
                 <span className="text-xs tabular-nums text-muted-foreground">{m.assistance_multiplier.toFixed(1)}×</span>
               </button>
             ))}
