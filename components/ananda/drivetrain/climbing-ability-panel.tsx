@@ -5,14 +5,16 @@ import { AlertTriangle, Info } from "lucide-react"
 import { Slider } from "@/components/ui/slider"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { SectionLabel, TechSpecRow } from "../ui-primitives"
+import { SectionLabel } from "../ui-primitives"
 import { ClimbingSlopeVisual } from "./climbing-slope-visual"
+import { ClimbingSeverityScale } from "./climbing-severity-scale"
 import {
   DEFAULT_BIKE_WEIGHT_KG,
   PEDAL_EFFORT_PRESETS,
   RIDER_WEIGHT_MAX_KG,
   RIDER_WEIGHT_MIN_KG,
   computeClimbingAbility,
+  gradePercentToAngleDegrees,
   type MotorType,
   type PedalEffortKey,
 } from "@/lib/ananda-climbing"
@@ -71,11 +73,16 @@ export function ClimbingAbilityPanel({
 
   const systemWeightKg = riderWeightKg + DEFAULT_BIKE_WEIGHT_KG
 
+  const gearContextLabel =
+    largestRearTeeth != null && frontChainringTeeth != null
+      ? `Lowest climbing gear · ${largestRearTeeth}T / ${frontChainringTeeth}T`
+      : "Theoretical peak, low-speed climbing estimate"
+
   return (
     <div className="flex flex-col gap-5 border border-border bg-white p-5">
-      <div className="flex items-center justify-between gap-3">
-        <SectionLabel>Climbing Ability</SectionLabel>
-        <p className="text-xs font-body text-muted-foreground">Theoretical peak, low-speed climbing estimate</p>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <SectionLabel>Climbing ability</SectionLabel>
+        <p className="text-xs font-body text-muted-foreground sm:-mt-4">{gearContextLabel}</p>
       </div>
 
       {/* Rider weight slider */}
@@ -173,25 +180,22 @@ export function ClimbingAbilityPanel({
       ) : result.status === "missing-data" ? (
         <EmptyClimbingState missing={result.missingFields} />
       ) : (
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-            <TechSpecRow label="Rider contribution" value={pedalPreset.torqueNm} unit="Nm" />
-            <TechSpecRow
+        <div className="flex flex-col gap-5">
+          {/* Calculation summary: 4 equal columns on desktop, 2x2 on mobile. */}
+          <div className="grid grid-cols-2 gap-4 border-y border-border py-4 sm:grid-cols-4">
+            <CalcSummaryStat label="Rider contribution" value={pedalPreset.torqueNm} unit="Nm" />
+            <CalcSummaryStat
               label="Motor-assist torque"
               value={Math.round(result.assistance.motorTorqueDeliveredNm * 10) / 10}
               unit="Nm"
-              highlight
             />
-            <TechSpecRow
+            <CalcSummaryStat
               label="Total wheel torque"
               value={Math.round(result.totalWheelTorqueNm * 10) / 10}
               unit="Nm"
               highlight
             />
-            <TechSpecRow
-              label="Climbing ratio"
-              value={largestRearTeeth != null && frontChainringTeeth != null ? `${largestRearTeeth}T / ${frontChainringTeeth}T` : "—"}
-            />
+            <CalcSummaryStat label="System weight" value={systemWeightKg} unit="kg" />
           </div>
 
           {result.assistance.isCappedByMotorMax && (
@@ -209,18 +213,41 @@ export function ClimbingAbilityPanel({
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-              <ClimbingSlopeVisual gradePercent={result.gradePercent as number} capped={(result.gradePercent as number) > 45} />
-              <div className="flex flex-col gap-1">
-                <p className="text-3xl font-sans font-black tabular-nums text-graphite">
-                  {(result.gradePercent as number).toFixed(1)}%
-                </p>
-                <p className="text-sm font-body text-muted-foreground">Maximum theoretical grade</p>
-                {result.scenario && (
-                  <p className="text-sm font-body font-medium text-primary">{result.scenario.label}</p>
-                )}
-              </div>
-            </div>
+            <>
+              {(() => {
+                const gradePercent = result.gradePercent as number
+                const angleDegrees = gradePercentToAngleDegrees(gradePercent)
+                const riseMetres = gradePercent
+                return (
+                  <>
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+                      <div className="min-w-0 lg:w-[65%]">
+                        <ClimbingSlopeVisual gradePercent={gradePercent} angleDegrees={angleDegrees} riseMetres={riseMetres} />
+                      </div>
+                      <div
+                        className="flex min-w-0 flex-col items-center gap-1 text-center lg:w-[35%] lg:items-start lg:text-left"
+                        aria-live="polite"
+                      >
+                        <p className="text-4xl font-sans font-black tabular-nums leading-none text-primary sm:text-5xl">
+                          {gradePercent.toFixed(1)}%
+                        </p>
+                        <p className="text-sm font-body font-semibold tabular-nums text-graphite">
+                          {angleDegrees.toFixed(1)}&deg; equivalent angle
+                        </p>
+                        {result.scenario && (
+                          <p className="text-sm font-body font-medium text-muted-foreground">{result.scenario.label}</p>
+                        )}
+                        <p className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">
+                          Maximum theoretical grade
+                        </p>
+                      </div>
+                    </div>
+
+                    <ClimbingSeverityScale gradePercent={gradePercent} />
+                  </>
+                )
+              })()}
+            </>
           )}
 
           <p className="text-xs font-body leading-relaxed text-muted-foreground">
@@ -229,6 +256,32 @@ export function ClimbingAbilityPanel({
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function CalcSummaryStat({
+  label,
+  value,
+  unit,
+  highlight,
+}: {
+  label: string
+  value: number
+  unit: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground text-balance">{label}</span>
+      <span
+        className={cn(
+          "text-lg font-sans font-bold tabular-nums sm:text-xl",
+          highlight ? "text-primary" : "text-graphite",
+        )}
+      >
+        {value} <span className="text-sm font-semibold">{unit}</span>
+      </span>
     </div>
   )
 }
