@@ -1,10 +1,14 @@
 "use client"
 
+import { useState } from "react"
+import { Bike, Network } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
+import { useMidDriveSystemDiagramData } from "@/lib/use-system-diagram-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { SystemDiagram } from "./system-diagram/system-diagram"
+import { RadialSystemDiagram } from "./system-diagram/radial-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
@@ -262,6 +266,9 @@ export function Step9SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
 
+  const [overviewView, setOverviewView] = useState<"bike" | "diagram">("bike")
+  const midDriveDiagramData = useMidDriveSystemDiagramData()
+
   const { motors } = useMotors()
   const { displays } = useDisplays()
   const { batteries } = useBatteries()
@@ -293,10 +300,52 @@ export function Step9SystemDiagram() {
       <div>
         <StepHeader
           step={7}
-          title="System Diagram Overview"
-          subtitle="Interactive system architecture diagram based on your configuration. Select a connection below to inspect it, and edit cable lengths as needed."
+          title="System Overview"
+          subtitle="Review the physical component placement or inspect the system architecture and cable connections."
         />
-        <SystemDiagram />
+
+        <div role="tablist" aria-label="System overview view" className="mb-6 grid grid-cols-2 gap-2 sm:inline-grid sm:w-auto">
+          <button
+            type="button"
+            role="tab"
+            id="overview-tab-bike"
+            aria-selected={overviewView === "bike"}
+            aria-controls="overview-panel-bike"
+            onClick={() => setOverviewView("bike")}
+            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
+              overviewView === "bike" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
+            }`}
+          >
+            <Bike className="h-4 w-4" aria-hidden="true" />
+            Bike View
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="overview-tab-diagram"
+            aria-selected={overviewView === "diagram"}
+            aria-controls="overview-panel-diagram"
+            onClick={() => setOverviewView("diagram")}
+            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
+              overviewView === "diagram" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
+            }`}
+          >
+            <Network className="h-4 w-4" aria-hidden="true" />
+            System Diagram
+          </button>
+        </div>
+
+        <div style={{ minHeight: 620 }}>
+          {overviewView === "bike" ? (
+            <div id="overview-panel-bike" role="tabpanel" aria-labelledby="overview-tab-bike">
+              <SystemDiagram />
+            </div>
+          ) : (
+            <div id="overview-panel-diagram" role="tabpanel" aria-labelledby="overview-tab-diagram">
+              <RadialSystemDiagram data={midDriveDiagramData} />
+            </div>
+          )}
+        </div>
       </div>
     )
   }

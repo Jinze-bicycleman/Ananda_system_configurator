@@ -141,6 +141,24 @@
   th { background-color: #f5f5f5 !important; font-weight: bold; }
 }
 
+/* Climbing-ability slope: spinning wheel indicating uphill travel.
+   Only the inner spokes/marker group rotates; the outer tire stays fixed. */
+@keyframes climb-wheel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.climb-wheel-spin {
+  animation: climb-wheel-spin 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .climb-wheel-spin {
+    animation: none;
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }

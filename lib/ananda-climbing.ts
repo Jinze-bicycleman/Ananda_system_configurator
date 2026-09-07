@@ -190,10 +190,28 @@ export function calculateClimbingGrade(
 export type GradeScenario = "city" | "steep-road" | "very-steep" | "extreme"
 
 export function classifyGradeScenario(gradePercent: number): { key: GradeScenario; label: string } {
-  if (gradePercent <= 8) return { key: "city", label: "City overpass or normal underground car park" }
+  if (gradePercent <= 8) return { key: "city", label: "Urban bridge or ordinary parking ramp" }
   if (gradePercent <= 15) return { key: "steep-road", label: "Steep mountain road or scenic switchback" }
-  if (gradePercent <= 25) return { key: "very-steep", label: "Very steep car park ramp or off-road MTB climb" }
-  return { key: "extreme", label: "Extreme challenge / technical off-road terrain" }
+  if (gradePercent <= 25) return { key: "very-steep", label: "Very steep ramp or off-road climb" }
+  return { key: "extreme", label: "Extreme technical climbing challenge" }
+}
+
+/** Severity-scale bucket (0-30%+) used by the climb-severity scale UI. */
+export type ClimbSeverityLevel = "Easy" | "Moderate" | "Steep" | "Extreme"
+
+export function classifyClimbSeverity(gradePercent: number): ClimbSeverityLevel {
+  if (gradePercent <= 8) return "Easy"
+  if (gradePercent <= 15) return "Moderate"
+  if (gradePercent <= 25) return "Steep"
+  return "Extreme"
+}
+
+/**
+ * Converts a grade percentage (rise/run * 100) to the equivalent slope angle
+ * in degrees. The grade percentage must never be used directly as an angle.
+ */
+export function gradePercentToAngleDegrees(gradePercent: number): number {
+  return Math.atan(gradePercent / 100) * (180 / Math.PI)
 }
 
 // --- Convenience: full climbing-ability computation ---------------------------

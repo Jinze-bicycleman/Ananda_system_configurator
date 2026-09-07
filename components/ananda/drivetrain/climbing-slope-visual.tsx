@@ -1,64 +1,207 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
+
 /**
- * A responsive side-profile ramp/hillside with a simplified rider silhouette
- * whose position tracks the live slope angle. Pure CSS transforms so it
- * respects `prefers-reduced-motion` (the transition is simply removed).
+ * Responsive inline-SVG climbing-grade visualization: a rising road with a
+ * single spinning wheel resting tangent to its surface, plus rise/run
+ * labels. Container width is measured with `ResizeObserver` and used
+ * directly as the SVG `viewBox`, so on-screen text stays a constant size
+ * instead of shrinking as a fixed-size drawing is scaled down for mobile.
  */
+
+const RUN_LABEL = "100 m horizontal run"
+const MARGIN_LEFT = 20
+const MARGIN_RIGHT = 92
+const MARGIN_TOP = 34
+const MARGIN_BOTTOM = 40
+const WHEEL_RADIUS = 17
+const WHEEL_POSITION_FRACTION = 2 / 3
+
 export function ClimbingSlopeVisual({
   gradePercent,
-  capped,
+  angleDegrees,
+  riseMetres,
 }: {
-  /** 0-100+, already capped for layout when `capped` is true. */
+  /** True (uncapped) grade as a percentage, e.g. 12.4. */
   gradePercent: number
-  capped: boolean
+  /** True equivalent slope angle in degrees, derived via atan(grade / 100). */
+  angleDegrees: number
+  /** Vertical rise, in metres, over the 100 m horizontal run. */
+  riseMetres: number
 }) {
-  // Cap the *visual* angle so extreme grades don't fully vertical-ize the
-  // drawing, while the numeric readout elsewhere shows the true value.
-  const visualPercent = Math.min(gradePercent, 45)
-  const angleDeg = Math.atan(visualPercent / 100) * (180 / Math.PI)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState({ width: 340, height: 200 })
 
-  const width = 320
-  const height = 140
-  const baseY = height - 24
-  const riseHeight = (Math.tan((angleDeg * Math.PI) / 180) * width) / 2
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width
+      if (!width || width <= 0) return
+      const height = Math.max(170, Math.min(260, width * 0.55))
+      setSize({ width, height })
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
-  const rampPath = `M 12 ${baseY} L ${width - 12} ${baseY - riseHeight} L ${width - 12} ${baseY} Z`
+  const { width, height } = size
+  const baseY = height - MARGIN_BOTTOM
+  const roadLeftX = MARGIN_LEFT
+  const maxRunPx = width - MARGIN_LEFT - MARGIN_RIGHT
+  const maxRisePx = baseY - MARGIN_TOP - WHEEL_RADIUS
+
+  // Preserve the true rise/run ratio. If the natural rise would overflow the
+  // available drawing height, scale the whole triangle down uniformly (both
+  // axes together) so the angle is never visually clamped or exaggerated.
+  const trueRiseFraction = Math.max(gradePercent, 0) / 100
+  const naturalRisePx = maxRunPx * trueRiseFraction
+  const fitScale = naturalRisePx > maxRisePx && naturalRisePx > 0 ? maxRisePx / naturalRisePx : 1
+  const runPx = maxRunPx * fitScale
+  const risePx = naturalRisePx * fitScale
+
+  const roadTopX = roadLeftX + runPx
+  const roadTopY = baseY - risePx
+
+  const wheelRoadX = roadLeftX + runPx * WHEEL_POSITION_FRACTION
+  const wheelRoadY = baseY - risePx * WHEEL_POSITION_FRACTION
+
+  // Unit vector along the road, then the outward (upward) unit normal so the
+  // wheel sits exactly tangent to the surface, offset by its own radius.
+  const roadLen = Math.hypot(runPx, risePx) || 1
+  const dirX = runPx / roadLen
+  const dirY = -risePx / roadLen
+  const normX = dirY
+  const normY = -dirX
+  const wheelCx = wheelRoadX + normX * WHEEL_RADIUS
+  const wheelCy = wheelRoadY + normY * WHEEL_RADIUS
+
+  const spokeAngles = Array.from({ length: 8 }, (_, i) => (i * Math.PI) / 4)
+  const spokeInnerR = WHEEL_RADIUS * 0.18
+  const spokeOuterR = WHEEL_RADIUS * 0.82
+
+  const runLabelX = roadLeftX + maxRunPx / 2
+  const runLabelY = height - 14
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={containerRef} className="w-full">
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height={height}
         role="img"
-        aria-label={`Side profile illustration of a ${gradePercent.toFixed(1)} percent grade climb, shown as a ramp rising from left to right${capped ? ", visually capped for display" : ""}.`}
-        className="w-full motion-reduce:transition-none"
+        aria-labelledby="climb-slope-title climb-slope-desc"
+        className="block"
       >
-        <line x1="0" y1={baseY} x2={width} y2={baseY} stroke="var(--border)" strokeWidth={1} />
-        <path
-          d={rampPath}
-          fill="var(--muted)"
-          stroke="var(--graphite)"
+        <title id="climb-slope-title">Climbing steepness illustration</title>
+        <desc id="climb-slope-desc">
+          {`A ${gradePercent.toFixed(1)} percent grade, equivalent to a ${angleDegrees.toFixed(1)} degree slope angle, rising ${riseMetres.toFixed(1)} metres over a 100 metre horizontal run.`}
+        </desc>
+
+        {/* Baseline */}
+        <line
+          x1={roadLeftX}
+          y1={baseY}
+          x2={roadLeftX + maxRunPx}
+          y2={baseY}
+          stroke="var(--border-strong)"
           strokeWidth={1.5}
-          className="transition-[d] duration-300 ease-out motion-reduce:transition-none"
+          aria-hidden="true"
+        />
+
+        {/* Filled hill triangle */}
+        <polygon
+          points={`${roadLeftX},${baseY} ${roadTopX},${roadTopY} ${roadTopX},${baseY}`}
+          fill="var(--primary)"
+          fillOpacity={0.08}
+          aria-hidden="true"
+        />
+
+        {/* Rising road surface */}
+        <line
+          x1={roadLeftX}
+          y1={baseY}
+          x2={roadTopX}
+          y2={roadTopY}
+          stroke="var(--graphite)"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          aria-hidden="true"
+        />
+
+        {/* Vertical rise indicator */}
+        <line
+          x1={roadTopX}
+          y1={baseY}
+          x2={roadTopX}
+          y2={roadTopY}
+          stroke="var(--muted-foreground)"
+          strokeWidth={1}
+          strokeDasharray="3 3"
+          aria-hidden="true"
+        />
+        <text
+          x={roadTopX + 6}
+          y={(baseY + roadTopY) / 2}
+          fontSize={12}
+          fontFamily="var(--font-sans)"
+          fontWeight={600}
+          fill="var(--graphite)"
+          dominantBaseline="middle"
+          aria-hidden="true"
+        >
+          {`${riseMetres.toFixed(1)} m rise`}
+        </text>
+
+        {/* Horizontal run label */}
+        <text
+          x={runLabelX}
+          y={runLabelY}
+          fontSize={12}
+          fontFamily="var(--font-sans)"
+          fill="var(--muted-foreground)"
+          textAnchor="middle"
+          aria-hidden="true"
+        >
+          {RUN_LABEL}
+        </text>
+
+        {/* Wheel: outer tire is static; the inner group rotates clockwise to
+            suggest uphill movement, without representing calculated speed. */}
+        <circle
+          cx={wheelCx}
+          cy={wheelCy}
+          r={WHEEL_RADIUS}
+          fill="var(--primary)"
+          fillOpacity={0.06}
+          stroke="var(--graphite)"
+          strokeWidth={2.5}
+          aria-hidden="true"
         />
         <g
-          className="transition-transform duration-300 ease-out motion-reduce:transition-none"
-          style={{
-            transform: `translate(${width - 46}px, ${baseY - riseHeight - 22}px) rotate(${-angleDeg}deg)`,
-            transformOrigin: "12px 22px",
-          }}
+          className="climb-wheel-spin"
+          style={{ transformOrigin: `${wheelCx}px ${wheelCy}px` }}
+          aria-hidden="true"
         >
-          <circle cx="6" cy="20" r="5" fill="var(--primary)" />
-          <circle cx="26" cy="20" r="5" fill="var(--primary)" />
-          <line x1="6" y1="20" x2="26" y2="20" stroke="var(--graphite)" strokeWidth={2} />
-          <line x1="16" y1="20" x2="12" y2="6" stroke="var(--graphite)" strokeWidth={2} />
-          <line x1="16" y1="20" x2="22" y2="4" stroke="var(--graphite)" strokeWidth={2} />
-          <circle cx="12" cy="3" r="3" fill="var(--graphite)" />
+          <circle cx={wheelCx} cy={wheelCy} r={WHEEL_RADIUS * 0.9} fill="none" stroke="var(--primary)" strokeWidth={1} />
+          {spokeAngles.map((a, i) => (
+            <line
+              key={i}
+              x1={wheelCx + Math.cos(a) * spokeInnerR}
+              y1={wheelCy + Math.sin(a) * spokeInnerR}
+              x2={wheelCx + Math.cos(a) * spokeOuterR}
+              y2={wheelCy + Math.sin(a) * spokeOuterR}
+              stroke="var(--muted-foreground)"
+              strokeWidth={1}
+            />
+          ))}
+          <circle cx={wheelCx} cy={wheelCy} r={WHEEL_RADIUS * 0.14} fill="var(--primary)" />
+          <circle cx={wheelCx} cy={wheelCy - WHEEL_RADIUS * 0.9} r={WHEEL_RADIUS * 0.12} fill="var(--primary)" />
         </g>
       </svg>
       <p className="sr-only">
-        The illustrated ramp rises at approximately {gradePercent.toFixed(1)} percent grade
-        {capped ? ", though the illustration angle is capped for layout while the numeric result is not." : "."}
+        {`The road rises at ${gradePercent.toFixed(1)} percent grade, equivalent to a ${angleDegrees.toFixed(1)} degree slope angle, gaining ${riseMetres.toFixed(1)} metres over a 100 metre horizontal run. A single wheel is shown spinning in place on the slope to indicate uphill travel.`}
       </p>
     </div>
   )
