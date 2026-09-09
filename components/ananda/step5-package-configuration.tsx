@@ -7,6 +7,7 @@ import {
   useDisplays,
   useBatteries,
   usePackageMotors,
+  useSpeedSensors,
   chargersForVoltage,
   resolveImageUrl,
   CHARGING_PORTS,
@@ -16,6 +17,7 @@ import {
   type MotorRow,
   type ChargerOption,
   type ChargingPortOption,
+  type SpeedSensorRow,
 } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
@@ -214,6 +216,7 @@ export function Step5PackageConfiguration() {
   const { controllers, isLoading: controllersLoading } = useControllers()
   const { displays, isLoading: displaysLoading } = useDisplays()
   const { batteries, isLoading: batteriesLoading } = useBatteries()
+  const { speedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
 
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
   const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
@@ -225,6 +228,7 @@ export function Step5PackageConfiguration() {
   const selectedBattery = compatibleBatteries.find((b) => b.id === s.batteryId) ?? null
   const selectedCharger = compatibleChargers.find((c) => c.id === s.chargerId) ?? null
   const selectedPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
+  const selectedSpeedSensor = speedSensors.find((sensor) => sensor.id === s.speedSensorId) ?? null
 
   // A Best Match tag only ever appears on a product that's actually present
   // in the current compatible list — never invented, never shown on a stale
@@ -239,6 +243,7 @@ export function Step5PackageConfiguration() {
   const bestChargerId = bestMatchId("chargerId", compatibleChargers)
   const bestPortId = bestMatchId("chargingPortId", CHARGING_PORTS)
   const bestControllerId = bestMatchId("controllerId", compatibleControllers)
+  const bestSpeedSensorId = bestMatchId("speedSensorId", speedSensors)
 
   const toggleSkip = (key: string, idField: keyof typeof s) => {
     const currentlySkipped = s.skippedItems.includes(key)
@@ -384,12 +389,38 @@ export function Step5PackageConfiguration() {
         skippable
         skipped={s.skippedItems.includes("speedSensorId")}
         onToggleSkip={() => toggleSkip("speedSensorId", "speedSensorId")}
-        hasOptions={false}
+        hasOptions={speedSensors.length > 0}
+        optionsLoading={speedSensorsLoading}
         expanded={expanded.speedSensorId}
         onToggleExpanded={() => toggleExpanded("speedSensorId")}
-        selectedSummary={s.speedSensorId ? <p className="text-sm font-sans font-bold text-primary">{s.speedSensorId}</p> : null}
+        selectedSummary={
+          selectedSpeedSensor && (
+            <div>
+              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedSpeedSensor.model}</p>
+              <p className="text-xs font-body text-muted-foreground">
+                {selectedSpeedSensor.connector_type ?? "—"}
+                {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m lead` : ""}
+              </p>
+            </div>
+          )
+        }
       >
-        <EmptyOptionsNotice />
+        <div className="product-option-grid">
+          {speedSensors.map((sensor: SpeedSensorRow) => (
+            <OptionCard
+              key={sensor.id}
+              title={sensor.model}
+              specs={[
+                { label: "Mounting", value: sensor.mounting_position },
+                { label: "Connector", value: sensor.connector_type },
+                { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+              ]}
+              selected={s.speedSensorId === sensor.id}
+              isBestMatch={bestSpeedSensorId === sensor.id}
+              onSelect={() => s.setField("speedSensorId", sensor.id)}
+            />
+          ))}
+        </div>
       </ConfigRow>
 
       <ConfigRow

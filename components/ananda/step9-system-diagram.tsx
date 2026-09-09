@@ -5,10 +5,9 @@ import { Bike, Network } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
-import { useMidDriveSystemDiagramData } from "@/lib/use-system-diagram-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { SystemDiagram } from "./system-diagram/system-diagram"
-import { RadialSystemDiagram } from "./system-diagram/radial-system-diagram"
+import { FixedSystemDiagram } from "./system-diagram/fixed-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
@@ -267,7 +266,6 @@ export function Step9SystemDiagram() {
   const driveType = s.driveType ?? "mid"
 
   const [overviewView, setOverviewView] = useState<"bike" | "diagram">("bike")
-  const midDriveDiagramData = useMidDriveSystemDiagramData()
 
   const { motors } = useMotors()
   const { displays } = useDisplays()
@@ -336,15 +334,22 @@ export function Step9SystemDiagram() {
         </div>
 
         <div style={{ minHeight: 620 }}>
-          {overviewView === "bike" ? (
-            <div id="overview-panel-bike" role="tabpanel" aria-labelledby="overview-tab-bike">
-              <SystemDiagram />
-            </div>
-          ) : (
-            <div id="overview-panel-diagram" role="tabpanel" aria-labelledby="overview-tab-diagram">
-              <RadialSystemDiagram data={midDriveDiagramData} />
-            </div>
-          )}
+          <div
+            id="overview-panel-bike"
+            role="tabpanel"
+            aria-labelledby="overview-tab-bike"
+            hidden={overviewView !== "bike"}
+          >
+            <SystemDiagram />
+          </div>
+          <div
+            id="overview-panel-diagram"
+            role="tabpanel"
+            aria-labelledby="overview-tab-diagram"
+            hidden={overviewView !== "diagram"}
+          >
+            <FixedSystemDiagram />
+          </div>
         </div>
       </div>
     )

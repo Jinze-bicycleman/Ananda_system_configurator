@@ -381,3 +381,37 @@ export function useExtensionCableLengthOptions() {
 export function connectionCableLengthOptionsFor(options: ConnectionCableLengthOptionRow[], cableId: string) {
   return options.filter((o) => o.cable_id === cableId)
 }
+
+// Speed sensor catalog (wheel-mounted speed sensor for both mid-drive and
+// hub systems). Its cable is a fixed integrated lead — `cable_length_mm`/
+// `connector_type` describe that lead directly, unlike the display/
+// accessory connections which are assembled from the separate
+// connection-cable catalog.
+export type SpeedSensorRow = {
+  id: string
+  model: string
+  name: string | null
+  mounting_position: string | null
+  cable_length_mm: number | null
+  connector_type: string | null
+  is_active: boolean
+  sort_order: number
+}
+
+const SPEED_SENSOR_COLUMNS = "id, model, name, mounting_position, cable_length_mm, connector_type, is_active, sort_order"
+
+async function fetchSpeedSensors(): Promise<SpeedSensorRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("speed_sensors")
+    .select(SPEED_SENSOR_COLUMNS)
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as SpeedSensorRow[]
+}
+
+export function useSpeedSensors() {
+  const { data, isLoading, error } = useSWR<SpeedSensorRow[]>("ananda-speed-sensors", fetchSpeedSensors)
+  return { speedSensors: data ?? [], isLoading, error }
+}

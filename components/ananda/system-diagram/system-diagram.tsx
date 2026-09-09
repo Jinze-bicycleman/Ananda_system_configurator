@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Info, Loader2 } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
-import { useMotors, useDisplays, useBatteries, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
+import { useMotors, useDisplays, useBatteries, useSpeedSensors, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
 import { aRemotes } from "@/lib/ananda-data"
 import { componentPoints, calloutAnchors, CABLE_SPECS, type ComponentKey } from "@/lib/ananda-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "@/components/ananda/cable-spec-controls"
@@ -36,15 +36,17 @@ export function SystemDiagram() {
   const { motors, isLoading: motorsLoading, error: motorsError } = useMotors()
   const { displays, isLoading: displaysLoading, error: displaysError } = useDisplays()
   const { batteries, isLoading: batteriesLoading, error: batteriesError } = useBatteries()
+  const { speedSensors, isLoading: speedSensorsLoading, error: speedSensorsError } = useSpeedSensors()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const isLoading = motorsLoading || displaysLoading || batteriesLoading
-  const hasError = Boolean(motorsError || displaysError || batteriesError)
+  const isLoading = motorsLoading || displaysLoading || batteriesLoading || speedSensorsLoading
+  const hasError = Boolean(motorsError || displaysError || batteriesError || speedSensorsError)
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
   const display = displays.find((d) => d.id === s.displayId) ?? null
   const battery = batteries.find((b) => b.id === s.batteryId) ?? null
+  const speedSensor = speedSensors.find((sensor) => sensor.id === s.speedSensorId) ?? null
   const remote = aRemotes.find((r) => r.id === s.remoteId) ?? null
   const accessoryCount = s.accessoryIds.length
   const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
@@ -76,7 +78,13 @@ export function SystemDiagram() {
     },
     speedSensor: {
       title: "Speed sensor",
-      lines: [speedSensorSkipped ? "Not needed" : s.speedSensorId ? `${s.speedSensorId} · SM-3P` : "SS-02 · SM-3P"],
+      lines: [
+        speedSensorSkipped
+          ? "Not needed"
+          : speedSensor
+            ? `${speedSensor.model} · ${speedSensor.connector_type ?? "SM-3P"}`
+            : "SS-02 · SM-3P",
+      ],
     },
     motor: {
       title: "Motor unit",
