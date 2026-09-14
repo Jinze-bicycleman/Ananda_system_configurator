@@ -7,7 +7,7 @@ import { StepHeader, BigSpec } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { AdvancedDriveOverride } from "./recommendation/advanced-drive-override"
 import { cn } from "@/lib/utils"
-import { AlertTriangle, CheckCircle2, Circle, Loader2, MinusCircle, XCircle } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Circle, Loader2, MinusCircle, Settings2, XCircle } from "lucide-react"
 
 function RequirementList({ solution }: { solution: RecommendedSolution }) {
   if (solution.metRequirements.length === 0 && solution.conditionalRequirements.length === 0 && solution.unmetRequirements.length === 0) {
@@ -184,6 +184,56 @@ function SolutionCard({
   )
 }
 
+// Fourth, always-available option alongside the ranked recommendations —
+// no preset motor/battery/display combination, no specifications. Selecting
+// it lets the user build every component from scratch in Package
+// Configuration instead of starting from a ranked solution.
+function CustomSolutionCard({ selected, onSelect }: { selected: boolean; onSelect: () => void }) {
+  return (
+    <div
+      className={cn(
+        "product-card relative flex flex-col border-2 border-dashed transition-all",
+        selected ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/40",
+      )}
+    >
+      <div className={cn("h-1.5 w-full", selected ? "bg-primary" : "bg-border")} />
+
+      <div className="flex items-center justify-between px-4 pt-4">
+        <span className="inline-flex items-center gap-1.5 border border-border px-2 py-1 text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">
+          <Settings2 className="h-3 w-3" /> Fully Customize
+        </span>
+        {selected && (
+          <div className="rounded-full bg-primary p-1">
+            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+          </div>
+        )}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col p-4">
+        <p className="text-xs font-body leading-relaxed text-muted-foreground">
+          Skip the ranked recommendations and build every component yourself in Package Configuration. No preset motor, battery,
+          display, or specifications are applied.
+        </p>
+
+        <div className="mt-4 flex flex-1 items-center justify-center border border-dashed border-border bg-surface py-10">
+          <p className="text-xs font-sans font-semibold uppercase tracking-wider text-muted-foreground">No preset specification</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onSelect}
+          className={cn(
+            "mt-4 w-full py-2.5 text-sm font-sans font-bold uppercase tracking-wider transition-all",
+            selected ? "bg-primary text-white" : "border border-border text-graphite hover:border-primary hover:text-primary",
+          )}
+        >
+          {selected ? "Custom Build Selected" : "Build From Scratch"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function Step4RecommendedSolutions() {
   const s = useAnandaStore()
   const { solutions, noSolutionReason, isLoading } = useRecommendations()
@@ -218,19 +268,19 @@ export function Step4RecommendedSolutions() {
         subtitle="Based on your Product Targets, here are three ranked configurations. Pick one to carry forward — you can fine-tune every component in Package Configuration."
       />
 
-      {isLoading ? (
-        <div id="field-solutions" className="flex items-center justify-center gap-2 py-16 text-sm font-sans text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Generating recommendations…
-        </div>
-      ) : noSolutionReason ? (
-        <div id="field-solutions" className="border-2 border-dashed border-warning/40 p-8 text-center">
-          <AlertTriangle className="mx-auto mb-3 h-6 w-6 text-warning" />
-          <p className="mb-1 text-sm font-sans font-semibold uppercase tracking-wider text-warning">No Solution Available</p>
-          <p className="mx-auto max-w-md text-sm font-body text-muted-foreground">{noSolutionReason}</p>
-        </div>
-      ) : (
-        <div id="field-solutions" className="responsive-product-grid">
-          {solutions.map((solution) => (
+      <div id="field-solutions" className="responsive-product-grid">
+        {isLoading ? (
+          <div className="col-span-full flex items-center justify-center gap-2 py-16 text-sm font-sans text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Generating recommendations…
+          </div>
+        ) : noSolutionReason ? (
+          <div className="col-span-full border-2 border-dashed border-warning/40 p-8 text-center">
+            <AlertTriangle className="mx-auto mb-3 h-6 w-6 text-warning" />
+            <p className="mb-1 text-sm font-sans font-semibold uppercase tracking-wider text-warning">No Solution Available</p>
+            <p className="mx-auto max-w-md text-sm font-body text-muted-foreground">{noSolutionReason}</p>
+          </div>
+        ) : (
+          solutions.map((solution) => (
             <SolutionCard
               key={solution.id}
               solution={solution}
@@ -238,9 +288,10 @@ export function Step4RecommendedSolutions() {
               selected={s.selectedSolutionId === solution.id}
               onSelect={() => applySolution(solution)}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+        <CustomSolutionCard selected={s.selectedSolutionId === "custom"} onSelect={() => s.selectCustomSolution()} />
+      </div>
 
       <AdvancedDriveOverride />
 
