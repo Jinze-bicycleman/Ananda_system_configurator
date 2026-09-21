@@ -1,22 +1,36 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Bluetooth, CheckCircle2, ChevronDown, Lightbulb, MapPin, Search, Settings2, ShieldCheck } from "lucide-react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { Bluetooth, CheckCircle2, HelpCircle, Lightbulb, Search, Wifi, Zap } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
 import {
   RIDER_PROFILES,
-  WEIGHT_BANDS,
-  RANGE_BANDS,
+  BATTERY_CAPACITY_BANDS,
+  TERRAIN_BANDS,
   TORQUE_BANDS,
+  DEFAULT_LIGHTS_CONFIG,
   applyRiderProfile,
-  type WeightBand,
-  type RangeBand,
+  type BatteryCapacityBand,
+  type TerrainBand,
   type TorqueBand,
-  type FunctionLevel,
+  type BluetoothAppChoice,
+  type LightsConfig,
+  type YesNo,
 } from "@/lib/ananda-product-targets"
 import { StepHeader, SectionLabel, ChoiceGroup } from "./ui-primitives"
 import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 // Each rider profile reuses the bicycle-application photography from the
 // (now-retired) standalone Bike Category step, and drives `bikeCategory`
@@ -38,44 +52,322 @@ const RIDER_PROFILE_BIKE_CATEGORY: Record<string, string> = {
   performance: "MTB",
 }
 
-const FUNCTION_LEVELS: { id: FunctionLevel; label: string }[] = [
-  { id: "must", label: "Must Have" },
-  { id: "target", label: "Target" },
-  { id: "nice", label: "Nice to Have" },
-  { id: "not_required", label: "Not Required" },
+const DRIVE_UNITS = [
+  { id: "mid" as const, label: "Mid Motor", disabled: false },
+  { id: "hub" as const, label: "Hub Motor", disabled: true },
 ]
 
-function FunctionRow({
-  icon: Icon,
+const VOLTAGE_PLATFORMS = [36, 48] as const
+
+const ANANDA_APP_INFO = (
+  <div className="space-y-1.5">
+    <p className="font-sans font-bold uppercase tracking-wider text-foreground">Key Features</p>
+    <p>
+      <span className="font-semibold text-foreground">Live Tracking &amp; History:</span> Record your riding time, distance, maximum
+      speed, average speed, and view real-time maps.
+    </p>
+    <p>
+      <span className="font-semibold text-foreground">Motor Diagnostics:</span> Run system health checks to spot communication errors,
+      headlight issues, speed sensor faults, and motor or controller temperatures.
+    </p>
+    <p>
+      <span className="font-semibold text-foreground">Boost Adjustment:</span> Customize your ride by changing assist levels and
+      maximum output power.
+    </p>
+    <p>
+      <span className="font-semibold text-foreground">Security:</span> Set a personalized passcode lock and use bike finder tools to
+      locate your last known parking position.
+    </p>
+  </div>
+)
+
+const THIRD_PARTY_APP_INFO = (
+  <p>Uses the Ananda communication protocol for data transferring and reading with your own third-party application.</p>
+)
+
+// Compact segmented button with a hover "?" tooltip describing the option —
+// used for the two Bluetooth app choices (Ananda Ride App / 3rd-Party App).
+function InfoOptionButton({
   label,
-  value,
-  onChange,
-  }: {
-  icon: typeof Bluetooth
+  selected,
+  onSelect,
+  info,
+}: {
   label: string
-  value: FunctionLevel
-  onChange: (level: FunctionLevel) => void
-  }) {
+  selected: boolean
+  onSelect: () => void
+  info: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 border px-2 py-1.5 transition-colors",
+        selected ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
+      )}
+    >
+      <button type="button" onClick={onSelect} className="text-[10px] font-sans font-bold uppercase tracking-wider">
+        {label}
+      </button>
+      <HoverCard openDelay={100}>
+        <HoverCardTrigger asChild>
+          <button
+            type="button"
+            aria-label={`About ${label}`}
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current"
+          >
+            <HelpCircle className="h-3 w-3" />
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80 text-xs leading-relaxed text-foreground">{info}</HoverCardContent>
+      </HoverCard>
+    </div>
+  )
+}
+
+// Bluetooth — choice of companion app instead of a Must/Target/Nice level.
+// Choosing the 3rd-Party App requires an explicit confirmation on a warning
+// dialog before the selection is committed.
+function BluetoothFunctionRow() {
+  const s = useAnandaStore()
+  const t = s.productTargets
+  const [pendingThirdParty, setPendingThirdParty] = useState(false)
+
+  const choose = (app: BluetoothAppChoice) => {
+    if (app === "third_party" && !t.functions.bluetoothThirdPartyAcknowledged) {
+      setPendingThirdParty(true)
+      return
+    }
+    s.setProductTarget({ functions: { bluetoothApp: app, bluetooth: "target" } })
+  }
+
+  const confirmThirdParty = () => {
+    s.setProductTarget({ functions: { bluetoothApp: "third_party", bluetooth: "target", bluetoothThirdPartyAcknowledged: true } })
+  }
+
   return (
     <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
       <span className="flex min-w-0 items-center gap-2 text-sm font-sans font-semibold text-graphite">
-    <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-    <span>{label}</span>
-  </span>
+        <Bluetooth aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+        <span>Bluetooth</span>
+      </span>
+      <div className="flex flex-wrap gap-2 sm:justify-end">
+        <InfoOptionButton
+          label="Ananda Ride App"
+          selected={t.functions.bluetoothApp === "ananda_app"}
+          onSelect={() => choose("ananda_app")}
+          info={ANANDA_APP_INFO}
+        />
+        <InfoOptionButton
+          label="3rd-Party App"
+          selected={t.functions.bluetoothApp === "third_party"}
+          onSelect={() => choose("third_party")}
+          info={THIRD_PARTY_APP_INFO}
+        />
+      </div>
+
+      <AlertDialog open={pendingThirdParty} onOpenChange={setPendingThirdParty}>
+        <AlertDialogContent className="border-2 border-border font-sans">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+              3rd-Party App Connectivity
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+              Configuring 3rd-party app connectivity may cause extra cost, please consult our sales for more information.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmThirdParty}
+              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+            >
+              Confirm &amp; Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
+
+// IoT Module — merges the old GPS Tracking + Anti-Theft rows into a single
+// Yes/No choice, with a description of what the module provides in the
+// space where the second row used to be.
+function IotModuleRow() {
+  const s = useAnandaStore()
+  const t = s.productTargets
+
+  const setIot = (value: YesNo) =>
+    s.setProductTarget({
+      functions: {
+        iotModule: value,
+        gps: value === "yes" ? "target" : "not_required",
+        antiTheft: value === "yes" ? "target" : "not_required",
+      },
+    })
+
+  return (
+    <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
+      <span className="flex min-w-0 items-start gap-2 text-sm font-sans font-semibold text-graphite">
+        <Wifi aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <span className="min-w-0">
+          <span className="block">IoT Module</span>
+          <span className="mt-1 block max-w-sm text-xs font-normal leading-relaxed text-muted-foreground">
+            IoT module provides GPS and internet connectivity function, requires LAN service via SIM card.
+          </span>
+        </span>
+      </span>
       <div className="choice-group sm:w-auto sm:justify-end">
-        {FUNCTION_LEVELS.map((lvl) => (
+        {(["yes", "no"] as const).map((v) => (
           <button
-            key={lvl.id}
+            key={v}
             type="button"
-            onClick={() => onChange(lvl.id)}
+            onClick={() => setIot(v)}
             className={cn(
-              "border px-2 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
-              value === lvl.id ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
+              "border px-3 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
+              t.functions.iotModule === v ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
             )}
           >
-            {lvl.label}
+            {v}
           </button>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// Lights — Yes/No, revealing exact-value fields (light count, voltage,
+// total power) once enabled. Defaults to 12V / 2 lights / 10W.
+function LightsFunctionRow() {
+  const s = useAnandaStore()
+  const t = s.productTargets
+  const cfg = t.functions.lightsConfig ?? DEFAULT_LIGHTS_CONFIG
+
+  const setLights = (value: YesNo) => s.setProductTarget({ functions: { lights: value } })
+  const setCfg = (patch: Partial<LightsConfig>) => s.setProductTarget({ functions: { lightsConfig: { ...cfg, ...patch } } })
+
+  return (
+    <div className="border border-border p-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <span className="flex min-w-0 items-center gap-2 text-sm font-sans font-semibold text-graphite">
+          <Lightbulb aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+          <span>Lights</span>
+        </span>
+        <div className="choice-group sm:w-auto sm:justify-end">
+          {(["yes", "no"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setLights(v)}
+              className={cn(
+                "border px-3 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
+                t.functions.lights === v ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+      {t.functions.lights === "yes" && (
+        <div className="mt-3 grid grid-cols-1 gap-3 border-t border-dashed border-border pt-3 sm:grid-cols-3">
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Number of lights
+            <input
+              type="number"
+              min="1"
+              value={cfg.count}
+              onChange={(e) => setCfg({ count: Number(e.target.value) || 1 })}
+              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+          </label>
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Light voltage (V)
+            <input
+              type="number"
+              min="1"
+              value={cfg.voltageV}
+              onChange={(e) => setCfg({ voltageV: Number(e.target.value) || 12 })}
+              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+          </label>
+          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Total power consumption (W)
+            <input
+              type="number"
+              min="1"
+              value={cfg.powerW}
+              onChange={(e) => setCfg({ powerW: Number(e.target.value) || 10 })}
+              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Drive Unit Selection — sets the real `driveType` / `voltagePlatform`
+// fields directly (the same fields Step 4's recommendation engine and
+// Package Configuration already key off of), placed right after the Rider
+// Profile cards and before Wheel & Tyre Data.
+function DriveUnitSection() {
+  const s = useAnandaStore()
+
+  return (
+    <div id="field-driveUnit" className="mb-8">
+      <SectionLabel>Drive Unit Selection</SectionLabel>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="min-w-0">
+          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Motor Type</p>
+          <div className="flex flex-wrap gap-3">
+            {DRIVE_UNITS.map((d) => {
+              const selected = s.driveType === d.id
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  disabled={d.disabled}
+                  onClick={() => s.setDriveType(d.id)}
+                  className={cn(
+                    "flex min-w-0 flex-1 basis-40 items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-sm font-sans font-semibold transition-colors",
+                    d.disabled
+                      ? "cursor-not-allowed border-border text-muted-foreground opacity-50"
+                      : selected
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border text-graphite hover:border-primary/40",
+                  )}
+                >
+                  {d.label}
+                  {selected && <CheckCircle2 className="h-4 w-4 shrink-0" />}
+                  {d.disabled && <span className="text-[10px] uppercase tracking-wider">Soon</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div className="min-w-0">
+          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Voltage Platform</p>
+          <div className="flex flex-wrap gap-3">
+            {VOLTAGE_PLATFORMS.map((v) => {
+              const selected = s.voltagePlatform === v
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => s.setVoltage(v)}
+                  className={cn(
+                    "flex min-w-0 flex-1 basis-24 items-center justify-center gap-1.5 border-2 px-3 py-2.5 text-sm font-sans font-bold transition-colors",
+                    selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+                  )}
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  {v}V
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -84,7 +376,6 @@ function FunctionRow({
 export function Step3ProductTargets() {
   const s = useAnandaStore()
   const t = s.productTargets
-  const [advancedOpen, setAdvancedOpen] = useState(t.mode === "advanced")
 
   return (
     <div>
@@ -150,31 +441,39 @@ export function Step3ProductTargets() {
         </div>
       </div>
 
+      {/* Drive unit selection — mid vs hub motor, and voltage platform.
+          Placed after the Rider Profile cards and before Wheel & Tyre
+          Data. */}
+      <DriveUnitSection />
+
       {/* Wheel & tyre data — depends on the bike category set by the rider
           profile above, and feeds the drivetrain estimates further down the
           flow, so it belongs here rather than in Functions & Connectivity. */}
       <WheelAndTyreSection />
 
-      {/* Weight / Range / Torque bands */}
+      {/* Battery capacity / Riding terrain / Torque bands */}
       <div className="mb-8 grid grid-cols-1 gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
         <div id="field-weightTarget" className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">System Weight</p>
+          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Battery Capacity</p>
           <ChoiceGroup
-            options={(Object.keys(WEIGHT_BANDS) as WeightBand[]).map((id) => ({ id, label: WEIGHT_BANDS[id].label.split(" (")[0] }))}
-            value={t.weight.band}
+            options={(Object.keys(BATTERY_CAPACITY_BANDS) as BatteryCapacityBand[]).map((id) => ({
+              id,
+              label: BATTERY_CAPACITY_BANDS[id].label,
+            }))}
+            value={t.battery.band}
             onChange={(band) => {
-              const b = WEIGHT_BANDS[band]
-              s.setProductTarget({ weight: { targetKg: b.targetKg, maxKg: b.maxKg, band } })
+              const b = BATTERY_CAPACITY_BANDS[band]
+              s.setProductTarget({ battery: { capacityWh: b.capacityWh, band } })
             }}
           />
         </div>
         <div id="field-rangeTarget" className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Range</p>
+          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Riding Terrain</p>
           <ChoiceGroup
-            options={(Object.keys(RANGE_BANDS) as RangeBand[]).map((id) => ({ id, label: RANGE_BANDS[id].label.split(" (")[0] }))}
+            options={(Object.keys(TERRAIN_BANDS) as TerrainBand[]).map((id) => ({ id, label: TERRAIN_BANDS[id].label }))}
             value={t.performance.rangeBand}
             onChange={(band) => {
-              const b = RANGE_BANDS[band]
+              const b = TERRAIN_BANDS[band]
               s.setProductTarget({ performance: { rangeTargetKm: b.targetKm, rangeBand: band } })
             }}
           />
@@ -196,10 +495,9 @@ export function Step3ProductTargets() {
       <div className="mb-8">
         <SectionLabel>Functions & Connectivity</SectionLabel>
         <div className="space-y-2">
-          <FunctionRow icon={Bluetooth} label="Bluetooth" value={t.functions.bluetooth} onChange={(level) => s.setProductTarget({ functions: { bluetooth: level } })} />
-          <FunctionRow icon={MapPin} label="GPS Tracking" value={t.functions.gps} onChange={(level) => s.setProductTarget({ functions: { gps: level } })} />
-          <FunctionRow icon={ShieldCheck} label="Anti-Theft" value={t.functions.antiTheft} onChange={(level) => s.setProductTarget({ functions: { antiTheft: level } })} />
-          <FunctionRow icon={Lightbulb} label="Lights" value={t.functions.lights} onChange={(level) => s.setProductTarget({ functions: { lights: level } })} />
+          <BluetoothFunctionRow />
+          <IotModuleRow />
+          <LightsFunctionRow />
         </div>
       </div>
 
@@ -220,18 +518,6 @@ export function Step3ProductTargets() {
             />
           </div>
           <div className="min-w-0">
-            <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Cost Priority</p>
-            <ChoiceGroup
-              options={[
-                { id: "lowest_cost" as const, label: "Lowest Cost" },
-                { id: "balanced" as const, label: "Balanced" },
-                { id: "feature_first" as const, label: "Feature-First" },
-              ]}
-              value={t.ambition.costPriority}
-              onChange={(costPriority) => s.setProductTarget({ ambition: { costPriority } })}
-            />
-          </div>
-          <div className="min-w-0">
             <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Differentiation</p>
             <select
               value={t.ambition.differentiation ?? ""}
@@ -244,63 +530,10 @@ export function Step3ProductTargets() {
               <option value="high_performance">High Performance</option>
               <option value="connected">Connected</option>
               <option value="design">Design</option>
-              <option value="low_maintenance">Low Maintenance</option>
+              <option value="low_cost">Low Cost</option>
             </select>
           </div>
         </div>
-      </div>
-
-      {/* Advanced numeric overrides */}
-      <div className="border border-dashed border-border">
-        <button
-          type="button"
-          onClick={() => {
-            const next = !advancedOpen
-            setAdvancedOpen(next)
-            s.setProductTarget({ mode: next ? "advanced" : "quick" })
-          }}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-        >
-          <span className="flex items-center gap-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">
-            <Settings2 className="h-3.5 w-3.5" /> Advanced Requirements (Exact Values)
-          </span>
-          <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", advancedOpen && "rotate-180")} />
-        </button>
-        {advancedOpen && (
-          <div className="grid grid-cols-1 gap-4 border-t border-dashed border-border p-4 sm:grid-cols-3">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Max weight (kg)
-              <input
-                type="number"
-                value={t.weight.maxKg ?? ""}
-                onChange={(e) => s.setProductTarget({ weight: { maxKg: e.target.value ? Number(e.target.value) : null, band: null } })}
-                className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Torque target (Nm)
-              <input
-                type="number"
-                value={t.performance.torqueTargetNm ?? ""}
-                onChange={(e) =>
-                  s.setProductTarget({ performance: { torqueTargetNm: e.target.value ? Number(e.target.value) : null, torqueBand: null } })
-                }
-                className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Range target (km)
-              <input
-                type="number"
-                value={t.performance.rangeTargetKm ?? ""}
-                onChange={(e) =>
-                  s.setProductTarget({ performance: { rangeTargetKm: e.target.value ? Number(e.target.value) : null, rangeBand: null } })
-                }
-                className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-              />
-            </label>
-          </div>
-        )}
       </div>
     </div>
   )

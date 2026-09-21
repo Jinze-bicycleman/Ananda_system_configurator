@@ -6,8 +6,22 @@ export type RequirementLevel = "must" | "target" | "nice"
 export type FunctionLevel = RequirementLevel | "not_required"
 
 export type WeightBand = "light" | "standard" | "heavy"
-export type RangeBand = "short" | "medium" | "long"
+// Riding Terrain — replaces the old distance-based Range selector. Still
+// backed by `rangeTargetKm`/`rangeBand` under the hood (consumed by the
+// recommendation engine's range scoring), just relabeled and re-optioned to
+// match the terrain the bike will actually be ridden on.
+export type TerrainBand = "flat" | "hilly" | "mixed"
 export type TorqueBand = "standard" | "high"
+// Battery Capacity — replaces the old System Weight selector on Step 3.
+export type BatteryCapacityBand = "light" | "standard" | "long_range"
+export type BluetoothAppChoice = "ananda_app" | "third_party"
+export type YesNo = "yes" | "no"
+
+export interface LightsConfig {
+  count: number
+  voltageV: number
+  powerW: number
+}
 
 export interface ProductTargets {
   mode: "quick" | "advanced"
@@ -24,20 +38,34 @@ export interface ProductTargets {
     torqueBand: TorqueBand | null
     rangeTargetKm: number | null
     rangeLevel: RequirementLevel
-    rangeBand: RangeBand | null
+    rangeBand: TerrainBand | null
+  }
+  battery: {
+    capacityWh: number | null
+    band: BatteryCapacityBand | null
   }
   functions: {
+    // User-facing choice of companion-app connectivity. `bluetooth` (a
+    // FunctionLevel) is still derived alongside it so the recommendation
+    // engine and target-status matrix keep working unchanged.
+    bluetoothApp: BluetoothAppChoice | null
+    bluetoothThirdPartyAcknowledged: boolean
     bluetooth: FunctionLevel
+    // IoT Module — merges GPS Tracking + Anti-Theft into a single Yes/No
+    // choice. `gps`/`antiTheft` (FunctionLevel) are still derived alongside
+    // it for the recommendation engine and target-status matrix.
+    iotModule: YesNo | null
     gps: FunctionLevel
     antiTheft: FunctionLevel
-    lights: FunctionLevel
+    lights: YesNo | null
+    lightsConfig: LightsConfig
     hmiType: "basic" | "connected" | "smart" | null
     hmiLevel: RequirementLevel
   }
   ambition: {
     positioning: "value" | "mainstream" | "premium" | null
     costPriority: "lowest_cost" | "balanced" | "feature_first" | null
-    differentiation: "lightweight" | "long_range" | "high_performance" | "connected" | "design" | "low_maintenance" | null
+    differentiation: "lightweight" | "long_range" | "high_performance" | "connected" | "design" | "low_cost" | null
   }
 }
 
@@ -46,9 +74,12 @@ export interface ProductTargets {
 export type ProductTargetsPatch = Partial<Pick<ProductTargets, "mode" | "presetId">> & {
   weight?: Partial<ProductTargets["weight"]>
   performance?: Partial<ProductTargets["performance"]>
+  battery?: Partial<ProductTargets["battery"]>
   functions?: Partial<ProductTargets["functions"]>
   ambition?: Partial<ProductTargets["ambition"]>
 }
+
+export const DEFAULT_LIGHTS_CONFIG: LightsConfig = { count: 2, voltageV: 12, powerW: 10 }
 
 export const defaultProductTargets: ProductTargets = {
   mode: "quick",
@@ -62,15 +93,23 @@ export const defaultProductTargets: ProductTargets = {
     rangeLevel: "target",
     rangeBand: null,
   },
+  battery: { capacityWh: null, band: null },
   functions: {
+    bluetoothApp: null,
+    bluetoothThirdPartyAcknowledged: false,
     bluetooth: "nice",
+    iotModule: null,
     gps: "not_required",
     antiTheft: "not_required",
-    lights: "nice",
+    lights: null,
+    lightsConfig: DEFAULT_LIGHTS_CONFIG,
     hmiType: null,
     hmiLevel: "target",
   },
-  ambition: { positioning: null, costPriority: null, differentiation: null },
+  // Cost Priority no longer has a Step 3 selector — default to "balanced" so
+  // downstream validation and the recommendation engine keep working without
+  // requiring manual input.
+  ambition: { positioning: null, costPriority: "balanced", differentiation: null },
 }
 
 export const WEIGHT_BANDS: Record<WeightBand, { label: string; targetKg: number; maxKg: number }> = {
@@ -79,10 +118,16 @@ export const WEIGHT_BANDS: Record<WeightBand, { label: string; targetKg: number;
   heavy: { label: "Heavy / Cargo (30 kg+)", targetKg: 34, maxKg: 40 },
 }
 
-export const RANGE_BANDS: Record<RangeBand, { label: string; targetKm: number }> = {
-  short: { label: "Short (≤ 60 km)", targetKm: 60 },
-  medium: { label: "Medium (60–110 km)", targetKm: 100 },
-  long: { label: "Long (110 km+)", targetKm: 140 },
+export const BATTERY_CAPACITY_BANDS: Record<BatteryCapacityBand, { label: string; capacityWh: number }> = {
+  light: { label: "Light (400Wh)", capacityWh: 400 },
+  standard: { label: "Standard (500Wh)", capacityWh: 500 },
+  long_range: { label: "Long Range (800Wh)", capacityWh: 800 },
+}
+
+export const TERRAIN_BANDS: Record<TerrainBand, { label: string; targetKm: number }> = {
+  flat: { label: "Flat", targetKm: 120 },
+  hilly: { label: "Hilly", targetKm: 80 },
+  mixed: { label: "Mixed", targetKm: 100 },
 }
 
 export const TORQUE_BANDS: Record<TorqueBand, { label: string; targetNm: number }> = {
@@ -95,11 +140,11 @@ export interface RiderProfilePreset {
   label: string
   description: string
   weightBand: WeightBand
-  rangeBand: RangeBand
+  batteryBand: BatteryCapacityBand
+  rangeBand: TerrainBand
   torqueBand: TorqueBand
-  bluetooth: FunctionLevel
-  gps: FunctionLevel
-  antiTheft: FunctionLevel
+  iotModule: YesNo
+  lights: YesNo
   positioning: NonNullable<ProductTargets["ambition"]["positioning"]>
   costPriority: NonNullable<ProductTargets["ambition"]["costPriority"]>
 }
@@ -110,11 +155,11 @@ export const RIDER_PROFILES: RiderProfilePreset[] = [
     label: "Commuter",
     description: "Daily city riding, light loads, cost-conscious.",
     weightBand: "light",
-    rangeBand: "medium",
+    batteryBand: "light",
+    rangeBand: "flat",
     torqueBand: "standard",
-    bluetooth: "nice",
-    gps: "not_required",
-    antiTheft: "not_required",
+    iotModule: "no",
+    lights: "yes",
     positioning: "mainstream",
     costPriority: "balanced",
   },
@@ -123,11 +168,11 @@ export const RIDER_PROFILES: RiderProfilePreset[] = [
     label: "Family / Cargo",
     description: "Carrying children or heavy loads, needs climbing torque and range.",
     weightBand: "heavy",
-    rangeBand: "long",
+    batteryBand: "long_range",
+    rangeBand: "hilly",
     torqueBand: "high",
-    bluetooth: "target",
-    gps: "target",
-    antiTheft: "target",
+    iotModule: "yes",
+    lights: "yes",
     positioning: "mainstream",
     costPriority: "balanced",
   },
@@ -136,11 +181,11 @@ export const RIDER_PROFILES: RiderProfilePreset[] = [
     label: "Trekking / Adventure",
     description: "Longer rides, mixed terrain, wants range and reliability.",
     weightBand: "standard",
-    rangeBand: "long",
+    batteryBand: "long_range",
+    rangeBand: "mixed",
     torqueBand: "standard",
-    bluetooth: "target",
-    gps: "target",
-    antiTheft: "nice",
+    iotModule: "yes",
+    lights: "yes",
     positioning: "premium",
     costPriority: "feature_first",
   },
@@ -149,11 +194,11 @@ export const RIDER_PROFILES: RiderProfilePreset[] = [
     label: "Performance",
     description: "High-power riding, hills and trails, torque-first.",
     weightBand: "standard",
-    rangeBand: "medium",
+    batteryBand: "standard",
+    rangeBand: "hilly",
     torqueBand: "high",
-    bluetooth: "target",
-    gps: "nice",
-    antiTheft: "nice",
+    iotModule: "no",
+    lights: "yes",
     positioning: "premium",
     costPriority: "feature_first",
   },
@@ -161,18 +206,27 @@ export const RIDER_PROFILES: RiderProfilePreset[] = [
 
 export function applyRiderProfile(preset: RiderProfilePreset): ProductTargetsPatch {
   const weight = WEIGHT_BANDS[preset.weightBand]
-  const range = RANGE_BANDS[preset.rangeBand]
+  const battery = BATTERY_CAPACITY_BANDS[preset.batteryBand]
+  const terrain = TERRAIN_BANDS[preset.rangeBand]
   const torque = TORQUE_BANDS[preset.torqueBand]
   return {
     presetId: preset.id,
     weight: { targetKg: weight.targetKg, maxKg: weight.maxKg, band: preset.weightBand },
     performance: {
-      rangeTargetKm: range.targetKm,
+      rangeTargetKm: terrain.targetKm,
       rangeBand: preset.rangeBand,
       torqueTargetNm: torque.targetNm,
       torqueBand: preset.torqueBand,
     },
-    functions: { bluetooth: preset.bluetooth, gps: preset.gps, antiTheft: preset.antiTheft },
+    battery: { capacityWh: battery.capacityWh, band: preset.batteryBand },
+    functions: {
+      bluetoothApp: "ananda_app",
+      bluetooth: "target",
+      iotModule: preset.iotModule,
+      gps: preset.iotModule === "yes" ? "target" : "not_required",
+      antiTheft: preset.iotModule === "yes" ? "target" : "not_required",
+      lights: preset.lights,
+    },
     ambition: { positioning: preset.positioning, costPriority: preset.costPriority },
   }
 }

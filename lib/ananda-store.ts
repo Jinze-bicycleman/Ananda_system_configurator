@@ -17,7 +17,7 @@ export interface AnandaConfig {
   driveType: "mid" | "hub" | null
   voltagePlatform: 36 | 48 | 52 | null
   productTargets: ProductTargets
-  selectedSolutionId: "best" | "lower_cost" | "premium" | null
+  selectedSolutionId: "best" | "lower_cost" | "premium" | "custom" | null
   // Optional expert override consumed only by the recommendation engine as a
   // hard filter — independent from `driveType`/`voltagePlatform` above, which
   // are populated by `applyRecommendedSolution` once a solution is chosen.
@@ -119,6 +119,8 @@ export interface AnandaActions {
   ) => void
   /** Recomputes packageBaseline from the currently selected solution without touching live selections — used when the catalogue-derived recommendation for a component (e.g. charger) changes. */
   setPackageBaseline: (baseline: Record<string, string | null>) => void
+  /** "Fully Customize" Step 4 option — marks a solution as selected without applying any preset motor/battery/display combination, so the user builds every component from scratch in Package Configuration. Preserves any drive type / voltage platform already chosen on Step 3. */
+  selectCustomSolution: () => void
   selectPackage: (packageId: string, defaults: Partial<AnandaConfig>) => void
   setItemSkipped: (key: string, skipped: boolean) => void
   toggleAccessory: (id: string) => void
@@ -175,7 +177,15 @@ function normalizePersisted(input: Partial<AnandaConfig> & Record<string, unknow
           ...(input.productTargets as Partial<ProductTargets>),
           weight: { ...defaultProductTargets.weight, ...(input.productTargets as ProductTargets).weight },
           performance: { ...defaultProductTargets.performance, ...(input.productTargets as ProductTargets).performance },
-          functions: { ...defaultProductTargets.functions, ...(input.productTargets as ProductTargets).functions },
+          battery: { ...defaultProductTargets.battery, ...(input.productTargets as Partial<ProductTargets>).battery },
+          functions: {
+            ...defaultProductTargets.functions,
+            ...(input.productTargets as ProductTargets).functions,
+            lightsConfig: {
+              ...defaultProductTargets.functions.lightsConfig,
+              ...(input.productTargets as Partial<ProductTargets>).functions?.lightsConfig,
+            },
+          },
           ambition: { ...defaultProductTargets.ambition, ...(input.productTargets as ProductTargets).ambition },
         }
       : defaultProductTargets,
@@ -228,6 +238,23 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
         },
       })),
       setPackageBaseline: (baseline) => set((state) => ({ packageBaseline: { ...state.packageBaseline, ...baseline } })),
+      selectCustomSolution: () => set(() => ({
+        selectedSolutionId: "custom",
+        packageId: null,
+        motorId: null,
+        controllerId: null,
+        torqueSensorId: null,
+        cadenceSensorId: null,
+        speedSensorId: null,
+        displayId: null,
+        remoteId: null,
+        batteryId: null,
+        chargerId: null,
+        chargingPortId: null,
+        skippedItems: [],
+        targetStatusBaseline: null,
+        packageBaseline: {},
+      })),
       selectPackage: (packageId, defaults) => set((state) => ({ ...state, ...defaults, packageId, skippedItems: [] })),
       setItemSkipped: (key, skipped) => set((state) => ({
         skippedItems: skipped ? Array.from(new Set([...state.skippedItems, key])) : state.skippedItems.filter((item) => item !== key),
@@ -269,8 +296,8 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       name: "ananda-edrive-config-v1",
       merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
       partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
+        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectCustomSolution, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
+        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectCustomSolution; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
         return rest
       },
     },
