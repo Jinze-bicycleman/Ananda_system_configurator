@@ -6,6 +6,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -76,6 +77,16 @@ export function SpeedCadenceGraph({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <ReferenceArea
+              x1={60}
+              x2={90}
+              fill="var(--primary)"
+              fillOpacity={0.08}
+              stroke="var(--primary)"
+              strokeOpacity={0.25}
+              strokeDasharray="2 2"
+              label={{ value: "Ideal cadence (60–90 rpm)", position: "insideTop", fontSize: 10.5, fill: "var(--primary)" }}
+            />
             <XAxis
               dataKey="cadence"
               tick={{ fontSize: 11, fontFamily: "var(--font-sans)" }}

@@ -91,6 +91,28 @@ export interface AnandaConfig {
   extensionCableLengths: Record<string, number>
   currentStep: number
   hasStarted: boolean
+  // HMI communication-protocol filter (Step 5) — defaults to CAN bus.
+  hmiProtocolPreference: "can" | "uart"
+  // Bike components (Step 5) — chainring / crank / spider selections.
+  bikeComponentSelections: Record<string, string | null>
+  // Hub-motor controller sourcing (Step 5) — whether to use an Ananda
+  // controller, a customer-supplied third-party controller, or none.
+  controllerSourcing: "ananda" | "third_party" | "not_needed" | null
+  thirdPartyControllerAcknowledged: boolean
+  // Drivetrain system kind (Step 6) — derailleur vs internal gear hub, and
+  // the up/down ratio inputs used only for the gear-hub calculator.
+  drivetrainSystemKind: "derailleur" | "gear_hub" | null
+  hubGearUpRatio: number | null
+  hubGearDownRatio: number | null
+  // Accessory-level detail (Step 8)
+  lightSpecs: Record<string, { voltageV: number | null; currentA: number | null; powerW: number | null }>
+  throttleStartMode: "zero_start" | "speed_gate" | null
+  throttleSpeedGateKmh: number | null
+  throttleSampleAcknowledged: boolean
+  customAccessories: { id: string; name: string }[]
+  // Stage 7 — connector sourcing when non-Ananda accessories/controller are in play.
+  connectorSourcing: "standard" | "custom" | null
+  connectorCustomAcknowledged: boolean
 }
 
 export interface AnandaActions {
@@ -135,6 +157,10 @@ export interface AnandaActions {
   prevStep: () => void
   resetConfig: () => void
   startConfiguration: () => void
+  setLightSpec: (accessoryId: string, patch: Partial<{ voltageV: number | null; currentA: number | null; powerW: number | null }>) => void
+  addCustomAccessory: (name: string) => void
+  removeCustomAccessory: (id: string) => void
+  updateCustomAccessory: (id: string, name: string) => void
 }
 
 const defaultState: AnandaConfig = {
@@ -158,6 +184,11 @@ const defaultState: AnandaConfig = {
   crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
   accessoryIds: [], cableLengths: {}, extensionCableLengths: {}, currentStep: 1, hasStarted: false,
+  hmiProtocolPreference: "can", bikeComponentSelections: {},
+  controllerSourcing: null, thirdPartyControllerAcknowledged: false,
+  drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null,
+  lightSpecs: {}, throttleStartMode: null, throttleSpeedGateKmh: 15, throttleSampleAcknowledged: false,
+  customAccessories: [], connectorSourcing: null, connectorCustomAcknowledged: false,
 }
 
 function normalizePersisted(input: Partial<AnandaConfig> & Record<string, unknown>): Partial<AnandaConfig> {
@@ -291,13 +322,24 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       resetConfig: () => set({ ...defaultState, hasStarted: true }),
       startConfiguration: () => set({ hasStarted: true }),
+      setLightSpec: (accessoryId, patch) => set((state) => {
+        const existing = state.lightSpecs[accessoryId] ?? { voltageV: null, currentA: null, powerW: null }
+        return { lightSpecs: { ...state.lightSpecs, [accessoryId]: { ...existing, ...patch } } }
+      }),
+      addCustomAccessory: (name) => set((state) => ({
+        customAccessories: [...state.customAccessories, { id: `custom-${Date.now()}-${Math.round(Math.random() * 1000)}`, name }],
+      })),
+      removeCustomAccessory: (id) => set((state) => ({ customAccessories: state.customAccessories.filter((a) => a.id !== id) })),
+      updateCustomAccessory: (id, name) => set((state) => ({
+        customAccessories: state.customAccessories.map((a) => (a.id === id ? { ...a, name } : a)),
+      })),
     }),
     {
       name: "ananda-edrive-config-v1",
       merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
       partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectCustomSolution, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectCustomSolution; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig
+        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectCustomSolution, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, startConfiguration, setLightSpec, addCustomAccessory, removeCustomAccessory, updateCustomAccessory, ...rest } = state
+        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectCustomSolution; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig; void startConfiguration; void setLightSpec; void addCustomAccessory; void removeCustomAccessory; void updateCustomAccessory
         return rest
       },
     },

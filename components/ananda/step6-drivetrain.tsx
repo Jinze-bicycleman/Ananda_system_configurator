@@ -28,10 +28,26 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   const [smallestInput, setSmallestInput] = useState(s.rearTeeth != null ? String(s.rearTeeth) : "")
   const [largestInput, setLargestInput] = useState(s.largestRearTeeth != null ? String(s.largestRearTeeth) : "")
 
+  // Gear-hub-only inputs — the up/down internal-gear ratios taken straight
+  // from the hub's datasheet. A fixed reference cog (20T) converts the
+  // ratios into the same "equivalent rear sprocket teeth" shape the
+  // derailleur calculator already uses, so the graph/climbing panel below
+  // don't need a second code path.
+  const GEAR_HUB_REFERENCE_COG = 20
+  const [hubUpInput, setHubUpInput] = useState(s.hubGearUpRatio != null ? String(s.hubGearUpRatio) : "")
+  const [hubDownInput, setHubDownInput] = useState(s.hubGearDownRatio != null ? String(s.hubGearDownRatio) : "")
+
+  const isGearHub = s.drivetrainSystemKind === "gear_hub"
+
   const parseTeeth = (raw: string): number | null => {
     if (raw.trim() === "") return null
     const n = Number.parseInt(raw, 10)
     return Number.isFinite(n) ? n : null
+  }
+  const parseRatio = (raw: string): number | null => {
+    if (raw.trim() === "") return null
+    const n = Number.parseFloat(raw)
+    return Number.isFinite(n) && n > 0 ? n : null
   }
 
   const validation = useMemo(
@@ -50,6 +66,35 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   const commitLargest = (raw: string) => {
     setLargestInput(raw)
     s.setField("largestRearTeeth", parseTeeth(raw))
+  }
+  const commitHubUp = (raw: string) => {
+    setHubUpInput(raw)
+    const ratio = parseRatio(raw)
+    s.setField("hubGearUpRatio", ratio)
+    if (ratio) {
+      const equivalent = Math.round(GEAR_HUB_REFERENCE_COG / ratio)
+      setSmallestInput(String(equivalent))
+      s.setField("rearTeeth", equivalent)
+    }
+  }
+  const commitHubDown = (raw: string) => {
+    setHubDownInput(raw)
+    const ratio = parseRatio(raw)
+    s.setField("hubGearDownRatio", ratio)
+    if (ratio) {
+      const equivalent = Math.round(GEAR_HUB_REFERENCE_COG / ratio)
+      setLargestInput(String(equivalent))
+      s.setField("largestRearTeeth", equivalent)
+    }
+  }
+
+  const selectSystemKind = (kind: "derailleur" | "gear_hub") => {
+    s.setField("drivetrainSystemKind", kind)
+    // Switching kinds invalidates the previously computed rear-teeth values.
+    setSmallestInput("")
+    setLargestInput("")
+    s.setField("rearTeeth", null)
+    s.setField("largestRearTeeth", null)
   }
 
   const wheelRadiusMetres = useMemo(() => {
@@ -118,26 +163,70 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
 
       <div id="field-drivetrainTeeth" className="mb-8 border border-border bg-white p-5">
         <p className="mb-4 text-sm font-sans font-semibold text-graphite">Drivetrain gearing</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <ToothCountField
-            id="front-chainring-teeth"
-            label="Front chainring teeth"
-            value={frontInput}
-            onChange={commitFront}
-          />
-          <ToothCountField
-            id="smallest-rear-teeth"
-            label="Smallest rear sprocket teeth"
-            value={smallestInput}
-            onChange={commitSmallest}
-          />
-          <ToothCountField
-            id="largest-rear-teeth"
-            label="Largest rear sprocket teeth"
-            value={largestInput}
-            onChange={commitLargest}
-          />
+
+        <div className="mb-5 flex flex-wrap gap-2">
+          {(
+            [
+              { id: "derailleur" as const, label: "Derailleur System" },
+              { id: "gear_hub" as const, label: "Gear Hub System" },
+            ]
+          ).map((opt) => {
+            const selected = (s.drivetrainSystemKind ?? "derailleur") === opt.id
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => selectSystemKind(opt.id)}
+                className={cn(
+                  "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+                  selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+                )}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
         </div>
+
+        {isGearHub ? (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <ToothCountField
+                id="front-chainring-teeth"
+                label="Chainring teeth"
+                value={frontInput}
+                onChange={commitFront}
+              />
+              <RatioField id="hub-up-ratio" label="Hub gear up ratio" value={hubUpInput} onChange={commitHubUp} />
+              <RatioField id="hub-down-ratio" label="Hub gear down ratio" value={hubDownInput} onChange={commitHubDown} />
+            </div>
+            <p className="mt-3 text-xs font-body text-muted-foreground">
+              Enter the up (highest) and down (lowest) internal gear ratios from your gear hub&apos;s datasheet — e.g. a
+              Shimano Alfine 8 is 1.615 (up) / 0.527 (down).
+            </p>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <ToothCountField
+              id="front-chainring-teeth"
+              label="Front chainring teeth"
+              value={frontInput}
+              onChange={commitFront}
+            />
+            <ToothCountField
+              id="smallest-rear-teeth"
+              label="Smallest rear sprocket teeth"
+              value={smallestInput}
+              onChange={commitSmallest}
+            />
+            <ToothCountField
+              id="largest-rear-teeth"
+              label="Largest rear sprocket teeth"
+              value={largestInput}
+              onChange={commitLargest}
+            />
+          </div>
+        )}
         {!validation.isValid && (frontInput || smallestInput || largestInput) && (
           <div className="mt-4 space-y-2">
             {validation.messages.map((m) => (
@@ -171,6 +260,37 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
         onAssistanceModeChange={(key) => s.setField("climbingAssistanceModeKey", key)}
         pedalEffortKey={s.climbingPedalEffortKey}
         onPedalEffortChange={(key: PedalEffortKey) => s.setField("climbingPedalEffortKey", key)}
+      />
+    </div>
+  )
+}
+
+function RatioField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (raw: string) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-xs font-sans font-semibold text-graphite">
+        {label}
+      </label>
+      <input
+        id={id}
+        type="number"
+        min={0}
+        step={0.001}
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="e.g. 1.615"
+        className="w-full border border-border px-3 py-2 text-sm font-body font-semibold tabular-nums focus:border-primary outline-none"
       />
     </div>
   )

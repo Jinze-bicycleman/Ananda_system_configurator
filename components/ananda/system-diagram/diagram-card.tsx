@@ -75,6 +75,10 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
         "absolute inset-0 flex h-full w-full flex-col overflow-hidden border bg-card shadow-sm transition-colors",
         selected ? "border-primary ring-2 ring-primary/30" : "border-border",
         editing ? "cursor-move" : "cursor-pointer",
+        // Accessories are secondary to the cable/interface topology this
+        // diagram exists to communicate — rendered muted so cable details
+        // read as the primary content.
+        isAccessories && !selected && "opacity-70 grayscale-[0.3]",
       )}
       style={{ touchAction: editing ? "none" : undefined }}
       onPointerDown={editing ? onDragPointerDown : undefined}

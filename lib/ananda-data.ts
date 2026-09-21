@@ -265,18 +265,11 @@ export const aSensors: ASensor[] = [
 // ─── ACCESSORIES ──────────────────────────────────────────────────────────────
 
 export const aAccessories: AAccessory[] = [
-  { id: 'ACC-GPS',    name: 'GPS Module',        category: 'iot',     weightKg: 0.08, imageUrl: '', description: 'Integrated GPS for fleet management and anti-theft.' },
-  { id: 'ACC-4G',     name: '4G Module',          category: 'iot',     weightKg: 0.09, imageUrl: '', description: 'Cellular for remote diagnostics and OTA updates.' },
-  { id: 'ACC-BT',     name: 'Bluetooth Module',   category: 'iot',     weightKg: 0.04, imageUrl: '', description: 'BT connectivity for app pairing and data sync.' },
   { id: 'ACC-FL',     name: 'Front Light',        category: 'lights',  weightKg: 0.14, imageUrl: '', description: 'System-powered integrated front light.' },
   { id: 'ACC-RL',     name: 'Rear Light',         category: 'lights',  weightKg: 0.09, imageUrl: '', description: 'Integrated rear light with brake function.' },
-  { id: 'ACC-TUR',    name: 'Turn Signals',       category: 'lights',  weightKg: 0.18, imageUrl: '', description: 'Front and rear turn signal set.' },
+  { id: 'ACC-AMB',    name: 'Ambient Light',      category: 'lights',  weightKg: 0.10, imageUrl: '', description: 'Frame-integrated ambient / accent lighting.' },
   { id: 'ACC-TH01',   name: 'TH-01 Throttle',    category: 'throttle', weightKg: 0.05, imageUrl: '', description: 'Thumb-style throttle. Hub motor compatible.' },
   { id: 'ACC-THO',    name: 'Alternate Throttle', category: 'throttle', weightKg: 0.06, imageUrl: '', description: 'Twist-grip throttle alternative.' },
-  { id: 'ACC-HORN',   name: 'Electronic Horn',   category: 'other',   weightKg: 0.06, imageUrl: '', description: 'System-integrated electronic horn.' },
-  { id: 'ACC-RADAR',  name: 'Radar Module',       category: 'other',   weightKg: 0.12, imageUrl: '', description: 'Rear proximity detection and safety alerting.' },
-  { id: 'ACC-TPMS',   name: 'TPMS',              category: 'other',   weightKg: 0.06, imageUrl: '', description: 'Tyre pressure monitoring system.' },
-  { id: 'ACC-ESHIFT', name: 'Electronic Shift',  category: 'other',   weightKg: 0.08, imageUrl: '', description: 'Auto torque reduction on gear shift.' },
 ]
 
 // ─── CABLE PRESETS ──────────────────────────────────────────────────────────

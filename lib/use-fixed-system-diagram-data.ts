@@ -92,16 +92,13 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const displaySkipped = s.skippedItems.includes("displayId")
   const selectedAccessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
 
+  // Specs are intentionally minimal here — the fixed diagram is a compact
+  // system map, not a spec sheet, so each card shows only the category and
+  // model (falling back to a one-line status when nothing is selected yet).
   const motorNode: DiagramNode = {
     category: "Motor Unit",
     model: motor?.model ?? "Not selected",
-    specs: motor
-      ? [
-          { label: "Type", value: motor.motor_type === "hub" ? "Hub" : "Mid-Drive" },
-          { label: "Torque", value: motor.torque_nm != null ? `${motor.torque_nm} Nm` : "—" },
-          { label: "Power", value: motor.rated_power_w != null ? `${motor.rated_power_w} W` : "—" },
-        ]
-      : [{ label: "Status", value: "Awaiting selection" }],
+    specs: motor ? [] : [{ label: "Status", value: "Awaiting selection" }],
     imageUrl: motor ? resolveImageUrl(motor.image_url, motor.image_path) : null,
     status: motor ? "ok" : "missing",
   }
@@ -109,10 +106,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const hmiNode: DiagramNode = {
     category: "Display (HMI)",
     model: display?.model ?? (displaySkipped ? "Not needed" : "Not selected"),
-    specs: [
-      { label: "Connector", value: display?.connection_type ?? "—" },
-      { label: "Remote", value: remote ? remote.name : "—" },
-    ],
+    specs: display || displaySkipped ? [] : [{ label: "Status", value: "Awaiting selection" }],
     imageUrl: display ? resolveImageUrl(display.image_url, display.image_path) : null,
     status: display || displaySkipped ? "ok" : "missing",
   }
@@ -120,12 +114,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const speedSensorNode: DiagramNode = {
     category: "Speed Sensor",
     model: speedSensorSkipped ? "Not needed" : speedSensor?.model ?? "Not selected",
-    specs: speedSensor
-      ? [
-          { label: "Mounting", value: speedSensor.mounting_position ?? "—" },
-          { label: "Connector", value: speedSensor.connector_type ?? "—" },
-        ]
-      : [{ label: "Status", value: speedSensorSkipped ? "Not needed" : "Awaiting selection" }],
+    specs: speedSensor || speedSensorSkipped ? [] : [{ label: "Status", value: "Awaiting selection" }],
     imageUrl: null,
     status: speedSensor || speedSensorSkipped ? "ok" : "missing",
   }
@@ -133,12 +122,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const batteryNode: DiagramNode = {
     category: "Battery",
     model: battery?.model ?? (batterySkipped ? "Not needed" : "Not selected"),
-    specs: battery
-      ? [
-          { label: "Voltage", value: `${battery.voltage_v} V` },
-          { label: "Capacity", value: battery.capacity_wh != null ? `${battery.capacity_wh} Wh` : "—" },
-        ]
-      : [{ label: "Status", value: "Awaiting selection" }],
+    specs: battery || batterySkipped ? [] : [{ label: "Status", value: "Awaiting selection" }],
     imageUrl: battery ? resolveImageUrl(battery.image_url, battery.image_path) : null,
     status: battery || batterySkipped ? "ok" : "missing",
   }
@@ -149,7 +133,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const cageNode: DiagramNode = {
     category: "Battery Cage",
     model: battery ? `${battery.model} Cage` : batterySkipped ? "Not needed" : "Not selected",
-    specs: battery ? [{ label: "Mount", value: "Frame-mounted docking cage" }] : [{ label: "Status", value: "Awaiting battery selection" }],
+    specs: battery || batterySkipped ? [] : [{ label: "Status", value: "Awaiting battery selection" }],
     imageUrl: null,
     status: battery || batterySkipped ? "ok" : "missing",
   }
@@ -157,7 +141,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   const chargingPortNode: DiagramNode = {
     category: "Charging Port",
     model: chargingPort?.model ?? "Not selected",
-    specs: chargingPort ? [{ label: "Type", value: chargingPort.description }] : [{ label: "Status", value: "Awaiting selection" }],
+    specs: chargingPort ? [] : [{ label: "Status", value: "Awaiting selection" }],
     imageUrl: null,
     status: chargingPort ? "ok" : "missing",
   }
@@ -166,7 +150,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
     category: "Accessories",
     model:
       selectedAccessories.length > 0 ? `${selectedAccessories.length} item${selectedAccessories.length === 1 ? "" : "s"}` : "None selected",
-    specs: [{ label: "Harness", value: "Higo 6-pin" }],
+    specs: [],
     imageUrl: null,
     status: "ok",
   }

@@ -81,6 +81,50 @@ export function useReportData() {
     extensionLengthM: s.extensionCableLengths[c.connection] ?? null,
   }))
 
+  // ─── Scope of Supply — every product/line item included in this build ───
+  const scopeOfSupplyItems: { label: string; value: string }[] = []
+  if (motor) scopeOfSupplyItems.push({ label: "Motor", value: motor.model })
+  if (!isMid) {
+    if (controller) scopeOfSupplyItems.push({ label: "Controller", value: controller.model })
+    else if (s.controllerSourcing === "third_party") scopeOfSupplyItems.push({ label: "Controller", value: "Customer-supplied (3rd-party)" })
+  }
+  if (display) scopeOfSupplyItems.push({ label: "Display (HMI)", value: display.model })
+  if (battery) scopeOfSupplyItems.push({ label: "Battery", value: battery.model })
+  if (charger) scopeOfSupplyItems.push({ label: "Charger", value: charger.model })
+  if (chargingPort) scopeOfSupplyItems.push({ label: "Charging Port", value: chargingPort.model })
+  if (!speedSensorSkipped && s.speedSensorId) scopeOfSupplyItems.push({ label: "Speed Sensor", value: s.speedSensorId })
+  if (!torqueSensorSkipped && s.torqueSensorId) scopeOfSupplyItems.push({ label: "Torque Sensor", value: s.torqueSensorId })
+  for (const c of selectedDrivetrainComponents) scopeOfSupplyItems.push({ label: c.category.replace(/_/g, " "), value: displayName(c) })
+  if (selectedBelt) scopeOfSupplyItems.push({ label: "Belt", value: displayName(selectedBelt) })
+  for (const [category, id] of Object.entries(s.bikeComponentSelections)) {
+    if (id) scopeOfSupplyItems.push({ label: category.charAt(0).toUpperCase() + category.slice(1), value: id })
+  }
+  for (const a of accessories) scopeOfSupplyItems.push({ label: a.category.toUpperCase(), value: a.name })
+  for (const a of s.customAccessories) scopeOfSupplyItems.push({ label: "Custom Accessory", value: a.name || "Untitled" })
+  scopeOfSupplyItems.push({ label: "Cable & Harness Set", value: `${cablePresetList.length} connections specified` })
+
+  // ─── Items requiring a sample, additional cost, or sales-team consultation ───
+  const salesConsultationItems: string[] = []
+  if (s.controllerSourcing === "third_party" || s.controllerSourcing === "not_needed") {
+    salesConsultationItems.push(
+      "Controller: customer-supplied / 3rd-party — requires a physical sample for integration testing and sales-team coordination.",
+    )
+  }
+  if (s.connectorSourcing === "custom") {
+    salesConsultationItems.push("Connectors: custom solution requested — additional cost and +15 day lead time; consult sales.")
+  }
+  if (s.productTargets.functions.bluetoothApp === "third_party") {
+    salesConsultationItems.push("Connectivity: 3rd-party app integration — may incur additional cost; consult sales.")
+  }
+  if (s.accessoryIds.some((id) => id === "ACC-TH01" || id === "ACC-THO")) {
+    salesConsultationItems.push("Throttle: requires a physical sample for system integration testing.")
+  }
+  if (s.customAccessories.length > 0) {
+    salesConsultationItems.push(
+      `Other Accessories: ${s.customAccessories.length} custom item${s.customAccessories.length > 1 ? "s" : ""} require sales-team scoping and cost confirmation.`,
+    )
+  }
+
   const targetStatusRows = computeTargetStatus({ s, motor, battery, display })
   const feasibility = computeOverallFeasibility(targetStatusRows)
   const currentCostLabel = motor ? COST_LABELS[costTierForMotorModel(motor.model)] : "—"
@@ -150,6 +194,8 @@ export function useReportData() {
   changeImpact,
   currentCostLabel,
   climbing,
+  scopeOfSupplyItems,
+  salesConsultationItems,
   }
   }
 
@@ -166,7 +212,7 @@ function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
  */
 export async function generateReportPdf(data: ReportData) {
   const { jsPDF } = await import("jspdf")
-  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, currentCostLabel, climbing } = data
+  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, climbing, scopeOfSupplyItems, salesConsultationItems } = data
 
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -265,10 +311,11 @@ export async function generateReportPdf(data: ReportData) {
   sectionTitle("Overall Feasibility")
   row("Feasibility Assessment", feasibilityLabel)
   row("Selected Solution", s.selectedSolutionId ? s.selectedSolutionId.replace("_", " ").toUpperCase() : "—")
-  row("Current Cost Level", currentCostLabel)
 
   // ─── Product Target Summary ───
   sectionTitle("Product Target Summary")
+  row("Target Countries / Market", s.sellRegion ?? "—")
+  row("Regulation", s.regulation ?? "—")
   row("Weight Target", s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set")
   row(
     "Torque Target",
@@ -317,14 +364,14 @@ export async function generateReportPdf(data: ReportData) {
     for (const r of unmetRows) paragraph(`${r.dimension}: target ${r.targetLabel}, current ${r.currentLabel}.`)
   }
 
-  // ─── Risks, Conditions & Assumptions ───
-  sectionTitle("Risks, Conditions & Assumptions")
+  // ─── Risks & Assumptions ───
+  sectionTitle("Risks & Assumptions")
   paragraph("Configuration is compatible with the selected regulation based on rated power and speed limit inputs.")
   paragraph("Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.")
   paragraph("Range and cost-tier figures are heuristic estimates derived from battery capacity and motor model, not final priced or lab-tested values.")
   if (changeImpact.weight) {
     paragraph(
-      `Since the recommended solution was applied: weight ${changeImpact.weight[0].toFixed(1)} kg → ${changeImpact.weight[1].toFixed(1)} kg, range ${changeImpact.range?.[0]} km → ${changeImpact.range?.[1]} km, cost level ${changeImpact.cost?.[0]} → ${changeImpact.cost?.[1]}.`,
+      `Since the recommended solution was applied: weight ${changeImpact.weight[0].toFixed(1)} kg → ${changeImpact.weight[1].toFixed(1)} kg, range ${changeImpact.range?.[0]} km → ${changeImpact.range?.[1]} km.`,
     )
   }
 
@@ -440,6 +487,18 @@ export async function generateReportPdf(data: ReportData) {
     if (battery?.weight_kg) row("Battery", `${battery.weight_kg} kg`)
     row("Total (Motor + Battery)", `${systemWeightKg.toFixed(1)} kg`)
     paragraph("Weight estimate includes motor and battery only. Accessories, sensors, and ancillary components are not included in this total.")
+  }
+
+  // ─── Scope of Supply ───
+  sectionTitle("Scope of Supply")
+  for (const item of scopeOfSupplyItems) row(item.label, item.value)
+
+  // ─── Items Requiring Samples / Additional Cost / Sales Consultation ───
+  sectionTitle("Requires Sample / Additional Cost / Sales Consultation")
+  if (salesConsultationItems.length === 0) {
+    paragraph("No items in this configuration currently require a physical sample, additional cost, or sales-team consultation.")
+  } else {
+    for (const msg of salesConsultationItems) paragraph(msg)
   }
 
   // ─── System Compatibility Check ───
