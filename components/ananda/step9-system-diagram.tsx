@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Bike, Network } from "lucide-react"
+import { AlertTriangle, Bike, Network, Plug } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
@@ -9,6 +9,101 @@ import { StepHeader, SectionLabel } from "./ui-primitives"
 import { SystemDiagram } from "./system-diagram/system-diagram"
 import { FixedSystemDiagram } from "./system-diagram/fixed-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
+import { cn } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+// ─── In-house vs. custom connector sourcing (Stage 7) ────────────────────────
+// When the build includes anything Ananda doesn't manufacture in-house
+// (a customer-supplied controller, or free-text "Other Accessories"), the
+// standard connector harness may not fit. The user must choose whether to
+// use Ananda's standard connector specification or request a custom
+// solution — the latter carries an explicit cost/lead-time warning.
+function ConnectorSourcingPrompt() {
+  const s = useAnandaStore()
+  const needsChoice = s.controllerSourcing === "third_party" || s.controllerSourcing === "not_needed" || s.customAccessories.length > 0
+  const [pendingCustom, setPendingCustom] = useState(false)
+
+  if (!needsChoice) return null
+
+  return (
+    <div className="mb-6 border-2 border-warning/40 bg-warning/5 p-4">
+      <div className="mb-3 flex items-start gap-2">
+        <Plug className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-sans font-bold uppercase tracking-wide text-graphite">Non-Ananda Components Detected</p>
+          <p className="mt-1 text-xs font-body text-muted-foreground">
+            This build includes a customer-supplied controller and/or custom accessories. Choose how connectors for these
+            components should be sourced.
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => s.setField("connectorSourcing", "standard")}
+          className={cn(
+            "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+            s.connectorSourcing === "standard" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+          )}
+        >
+          Use Standard Connector Spec
+        </button>
+        <button
+          type="button"
+          onClick={() => setPendingCustom(true)}
+          className={cn(
+            "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+            s.connectorSourcing === "custom" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+          )}
+        >
+          Request Custom Solution
+        </button>
+      </div>
+
+      <AlertDialog open={pendingCustom} onOpenChange={setPendingCustom}>
+        <AlertDialogContent className="border-2 border-border font-sans">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+              Custom Connector Solution
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+              Customization incurs additional cost and extends the turnaround time by at least 15 days. Please consult our sales
+              team before proceeding.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                s.setField("connectorSourcing", "custom")
+                s.setField("connectorCustomAcknowledged", true)
+              }}
+              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+            >
+              Confirm &amp; Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {s.connectorSourcing === "custom" && (
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] font-sans font-bold uppercase tracking-wide text-warning">
+          <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+          Custom solution requested — additional cost and +15 day lead time apply. Sales team consultation required.
+        </p>
+      )}
+    </div>
+  )
+}
 
 // ─── SVG System Diagram ──────────────────────────────────────────────────────
 
@@ -302,6 +397,8 @@ export function Step9SystemDiagram() {
           subtitle="Review the physical component placement or inspect the system architecture and cable connections."
         />
 
+        <ConnectorSourcingPrompt />
+
         <div role="tablist" aria-label="System overview view" className="mb-6 grid grid-cols-2 gap-2 sm:inline-grid sm:w-auto">
           <button
             type="button"
@@ -362,6 +459,8 @@ export function Step9SystemDiagram() {
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />
+
+      <ConnectorSourcingPrompt />
 
       {/* Diagram */}
       <div className="border border-border bg-white p-4 mb-6 overflow-x-auto">

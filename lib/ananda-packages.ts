@@ -69,6 +69,8 @@ export type HmiDisplayRow = {
   connection_type: string | null
   voltage_v: number | null
   communication_protocol: string | null
+  mounting_position: string | null
+  certifications: string | null
   image_url: string | null
   image_path: string | null
   datasheet_url: string | null
@@ -90,6 +92,7 @@ export type BatteryRow = {
   length_mm: number | null
   width_mm: number | null
   height_mm: number | null
+  safety_certificate: string | null
   image_url: string | null
   image_path: string | null
   datasheet_url: string | null
@@ -105,10 +108,10 @@ const CONTROLLER_COLUMNS =
   "id, model, compatible_motor_type, voltage_v, rated_power_w, peak_power_w, rated_current_a, peak_current_a, communication_protocol, connection_type, size, weight_kg, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const HMI_COLUMNS =
-  "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, mounting_position, certifications, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const BATTERY_COLUMNS =
-  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 async function fetchMotors(): Promise<MotorRow[]> {
   const supabase = createClient()
@@ -415,3 +418,45 @@ export function useSpeedSensors() {
   const { data, isLoading, error } = useSWR<SpeedSensorRow[]>("ananda-speed-sensors", fetchSpeedSensors)
   return { speedSensors: data ?? [], isLoading, error }
 }
+
+/** Derives a human-readable sensor type ("Wheel Speed Sensor" / "BB Speed Sensor") from its mounting position. */
+export function speedSensorTypeLabel(mountingPosition: string | null): string {
+  const m = (mountingPosition ?? "").toLowerCase()
+  if (m.includes("bottom bracket") || m.includes("bb")) return "BB Speed Sensor"
+  if (m) return "Wheel Speed Sensor"
+  return "Speed Sensor"
+}
+
+// Bike components catalog (chainring / crank / spider), used by the "Bike
+// Components" section at the bottom of Package Configuration (Step 5).
+export type BikeComponentRow = {
+  id: string
+  category: "chainring" | "crank" | "spider"
+  model: string
+  short_description: string | null
+  weight_kg: number | null
+  is_active: boolean
+  sort_order: number
+}
+
+async function fetchBikeComponents(): Promise<BikeComponentRow[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from("bike_components")
+    .select("id, category, model, short_description, weight_kg, is_active, sort_order")
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as BikeComponentRow[]
+}
+
+export function useBikeComponents() {
+  const { data, isLoading, error } = useSWR<BikeComponentRow[]>("ananda-bike-components", fetchBikeComponents)
+  return { components: data ?? [], isLoading, error }
+}
+
+export const BIKE_COMPONENT_CATEGORIES: { id: BikeComponentRow["category"]; label: string }[] = [
+  { id: "chainring", label: "Chainring" },
+  { id: "crank", label: "Crank" },
+  { id: "spider", label: "Spider" },
+]

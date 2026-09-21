@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { Bluetooth, CheckCircle2, HelpCircle, Lightbulb, Search, Wifi, Zap } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { CheckCircle2, Search, Wifi, Zap } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
 import {
@@ -9,28 +9,14 @@ import {
   BATTERY_CAPACITY_BANDS,
   TERRAIN_BANDS,
   TORQUE_BANDS,
-  DEFAULT_LIGHTS_CONFIG,
   applyRiderProfile,
   type BatteryCapacityBand,
   type TerrainBand,
   type TorqueBand,
-  type BluetoothAppChoice,
-  type LightsConfig,
   type YesNo,
 } from "@/lib/ananda-product-targets"
 import { StepHeader, SectionLabel, ChoiceGroup } from "./ui-primitives"
 import { cn } from "@/lib/utils"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 // Each rider profile reuses the bicycle-application photography from the
 // (now-retired) standalone Bike Category step, and drives `bikeCategory`
@@ -58,137 +44,6 @@ const DRIVE_UNITS = [
 ]
 
 const VOLTAGE_PLATFORMS = [36, 48] as const
-
-const ANANDA_APP_INFO = (
-  <div className="space-y-1.5">
-    <p className="font-sans font-bold uppercase tracking-wider text-foreground">Key Features</p>
-    <p>
-      <span className="font-semibold text-foreground">Live Tracking &amp; History:</span> Record your riding time, distance, maximum
-      speed, average speed, and view real-time maps.
-    </p>
-    <p>
-      <span className="font-semibold text-foreground">Motor Diagnostics:</span> Run system health checks to spot communication errors,
-      headlight issues, speed sensor faults, and motor or controller temperatures.
-    </p>
-    <p>
-      <span className="font-semibold text-foreground">Boost Adjustment:</span> Customize your ride by changing assist levels and
-      maximum output power.
-    </p>
-    <p>
-      <span className="font-semibold text-foreground">Security:</span> Set a personalized passcode lock and use bike finder tools to
-      locate your last known parking position.
-    </p>
-  </div>
-)
-
-const THIRD_PARTY_APP_INFO = (
-  <p>Uses the Ananda communication protocol for data transferring and reading with your own third-party application.</p>
-)
-
-// Compact segmented button with a hover "?" tooltip describing the option —
-// used for the two Bluetooth app choices (Ananda Ride App / 3rd-Party App).
-function InfoOptionButton({
-  label,
-  selected,
-  onSelect,
-  info,
-}: {
-  label: string
-  selected: boolean
-  onSelect: () => void
-  info: ReactNode
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5 border px-2 py-1.5 transition-colors",
-        selected ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
-      )}
-    >
-      <button type="button" onClick={onSelect} className="text-[10px] font-sans font-bold uppercase tracking-wider">
-        {label}
-      </button>
-      <HoverCard openDelay={100}>
-        <HoverCardTrigger asChild>
-          <button
-            type="button"
-            aria-label={`About ${label}`}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current"
-          >
-            <HelpCircle className="h-3 w-3" />
-          </button>
-        </HoverCardTrigger>
-        <HoverCardContent className="w-80 text-xs leading-relaxed text-foreground">{info}</HoverCardContent>
-      </HoverCard>
-    </div>
-  )
-}
-
-// Bluetooth — choice of companion app instead of a Must/Target/Nice level.
-// Choosing the 3rd-Party App requires an explicit confirmation on a warning
-// dialog before the selection is committed.
-function BluetoothFunctionRow() {
-  const s = useAnandaStore()
-  const t = s.productTargets
-  const [pendingThirdParty, setPendingThirdParty] = useState(false)
-
-  const choose = (app: BluetoothAppChoice) => {
-    if (app === "third_party" && !t.functions.bluetoothThirdPartyAcknowledged) {
-      setPendingThirdParty(true)
-      return
-    }
-    s.setProductTarget({ functions: { bluetoothApp: app, bluetooth: "target" } })
-  }
-
-  const confirmThirdParty = () => {
-    s.setProductTarget({ functions: { bluetoothApp: "third_party", bluetooth: "target", bluetoothThirdPartyAcknowledged: true } })
-  }
-
-  return (
-    <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
-      <span className="flex min-w-0 items-center gap-2 text-sm font-sans font-semibold text-graphite">
-        <Bluetooth aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-        <span>Bluetooth</span>
-      </span>
-      <div className="flex flex-wrap gap-2 sm:justify-end">
-        <InfoOptionButton
-          label="Ananda Ride App"
-          selected={t.functions.bluetoothApp === "ananda_app"}
-          onSelect={() => choose("ananda_app")}
-          info={ANANDA_APP_INFO}
-        />
-        <InfoOptionButton
-          label="3rd-Party App"
-          selected={t.functions.bluetoothApp === "third_party"}
-          onSelect={() => choose("third_party")}
-          info={THIRD_PARTY_APP_INFO}
-        />
-      </div>
-
-      <AlertDialog open={pendingThirdParty} onOpenChange={setPendingThirdParty}>
-        <AlertDialogContent className="border-2 border-border font-sans">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
-              3rd-Party App Connectivity
-            </AlertDialogTitle>
-            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
-              Configuring 3rd-party app connectivity may cause extra cost, please consult our sales for more information.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmThirdParty}
-              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
-            >
-              Confirm &amp; Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  )
-}
 
 // IoT Module — merges the old GPS Tracking + Anti-Theft rows into a single
 // Yes/No choice, with a description of what the module provides in the
@@ -232,77 +87,6 @@ function IotModuleRow() {
           </button>
         ))}
       </div>
-    </div>
-  )
-}
-
-// Lights — Yes/No, revealing exact-value fields (light count, voltage,
-// total power) once enabled. Defaults to 12V / 2 lights / 10W.
-function LightsFunctionRow() {
-  const s = useAnandaStore()
-  const t = s.productTargets
-  const cfg = t.functions.lightsConfig ?? DEFAULT_LIGHTS_CONFIG
-
-  const setLights = (value: YesNo) => s.setProductTarget({ functions: { lights: value } })
-  const setCfg = (patch: Partial<LightsConfig>) => s.setProductTarget({ functions: { lightsConfig: { ...cfg, ...patch } } })
-
-  return (
-    <div className="border border-border p-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <span className="flex min-w-0 items-center gap-2 text-sm font-sans font-semibold text-graphite">
-          <Lightbulb aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-          <span>Lights</span>
-        </span>
-        <div className="choice-group sm:w-auto sm:justify-end">
-          {(["yes", "no"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setLights(v)}
-              className={cn(
-                "border px-3 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
-                t.functions.lights === v ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
-              )}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      </div>
-      {t.functions.lights === "yes" && (
-        <div className="mt-3 grid grid-cols-1 gap-3 border-t border-dashed border-border pt-3 sm:grid-cols-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Number of lights
-            <input
-              type="number"
-              min="1"
-              value={cfg.count}
-              onChange={(e) => setCfg({ count: Number(e.target.value) || 1 })}
-              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-            />
-          </label>
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Light voltage (V)
-            <input
-              type="number"
-              min="1"
-              value={cfg.voltageV}
-              onChange={(e) => setCfg({ voltageV: Number(e.target.value) || 12 })}
-              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-            />
-          </label>
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            Total power consumption (W)
-            <input
-              type="number"
-              min="1"
-              value={cfg.powerW}
-              onChange={(e) => setCfg({ powerW: Number(e.target.value) || 10 })}
-              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-            />
-          </label>
-        </div>
-      )}
     </div>
   )
 }
@@ -494,10 +278,11 @@ export function Step3ProductTargets() {
       {/* Functions */}
       <div className="mb-8">
         <SectionLabel>Functions & Connectivity</SectionLabel>
+        <p className="mb-3 text-xs font-body text-muted-foreground">
+          Companion-app connectivity and lighting specifics are configured on the Accessories step.
+        </p>
         <div className="space-y-2">
-          <BluetoothFunctionRow />
           <IotModuleRow />
-          <LightsFunctionRow />
         </div>
       </div>
 

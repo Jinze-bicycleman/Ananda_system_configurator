@@ -63,8 +63,9 @@ export function Step10Report() {
     targetStatusRows,
     feasibility,
     changeImpact,
-    currentCostLabel,
     climbing,
+    scopeOfSupplyItems,
+    salesConsultationItems,
   } = useReportData()
 
   const feasibilityInfo = FEASIBILITY_LABEL[feasibility]
@@ -95,6 +96,8 @@ export function Step10Report() {
 
       {/* ─── Product Target Summary ─── */}
       <ReportSection title="Product Target Summary">
+        <Row label="Target Countries / Market" value={s.sellRegion ?? "—"} />
+        <Row label="Regulation" value={s.regulation ?? "—"} />
         <Row
           label="Weight Target"
           value={s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set"}
@@ -143,13 +146,12 @@ export function Step10Report() {
         <Row label="Motor" value={motor ? motor.model : "—"} />
         <Row label="Battery" value={battery ? battery.model : "—"} />
         <Row label="Display" value={display ? display.model : "—"} />
-        <Row label="Current Cost Level" value={currentCostLabel} />
         <p className="mt-2 text-xs font-body text-muted-foreground">
           {s.selectedSolutionId
             ? "This configuration was selected from the ranked recommendations generated against the Product Targets on Step 3."
             : "No recommended solution has been applied yet — components below reflect manual configuration."}
         </p>
-        {changeImpact.weight && changeImpact.range && changeImpact.cost && (
+        {changeImpact.weight && changeImpact.range && (
           <div className="mt-3 space-y-1.5 border-t border-border pt-3">
             <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">Since Recommendation Applied</p>
             <div className="flex items-center justify-between text-[12px]">
@@ -162,12 +164,6 @@ export function Step10Report() {
               <span className="text-muted-foreground">Range</span>
               <span className="flex items-center gap-1.5 font-sans font-bold">
                 {changeImpact.range[0]} km <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.range[1]} km
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="text-muted-foreground">Cost Level</span>
-              <span className="flex items-center gap-1.5 font-sans font-bold">
-                {changeImpact.cost[0]} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.cost[1]}
               </span>
             </div>
           </div>
@@ -195,8 +191,8 @@ export function Step10Report() {
         )}
       </ReportSection>
 
-      {/* ─── Risks, Conditions & Assumptions ─── */}
-      <ReportSection title="Risks, Conditions & Assumptions">
+      {/* ─── Risks & Assumptions ─── */}
+      <ReportSection title="Risks & Assumptions">
         <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
           Configuration is compatible with the selected regulation based on rated power and speed limit inputs.
         </p>
@@ -294,7 +290,7 @@ export function Step10Report() {
         )}
       </ReportSection>
 
-      {/* ─── Climbing Ability ──����� */}
+      {/* ─── Climbing Ability ──������� */}
       <ReportSection title="Climbing Ability">
         <Row label="Rider Weight" value={`${climbing.riderWeightKg} kg`} />
         <Row label="Assistance Mode" value={climbing.assistanceModeLabel} />
@@ -402,6 +398,36 @@ export function Step10Report() {
           </p>
         </ReportSection>
       )}
+
+      {/* ─── Scope of Supply ─── */}
+      <ReportSection title="Scope of Supply">
+        {scopeOfSupplyItems.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No components have been selected yet.</p>
+        ) : (
+          scopeOfSupplyItems.map((item, i) => <Row key={`${item.label}-${i}`} label={item.label} value={item.value} />)
+        )}
+      </ReportSection>
+
+      {/* ─── Requires Sample / Additional Cost / Sales Consultation ─── */}
+      <ReportSection title="Requires Sample, Additional Cost, or Sales Consultation">
+        {salesConsultationItems.length === 0 ? (
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            <p className="text-sm font-body text-foreground">
+              No items in this configuration currently require a sample, additional cost, or sales-team consultation.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {salesConsultationItems.map((msg, i) => (
+              <div key={i} className="flex items-start gap-2 border border-warning/30 bg-warning/10 px-3 py-2">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <p className="text-xs font-body text-warning-foreground/90">{msg}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </ReportSection>
 
       {/* ─── System Compatibility ─── */}
       <ReportSection title="System Compatibility Check">

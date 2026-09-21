@@ -35,7 +35,7 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
   return (
     <div
       ref={ref}
-      className={cn("relative flex w-full overflow-hidden border bg-card shadow-sm", editing && "cursor-move")}
+      className={cn("relative flex w-full overflow-hidden border-2 border-primary/25 bg-card shadow-sm", editing && "cursor-move")}
       style={{ touchAction: editing ? "none" : undefined }}
       onPointerDown={editing ? onDragPointerDown : undefined}
     >
@@ -44,25 +44,25 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
         className="shrink-0"
         style={
           accentOrientation === "vertical"
-            ? { width: 4, backgroundColor: topology.color }
-            : { height: 4, width: "100%", backgroundColor: topology.color, position: "absolute", top: 0, left: 0 }
+            ? { width: 6, backgroundColor: topology.color }
+            : { height: 6, width: "100%", backgroundColor: topology.color, position: "absolute", top: 0, left: 0 }
         }
       />
-      <div className={cn("min-w-0 flex-1 px-2.5 py-1.5 text-[10.5px]", accentOrientation === "horizontal" && "pt-3")}>
+      <div className={cn("min-w-0 flex-1 px-2.5 py-1.5 text-[11px]", accentOrientation === "horizontal" && "pt-3.5")}>
         {isDocking ? (
           <p className="font-body font-semibold text-muted-foreground">Docked electrical interface · no cable</p>
         ) : (
           <>
             <div className={rowClass}>
-              <span className="font-sans font-semibold text-foreground">
-                Type: <span className="font-body font-normal text-muted-foreground">{data.cableModel ?? "—"}</span>
+              <span className="font-sans font-black text-primary">
+                Type: <span className="font-body font-semibold text-foreground">{data.cableModel ?? "—"}</span>
               </span>
             </div>
             <div className={rowClass}>
-              <span className="font-sans font-semibold text-foreground">
-                Connector: <span className="font-body font-normal text-muted-foreground">{data.connectorLabel ?? "—"}</span>
+              <span className="font-sans font-black text-primary">
+                Connector: <span className="font-body font-semibold text-foreground">{data.connectorLabel ?? "—"}</span>
               </span>
-              <span className="font-sans font-semibold text-foreground">
+              <span className="font-sans font-black text-primary">
                 Length:{" "}
                 {data.editable && data.storeKey ? (
                   <span className="inline-block align-middle">

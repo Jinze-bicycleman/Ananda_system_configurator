@@ -8,8 +8,11 @@ import {
   useBatteries,
   usePackageMotors,
   useSpeedSensors,
+  useBikeComponents,
   chargersForVoltage,
   resolveImageUrl,
+  speedSensorTypeLabel,
+  BIKE_COMPONENT_CATEGORIES,
   CHARGING_PORTS,
   type ControllerRow,
   type HmiDisplayRow,
@@ -18,11 +21,22 @@ import {
   type ChargerOption,
   type ChargingPortOption,
   type SpeedSensorRow,
+  type BikeComponentRow,
 } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, ChevronDown, Image as ImageIcon, Ban, RotateCcw, Loader2 } from "lucide-react"
+import { CheckCircle2, ChevronDown, Image as ImageIcon, Ban, RotateCcw, Loader2, ShieldCheck, Radio } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type Spec = { label: string; value: string | number | null }
 
@@ -33,6 +47,7 @@ function OptionCard({
   selected,
   isBestMatch,
   onSelect,
+  fullSpecs,
 }: {
   title: string
   imageUrl?: string | null
@@ -40,6 +55,8 @@ function OptionCard({
   selected: boolean
   isBestMatch?: boolean
   onSelect: () => void
+  /** Extra specs (certification, exact dimensions, etc.) shown behind a "Full Specification" disclosure. */
+  fullSpecs?: Spec[]
 }) {
   return (
     <div
@@ -75,6 +92,18 @@ function OptionCard({
               <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
             ))}
           </div>
+        )}
+        {fullSpecs && fullSpecs.some((sp) => sp.value != null) && (
+          <details className="mt-2 border border-border/70 rounded-sm" onClick={(e) => e.stopPropagation()}>
+            <summary className="cursor-pointer select-none px-2 py-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">
+              Full Specification
+            </summary>
+            <div className="border-t border-border">
+              {fullSpecs.map((sp) => sp.value != null && (
+                <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
+              ))}
+            </div>
+          </details>
         )}
       </div>
     </div>
@@ -221,6 +250,17 @@ export function Step5PackageConfiguration() {
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
   const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
   const compatibleChargers = chargersForVoltage(s.voltagePlatform)
+  const { components: bikeComponents, isLoading: bikeComponentsLoading } = useBikeComponents()
+  const [pendingThirdPartyController, setPendingThirdPartyController] = useState(false)
+
+  // Only filter the HMI list when at least one display actually declares the
+  // *other* protocol — with every current display supporting both CAN and
+  // UART, the toggle stays a no-op until protocol-exclusive models exist.
+  const protocolFilteredDisplays = displays.filter((d) => {
+    const protocol = (d.communication_protocol ?? "").toLowerCase()
+    if (!protocol) return true
+    return protocol.includes(s.hmiProtocolPreference)
+  })
 
   const selectedMotor = compatibleMotors.find((m) => m.id === s.motorId) ?? null
   const selectedController = compatibleControllers.find((c) => c.id === s.controllerId) ?? null
@@ -293,6 +333,7 @@ export function Step5PackageConfiguration() {
               specs={[
                 { label: "Torque", value: m.torque_nm ? `${m.torque_nm}Nm` : null },
                 { label: "Rated Power", value: m.rated_power_w ? `${m.rated_power_w}W` : null },
+                { label: "Peak Power", value: m.peak_power_w ? `${m.peak_power_w}W` : null },
                 { label: "Weight", value: m.weight_kg ? `${m.weight_kg}kg` : null },
               ]}
               selected={s.motorId === m.id}
@@ -335,6 +376,14 @@ export function Step5PackageConfiguration() {
                 { label: "Weight", value: b.weight_kg ? `${b.weight_kg}kg` : null },
                 { label: "Voltage", value: `${b.voltage_v}V` },
               ]}
+              fullSpecs={[
+                {
+                  label: "Exact Dimensions",
+                  value: b.length_mm && b.width_mm && b.height_mm ? `${b.length_mm} × ${b.width_mm} × ${b.height_mm} mm` : null,
+                },
+                { label: "Certification", value: b.safety_certificate },
+                { label: "Communication", value: b.communication_protocol },
+              ]}
               selected={s.batteryId === b.id}
               isBestMatch={bestBatteryId === b.id}
               onSelect={() => s.setField("batteryId", b.id)}
@@ -350,7 +399,7 @@ export function Step5PackageConfiguration() {
         skippable={false}
         skipped={false}
         onToggleSkip={() => {}}
-        hasOptions={displays.length > 0}
+        hasOptions={protocolFilteredDisplays.length > 0}
         optionsLoading={displaysLoading}
         expanded={expanded.displayId}
         onToggleExpanded={() => toggleExpanded("displayId")}
@@ -363,16 +412,42 @@ export function Step5PackageConfiguration() {
           )
         }
       >
+        <div className="mb-4 flex items-center gap-3 border border-border bg-surface px-3 py-2">
+          <Radio className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+          <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite">Communication protocol</span>
+          <div role="tablist" aria-label="HMI communication protocol" className="ml-auto inline-grid grid-cols-2 border border-border">
+            {(["can", "uart"] as const).map((protocol) => (
+              <button
+                key={protocol}
+                type="button"
+                role="tab"
+                aria-selected={s.hmiProtocolPreference === protocol}
+                onClick={() => s.setField("hmiProtocolPreference", protocol)}
+                className={cn(
+                  "px-3 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wide transition-colors",
+                  s.hmiProtocolPreference === protocol ? "bg-primary text-white" : "bg-white text-muted-foreground hover:text-primary",
+                )}
+              >
+                {protocol === "can" ? "CAN Bus" : "UART"}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="product-option-grid">
-          {displays.map((d: HmiDisplayRow) => (
+          {protocolFilteredDisplays.map((d: HmiDisplayRow) => (
             <OptionCard
               key={d.id}
               title={d.model}
               imageUrl={resolveImageUrl(d.image_url, d.image_path)}
               specs={[
                 { label: "Size", value: d.size },
+                { label: "Mounting", value: d.mounting_position },
                 { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
                 { label: "GPS", value: d.has_gps ? "Yes" : "No" },
+              ]}
+              fullSpecs={[
+                { label: "Protocol", value: d.communication_protocol },
+                { label: "Certifications", value: d.certifications },
               ]}
               selected={s.displayId === d.id}
               isBestMatch={bestDisplayId === d.id}
@@ -398,7 +473,7 @@ export function Step5PackageConfiguration() {
             <div>
               <p className="text-sm font-sans font-bold uppercase text-primary">{selectedSpeedSensor.model}</p>
               <p className="text-xs font-body text-muted-foreground">
-                {selectedSpeedSensor.connector_type ?? "—"}
+                {speedSensorTypeLabel(selectedSpeedSensor.mounting_position)} · {selectedSpeedSensor.connector_type ?? "—"}
                 {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m lead` : ""}
               </p>
             </div>
@@ -411,6 +486,7 @@ export function Step5PackageConfiguration() {
               key={sensor.id}
               title={sensor.model}
               specs={[
+                { label: "Type", value: speedSensorTypeLabel(sensor.mounting_position) },
                 { label: "Mounting", value: sensor.mounting_position },
                 { label: "Connector", value: sensor.connector_type },
                 { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
@@ -500,33 +576,127 @@ export function Step5PackageConfiguration() {
           expanded={expanded.controllerId}
           onToggleExpanded={() => toggleExpanded("controllerId")}
           selectedSummary={
-            selectedController && (
-              <div>
-                <p className="text-sm font-sans font-bold uppercase text-primary">{selectedController.model}</p>
-                <p className="text-xs font-body text-muted-foreground">
-                  {selectedController.voltage_v}V · {selectedController.rated_power_w ?? "—"}W rated
-                </p>
-              </div>
+            s.controllerSourcing === "not_needed" ? (
+              <p className="text-sm font-sans font-bold uppercase text-warning">Not Needed — Customer Supplied</p>
+            ) : s.controllerSourcing === "third_party" ? (
+              <p className="text-sm font-sans font-bold uppercase text-warning">3rd-Party Controller — Customer Supplied</p>
+            ) : (
+              selectedController && (
+                <div>
+                  <p className="text-sm font-sans font-bold uppercase text-primary">{selectedController.model}</p>
+                  <p className="text-xs font-body text-muted-foreground">
+                    {selectedController.voltage_v}V · {selectedController.rated_power_w ?? "—"}W rated
+                  </p>
+                </div>
+              )
             )
           }
         >
-          <div className="product-option-grid">
-            {compatibleControllers.map((c: ControllerRow) => (
-              <OptionCard
-                key={c.id}
-                title={c.model}
-                imageUrl={resolveImageUrl(c.image_url, c.image_path)}
-                specs={[
-                  { label: "Rated Power", value: c.rated_power_w ? `${c.rated_power_w}W` : null },
-                  { label: "Peak Current", value: c.peak_current_a ? `${c.peak_current_a}A` : null },
-                  { label: "Voltage", value: `${c.voltage_v}V` },
-                ]}
-                selected={s.controllerId === c.id}
-                isBestMatch={bestControllerId === c.id}
-                onSelect={() => s.setField("controllerId", c.id)}
-              />
-            ))}
+          <div className="mb-4 flex flex-col gap-2">
+            <p className="text-xs font-sans font-semibold text-graphite">Controller sourcing</p>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  { id: "ananda" as const, label: "Ananda Controller" },
+                  { id: "third_party" as const, label: "3rd-Party / Customer Supplied" },
+                  { id: "not_needed" as const, label: "Not Needed" },
+                ]
+              ).map((opt) => {
+                const selected = (s.controllerSourcing ?? "ananda") === opt.id
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => {
+                      if (opt.id === "ananda") {
+                        s.setField("controllerSourcing", "ananda")
+                        s.setItemSkipped("controllerId", false)
+                        return
+                      }
+                      setPendingThirdPartyController(true)
+                      s.setField("controllerSourcing", opt.id)
+                    }}
+                    className={cn(
+                      "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+                      selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
+
+          {(s.controllerSourcing ?? "ananda") === "ananda" ? (
+            <div className="product-option-grid">
+              {compatibleControllers.map((c: ControllerRow) => (
+                <OptionCard
+                  key={c.id}
+                  title={c.model}
+                  imageUrl={resolveImageUrl(c.image_url, c.image_path)}
+                  specs={[
+                    { label: "Rated Power", value: c.rated_power_w ? `${c.rated_power_w}W` : null },
+                    { label: "Peak Current", value: c.peak_current_a ? `${c.peak_current_a}A` : null },
+                    { label: "Voltage", value: `${c.voltage_v}V` },
+                  ]}
+                  selected={s.controllerId === c.id}
+                  isBestMatch={bestControllerId === c.id}
+                  onSelect={() => s.setField("controllerId", c.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="border border-warning/40 bg-warning/10 px-4 py-3">
+              <p className="text-xs font-body text-warning-foreground">
+                A customer-supplied controller is being used. This item will be listed on the Final Report as requiring a physical
+                sample and sales-team coordination.
+              </p>
+            </div>
+          )}
+
+          <AlertDialog open={pendingThirdPartyController} onOpenChange={(open) => {
+            if (!open && !s.thirdPartyControllerAcknowledged) {
+              s.setField("controllerSourcing", "ananda")
+              s.setItemSkipped("controllerId", false)
+            }
+            setPendingThirdPartyController(open)
+          }}>
+            <AlertDialogContent className="border-2 border-border font-sans">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+                  Using a Non-Ananda Controller
+                </AlertDialogTitle>
+                <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+                  Using Ananda is recommended. Choosing a 3rd-party controller (or none) will reduce your warranty coverage and
+                  increase engineering work on our side. We will require a physical sample of the 3rd-party component for system
+                  integration testing — Ananda is not responsible for product issues if that test was not conducted. Please inform
+                  our sales team of your chosen supplier.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  className="font-sans text-xs font-bold uppercase tracking-wider"
+                  onClick={() => {
+                    s.setField("controllerSourcing", "ananda")
+                    s.setItemSkipped("controllerId", false)
+                  }}
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    s.setField("controllerId", null)
+                    s.setItemSkipped("controllerId", true)
+                    s.setField("thirdPartyControllerAcknowledged", true)
+                  }}
+                  className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+                >
+                  Confirm &amp; Continue
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </ConfigRow>
       )}
 
@@ -546,6 +716,47 @@ export function Step5PackageConfiguration() {
           <EmptyOptionsNotice />
         </ConfigRow>
       )}
+
+      <section id="config-bikeComponents-panel" className="mb-6 border border-transparent">
+        <div className="mb-4 flex items-center gap-2">
+          <SectionLabel>Bike Components</SectionLabel>
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">Optional</span>
+        </div>
+        {bikeComponentsLoading ? (
+          <div className="flex items-center gap-2 py-8 justify-center text-sm font-sans text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {BIKE_COMPONENT_CATEGORIES.map((category) => {
+              const options = bikeComponents.filter((c: BikeComponentRow) => c.category === category.id)
+              const selectedId = s.bikeComponentSelections[category.id] ?? null
+              if (options.length === 0) return null
+              return (
+                <div key={category.id}>
+                  <p className="mb-3 text-xs font-sans font-bold uppercase tracking-wider text-graphite">{category.label}</p>
+                  <div className="product-option-grid">
+                    {options.map((c) => (
+                      <OptionCard
+                        key={c.id}
+                        title={c.model}
+                        specs={[
+                          { label: "Description", value: c.short_description },
+                          { label: "Weight", value: c.weight_kg ? `${c.weight_kg}kg` : null },
+                        ]}
+                        selected={selectedId === c.id}
+                        onSelect={() =>
+                          s.setField("bikeComponentSelections", { ...s.bikeComponentSelections, [category.id]: c.id })
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
