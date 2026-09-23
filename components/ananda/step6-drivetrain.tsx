@@ -320,7 +320,7 @@ function ToothCountField({
         inputMode="numeric"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={id === "largest-rear-teeth" ? "e.g. 43" : "e.g. 34"}
+        placeholder={id === "largest-rear-teeth" ? "e.g. 43" : id === "smallest-rear-teeth" ? "e.g. 11" : "e.g. 34"}
         className="w-full border border-border px-3 py-2 text-sm font-body font-semibold tabular-nums focus:border-primary outline-none"
       />
     </div>
