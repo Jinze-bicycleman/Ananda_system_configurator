@@ -289,7 +289,7 @@ function RatioField({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g. 1.615"
+        placeholder={id === "hub-down-ratio" ? "e.g. 0.8" : "e.g. 1.615"}
         className="w-full border border-border px-3 py-2 text-sm font-body font-semibold tabular-nums focus:border-primary outline-none"
       />
     </div>
