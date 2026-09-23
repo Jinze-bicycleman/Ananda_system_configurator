@@ -197,8 +197,9 @@ export function Step3ProductTargets() {
               id,
               label: BATTERY_CAPACITY_BANDS[id].label,
             }))}
-            value={t.battery.band}
-            onChange={(band) => {
+  value={t.battery.band}
+  selectedClassName="bg-primary/25 ring-2 ring-primary/40"
+  onChange={(band) => {
               const b = BATTERY_CAPACITY_BANDS[band]
               s.setProductTarget({ battery: { capacityWh: b.capacityWh, band } })
             }}
