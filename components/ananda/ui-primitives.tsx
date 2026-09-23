@@ -85,13 +85,14 @@ interface ChoiceGroupProps<T extends string> {
   value: T | null
   onChange: (id: T) => void
   className?: string
+  selectedClassName?: string
 }
 
 // Reusable segmented / choice-button group (Value · Mainstream · Premium,
 // Must Have · Target · Nice to Have, etc). Buttons wrap onto the next row
 // instead of compressing below a readable width, and never overlap a
 // neighboring button's text.
-export function ChoiceGroup<T extends string>({ options, value, onChange, className }: ChoiceGroupProps<T>) {
+export function ChoiceGroup<T extends string>({ options, value, onChange, className, selectedClassName }: ChoiceGroupProps<T>) {
   return (
     <div className={cn("choice-group", className)}>
       {options.map((opt) => (
@@ -105,7 +106,7 @@ export function ChoiceGroup<T extends string>({ options, value, onChange, classN
             opt.disabled
               ? "cursor-not-allowed border-border text-muted-foreground opacity-50"
               : value === opt.id
-                ? "border-primary bg-primary/5 text-primary"
+                ? cn("border-primary bg-primary/5 text-primary", selectedClassName)
                 : "border-border text-graphite hover:border-primary/40",
           )}
         >

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, Search, Wifi, Zap } from "lucide-react"
+import { CheckCircle2, Search, Zap } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
 import {
@@ -13,7 +13,6 @@ import {
   type BatteryCapacityBand,
   type TerrainBand,
   type TorqueBand,
-  type YesNo,
 } from "@/lib/ananda-product-targets"
 import { StepHeader, SectionLabel, ChoiceGroup } from "./ui-primitives"
 import { cn } from "@/lib/utils"
@@ -44,52 +43,6 @@ const DRIVE_UNITS = [
 ]
 
 const VOLTAGE_PLATFORMS = [36, 48] as const
-
-// IoT Module — merges the old GPS Tracking + Anti-Theft rows into a single
-// Yes/No choice, with a description of what the module provides in the
-// space where the second row used to be.
-function IotModuleRow() {
-  const s = useAnandaStore()
-  const t = s.productTargets
-
-  const setIot = (value: YesNo) =>
-    s.setProductTarget({
-      functions: {
-        iotModule: value,
-        gps: value === "yes" ? "target" : "not_required",
-        antiTheft: value === "yes" ? "target" : "not_required",
-      },
-    })
-
-  return (
-    <div className="flex flex-col gap-3 border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
-      <span className="flex min-w-0 items-start gap-2 text-sm font-sans font-semibold text-graphite">
-        <Wifi aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block">IoT Module</span>
-          <span className="mt-1 block max-w-sm text-xs font-normal leading-relaxed text-muted-foreground">
-            IoT module provides GPS and internet connectivity function, requires LAN service via SIM card.
-          </span>
-        </span>
-      </span>
-      <div className="choice-group sm:w-auto sm:justify-end">
-        {(["yes", "no"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setIot(v)}
-            className={cn(
-              "border px-3 py-1.5 text-center text-[10px] font-sans font-bold uppercase tracking-wider transition-colors",
-              t.functions.iotModule === v ? "border-primary bg-primary text-white" : "border-border text-muted-foreground hover:border-primary/40",
-            )}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // Drive Unit Selection — sets the real `driveType` / `voltagePlatform`
 // fields directly (the same fields Step 4's recommendation engine and
@@ -244,8 +197,9 @@ export function Step3ProductTargets() {
               id,
               label: BATTERY_CAPACITY_BANDS[id].label,
             }))}
-            value={t.battery.band}
-            onChange={(band) => {
+  value={t.battery.band}
+  selectedClassName="bg-primary/25 ring-2 ring-primary/40"
+  onChange={(band) => {
               const b = BATTERY_CAPACITY_BANDS[band]
               s.setProductTarget({ battery: { capacityWh: b.capacityWh, band } })
             }}
@@ -275,16 +229,6 @@ export function Step3ProductTargets() {
         </div>
       </div>
 
-      {/* Functions */}
-      <div className="mb-8">
-        <SectionLabel>Functions & Connectivity</SectionLabel>
-        <p className="mb-3 text-xs font-body text-muted-foreground">
-          Companion-app connectivity and lighting specifics are configured on the Accessories step.
-        </p>
-        <div className="space-y-2">
-          <IotModuleRow />
-        </div>
-      </div>
 
       {/* Product ambition */}
       <div className="mb-8">
