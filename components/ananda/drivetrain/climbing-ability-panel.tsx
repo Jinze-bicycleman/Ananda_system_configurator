@@ -145,8 +145,18 @@ export function ClimbingAbilityPanel({
                     : "border-border text-graphite hover:border-primary/40",
                 )}
               >
-                <span className="text-sm font-body leading-tight">{m.mode_key === "trail" ? "Tour" : m.display_label}</span>
-                <span className="text-xs tabular-nums text-muted-foreground">{m.assistance_multiplier.toFixed(1)}×</span>
+                <span
+                  className="text-sm font-body leading-tight"
+                  style={m.mode_key === "trail" ? { color: "#ebebeb" } : undefined}
+                >
+                  {m.mode_key === "trail" ? "Tour" : m.display_label}
+                </span>
+                <span
+                  className="text-xs tabular-nums text-muted-foreground"
+                  style={m.mode_key === "trail" ? { color: "#ecf0e8" } : undefined}
+                >
+                  {m.assistance_multiplier.toFixed(1)}×
+                </span>
               </button>
             ))}
           </div>
