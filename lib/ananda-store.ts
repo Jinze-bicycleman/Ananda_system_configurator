@@ -85,6 +85,10 @@ export interface AnandaConfig {
   chargingPortId: string | null
   accessoryIds: string[]
   cableLengths: Record<string, number>
+  // How each connection's length was chosen: from the standard catalog list
+  // or typed in as a custom length (which needs sales review). Absent means
+  // the length was never edited and the template default applies.
+  cableLengthModes: Record<string, "standard" | "custom">
   // Optional extension cable length (metres), keyed by the same connection
   // name as `cableLengths`. Absent/undefined means no extension was added —
   // the extension cable is always optional.
@@ -146,7 +150,7 @@ export interface AnandaActions {
   selectPackage: (packageId: string, defaults: Partial<AnandaConfig>) => void
   setItemSkipped: (key: string, skipped: boolean) => void
   toggleAccessory: (id: string) => void
-  setCableLength: (connection: string, length: number) => void
+  setCableLength: (connection: string, length: number, mode?: "standard" | "custom") => void
   /** Sets the optional extension cable length for a connection; pass `null` to remove it (back to no extension). */
   setExtensionCableLength: (connection: string, length: number | null) => void
   setDrivetrainType: (drivetrainType: "chain" | "belt") => void
@@ -183,7 +187,7 @@ const defaultState: AnandaConfig = {
   beltlineVerified: false,
   crankLength: null,
   crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
-  accessoryIds: [], cableLengths: {}, extensionCableLengths: {}, currentStep: 1, hasStarted: false,
+  accessoryIds: [], cableLengths: {}, cableLengthModes: {}, extensionCableLengths: {}, currentStep: 1, hasStarted: false,
   hmiProtocolPreference: "can", bikeComponentSelections: {},
   controllerSourcing: null, thirdPartyControllerAcknowledged: false,
   drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null,
@@ -292,7 +296,10 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
         skippedItems: skipped ? Array.from(new Set([...state.skippedItems, key])) : state.skippedItems.filter((item) => item !== key),
       })),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
-      setCableLength: (connection, length) => set((state) => ({ cableLengths: { ...state.cableLengths, [connection]: length } })),
+      setCableLength: (connection, length, mode = "standard") => set((state) => ({
+        cableLengths: { ...state.cableLengths, [connection]: length },
+        cableLengthModes: { ...state.cableLengthModes, [connection]: mode },
+      })),
       setExtensionCableLength: (connection, length) => set((state) => {
         if (length === null) {
           const next = { ...state.extensionCableLengths }
