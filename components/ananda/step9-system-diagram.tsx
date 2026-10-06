@@ -6,7 +6,7 @@ import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
-import { SystemDiagram } from "./system-diagram/system-diagram"
+import { BikeOverview } from "./bike-overview/bike-overview"
 import { FixedSystemDiagram } from "./system-diagram/fixed-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 import { cn } from "@/lib/utils"
@@ -437,7 +437,7 @@ export function Step9SystemDiagram() {
             aria-labelledby="overview-tab-bike"
             hidden={overviewView !== "bike"}
           >
-            <SystemDiagram />
+            <BikeOverview />
           </div>
           <div
             id="overview-panel-diagram"
