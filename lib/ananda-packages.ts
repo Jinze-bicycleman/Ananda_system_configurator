@@ -218,6 +218,20 @@ export function resolveImageUrl(...candidates: (string | null | undefined)[]): s
   return null
 }
 
+/**
+ * Every usable image for a product, in display order and de-duplicated.
+ * The gallery pop-up pages through this list, so adding a new image column
+ * or an `images` array to a table only requires passing it in here.
+ */
+export function productImages(...candidates: (string | null | undefined | (string | null | undefined)[])[]): string[] {
+  const urls: string[] = []
+  for (const candidate of candidates.flat()) {
+    const url = resolveImageUrl(candidate)
+    if (url && !urls.includes(url)) urls.push(url)
+  }
+  return urls
+}
+
 // Motor-specific assistance modes (Eco/Trail/Sport/Turbo/Boost multipliers),
 // used by the Climbing Ability panel. Falls back to the seeded 1x-5x
 // defaults if a motor has no rows (should not normally happen post-seed).
@@ -435,6 +449,8 @@ export type BikeComponentRow = {
   model: string
   short_description: string | null
   weight_kg: number | null
+  /** Tooth count — populated for chainrings so later stages can reuse it. */
+  teeth: number | null
   is_active: boolean
   sort_order: number
 }
@@ -443,7 +459,7 @@ async function fetchBikeComponents(): Promise<BikeComponentRow[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from("bike_components")
-    .select("id, category, model, short_description, weight_kg, is_active, sort_order")
+    .select("id, category, model, short_description, weight_kg, teeth, is_active, sort_order")
     .eq("is_active", true)
     .order("sort_order")
   if (error) throw error

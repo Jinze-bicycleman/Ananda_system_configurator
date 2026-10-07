@@ -2,7 +2,11 @@
 
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import { defaultProductTargets, type ProductTargets, type ProductTargetsPatch } from "./ananda-product-targets"
+
+export const DEFAULT_SMALLEST_REAR_TEETH = 11
+export const DEFAULT_LARGEST_REAR_TEETH = 43
+
+export type BluetoothAppChoice = "ananda_app" | "third_party"
 
 export interface AnandaConfig {
   sellRegion: string | null
@@ -16,19 +20,6 @@ export interface AnandaConfig {
   tyreCircumferenceMm: number | null
   driveType: "mid" | "hub" | null
   voltagePlatform: 36 | 48 | 52 | null
-  productTargets: ProductTargets
-  selectedSolutionId: "best" | "lower_cost" | "premium" | "custom" | null
-  // Optional expert override consumed only by the recommendation engine as a
-  // hard filter — independent from `driveType`/`voltagePlatform` above, which
-  // are populated by `applyRecommendedSolution` once a solution is chosen.
-  advancedDriveType: "mid" | "hub" | null
-  advancedVoltagePlatform: 36 | 48 | 52 | null
-  targetStatusBaseline: { weightKg: number; rangeKm: number; costLabel: string } | null
-  // Recommended (Best Match) product id per package-component key, captured
-  // when a Step 4 solution is applied. The Step 5 change-confirmation dialog
-  // diffs live selections against this to detect user deviations.
-  packageBaseline: Record<string, string | null>
-  packageId: string | null
   motorId: string | null
   controllerId: string | null
   torqueSensorId: string | null
@@ -36,87 +27,52 @@ export interface AnandaConfig {
   speedSensorId: string | null
   displayId: string | null
   remoteId: string | null
-  skippedItems: string[]
-  // Drivetrain System — `drivetrainType` is the live "chain" | "belt" selection
-  // (spec's `driveType`, renamed to avoid clashing with the motor `driveType`
-  // field above). The remaining chainring/rearSprocket/cadence/gear fields are
-  // legacy and retained only for backward compatibility with previously
-  // persisted state; the drivetrain step no longer writes to them.
-  drivetrainType: "chain" | "belt" | null
-  chainringTeeth: number
-  rearSprocketTeeth: number
-  cadenceRpm: number
-  gearRatio: number | null
-  estimatedSpeedKmh: number | null
-  estimatedOnWheelTorqueNm: number | null
-  gearSystem: string | null
-  transmissionType: "derailleur" | "internal_gear_hub" | "cvt" | "single_speed" | "gearbox" | null
-  selectedComponentIds: string[]
-  // Tooth-count-driven drivetrain configuration (Step 6). `frontTeeth` is the
-  // front chainring; `rearTeeth`/`largestRearTeeth` are the smallest/largest
-  // rear sprocket. Only these three integers are required going forward.
-  frontTeeth: number | null
-  rearTeeth: number | null
-  largestRearTeeth: number | null
-  selectedBeltId: string | null
-  // Climbing Ability panel (Step 6) inputs — preserved across navigation.
-  climbingRiderWeightKg: number
-  climbingAssistanceModeKey: string
-  climbingPedalEffortKey: "relaxed" | "normal" | "hard"
-  climbingCustomPedalTorqueNm: number | null
-  centerDistanceMm: number | null
-  adjustmentMm: number | null
-  drivetrainEfficiency: number
-  drivetrainWarnings: string[]
-  drivetrainErrors: string[]
-  warningsAcknowledged: boolean
-  gvwKg: number | null
-  frameHasBeltOpening: boolean | null
-  beltAlternateInstallationApproved: boolean
-  tensioningMethod: string | null
-  frameStiffnessVerified: "yes" | "no" | "not_yet" | null
-  frontPulleyClearanceVerified: boolean
-  rearPulleyClearanceVerified: boolean
-  beltlineVerified: boolean
-  crankLength: string | null
-  crankInterface: string | null
   batteryId: string | null
   chargerId: string | null
   chargingPortId: string | null
-  accessoryIds: string[]
-  cableLengths: Record<string, number>
-  // How each connection's length was chosen: from the standard catalog list
-  // or typed in as a custom length (which needs sales review). Absent means
-  // the length was never edited and the template default applies.
-  cableLengthModes: Record<string, "standard" | "custom">
-  // Optional extension cable length (metres), keyed by the same connection
-  // name as `cableLengths`. Absent/undefined means no extension was added —
-  // the extension cable is always optional.
-  extensionCableLengths: Record<string, number>
-  currentStep: number
-  hasStarted: boolean
-  // HMI communication-protocol filter (Step 5) — defaults to CAN bus.
-  hmiProtocolPreference: "can" | "uart"
-  // Bike components (Step 5) — chainring / crank / spider selections.
-  bikeComponentSelections: Record<string, string | null>
-  // Hub-motor controller sourcing (Step 5) — whether to use an Ananda
-  // controller, a customer-supplied third-party controller, or none.
-  controllerSourcing: "ananda" | "third_party" | "not_needed" | null
-  thirdPartyControllerAcknowledged: boolean
-  // Drivetrain system kind (Step 6) — derailleur vs internal gear hub, and
-  // the up/down ratio inputs used only for the gear-hub calculator.
+  skippedItems: string[]
+  // Package-configuration parts the customer sources from their own supplier.
+  // A key's presence means the "3rd party supplier" warning was accepted; the
+  // value is the supplier name (may be empty until the user fills it in).
+  thirdPartySuppliers: Record<string, string>
+  // Drivetrain (stage 4) — tooth counts. `frontTeeth` is the front chainring;
+  // `rearTeeth` / `largestRearTeeth` are the smallest / largest rear sprocket.
+  frontTeeth: number | null
+  rearTeeth: number | null
+  largestRearTeeth: number | null
+  // Teeth of the chainring picked under Bike Components. When set, the
+  // drivetrain stage's front chainring teeth must match it.
+  selectedChainringTeeth: number | null
   drivetrainSystemKind: "derailleur" | "gear_hub" | null
   hubGearUpRatio: number | null
   hubGearDownRatio: number | null
-  // Accessory-level detail (Step 8)
+  gvwKg: number | null
+  climbingRiderWeightKg: number
+  climbingAssistanceModeKey: string
+  climbingPedalEffortKey: "relaxed" | "normal" | "hard"
+  // Accessories (stage 5)
+  accessoryIds: string[]
   lightSpecs: Record<string, { voltageV: number | null; currentA: number | null; powerW: number | null }>
   throttleStartMode: "zero_start" | "speed_gate" | null
   throttleSpeedGateKmh: number | null
-  throttleSampleAcknowledged: boolean
   customAccessories: { id: string; name: string }[]
-  // Stage 7 — connector sourcing when non-Ananda accessories/controller are in play.
+  bluetoothApp: BluetoothAppChoice | null
+  bluetoothThirdPartyAcknowledged: boolean
+  // System diagram (stage 6)
+  cableLengths: Record<string, number>
+  // How each connection's length was chosen: from the standard catalog list
+  // or typed in as a custom length (which needs sales review).
+  cableLengthModes: Record<string, "standard" | "custom">
+  // Optional extension cable length (metres), keyed by connection name.
+  extensionCableLengths: Record<string, number>
   connectorSourcing: "standard" | "custom" | null
   connectorCustomAcknowledged: boolean
+  // Package configuration — HMI communication-protocol filter and bike
+  // component (chainring / crank / spider) selections.
+  hmiProtocolPreference: "can" | "uart"
+  bikeComponentSelections: Record<string, string | null>
+  currentStep: number
+  hasStarted: boolean
 }
 
 export interface AnandaActions {
@@ -126,39 +82,18 @@ export interface AnandaActions {
   setDriveType: (drive: "mid" | "hub") => void
   setVoltage: (voltage: 36 | 48 | 52) => void
   setBikeCategory: (category: string) => void
-  setProductTarget: (patch: ProductTargetsPatch) => void
-  setAdvancedOverride: (driveType: "mid" | "hub" | null, voltagePlatform: 36 | 48 | 52 | null) => void
-  clearAdvancedOverride: () => void
-  applyRecommendedSolution: (
-    solutionId: "best" | "lower_cost" | "premium",
-    defaults: {
-      driveType: "mid" | "hub"
-      voltagePlatform: 36 | 48 | 52
-      motorId: string
-      controllerId: string | null
-      displayId: string | null
-      batteryId: string | null
-      chargerId: string | null
-      chargingPortId: string | null
-      baseline: { weightKg: number; rangeKm: number; costLabel: string }
-    },
-  ) => void
-  /** Recomputes packageBaseline from the currently selected solution without touching live selections — used when the catalogue-derived recommendation for a component (e.g. charger) changes. */
-  setPackageBaseline: (baseline: Record<string, string | null>) => void
-  /** "Fully Customize" Step 4 option — marks a solution as selected without applying any preset motor/battery/display combination, so the user builds every component from scratch in Package Configuration. Preserves any drive type / voltage platform already chosen on Step 3. */
-  selectCustomSolution: () => void
-  selectPackage: (packageId: string, defaults: Partial<AnandaConfig>) => void
   setItemSkipped: (key: string, skipped: boolean) => void
+  /** Picks an Ananda product for a package item and drops any 3rd-party supplier set on it. */
+  selectPackageItem: (key: PackageItemKey, id: string) => void
+  /** Marks a package item as customer-sourced from a 3rd-party supplier (call after the warning is accepted). */
+  enableThirdParty: (key: PackageItemKey) => void
+  setThirdPartySupplierName: (key: PackageItemKey, name: string) => void
+  disableThirdParty: (key: PackageItemKey) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number, mode?: "standard" | "custom") => void
-  /** Sets the optional extension cable length for a connection; pass `null` to remove it (back to no extension). */
+  /** Sets the optional extension cable length for a connection; pass `null` to remove it. */
   setExtensionCableLength: (connection: string, length: number | null) => void
-  setDrivetrainType: (drivetrainType: "chain" | "belt") => void
-  setTransmissionType: (transmissionType: AnandaConfig["transmissionType"]) => void
-  resetDrivetrainDownstream: (from: "type" | "transmission" | "components") => void
   setStep: (step: number) => void
-  nextStep: () => void
-  prevStep: () => void
   resetConfig: () => void
   startConfiguration: () => void
   setLightSpec: (accessoryId: string, patch: Partial<{ voltageV: number | null; currentA: number | null; powerW: number | null }>) => void
@@ -167,64 +102,47 @@ export interface AnandaActions {
   updateCustomAccessory: (id: string, name: string) => void
 }
 
+export type PackageItemKey =
+  | "controllerId"
+  | "torqueSensorId"
+  | "speedSensorId"
+  | "displayId"
+  | "batteryId"
+  | "chargerId"
+  | "chargingPortId"
+
 const defaultState: AnandaConfig = {
   sellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
   bikeCategory: null, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null,
   driveType: null, voltagePlatform: null,
-  productTargets: defaultProductTargets, selectedSolutionId: null,
-  advancedDriveType: null, advancedVoltagePlatform: null, targetStatusBaseline: null, packageBaseline: {},
-  packageId: null, motorId: null, controllerId: null,
-  torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null,
-  remoteId: null, skippedItems: [], drivetrainType: null, chainringTeeth: 42, rearSprocketTeeth: 32,
-  cadenceRpm: 80, gearRatio: null, estimatedSpeedKmh: null,
-  estimatedOnWheelTorqueNm: null, gearSystem: null,
-  transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, largestRearTeeth: null,
-  selectedBeltId: null, centerDistanceMm: null, adjustmentMm: null, drivetrainEfficiency: 0.95,
-  climbingRiderWeightKg: 75, climbingAssistanceModeKey: "eco", climbingPedalEffortKey: "normal", climbingCustomPedalTorqueNm: null,
-  drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false, gvwKg: null,
-  frameHasBeltOpening: null, beltAlternateInstallationApproved: false, tensioningMethod: null,
-  frameStiffnessVerified: null, frontPulleyClearanceVerified: false, rearPulleyClearanceVerified: false,
-  beltlineVerified: false,
-  crankLength: null,
-  crankInterface: null, batteryId: null, chargerId: null, chargingPortId: null,
-  accessoryIds: [], cableLengths: {}, cableLengthModes: {}, extensionCableLengths: {}, currentStep: 1, hasStarted: false,
+  motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null,
+  displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null,
+  skippedItems: [], thirdPartySuppliers: {},
+  frontTeeth: null, rearTeeth: DEFAULT_SMALLEST_REAR_TEETH, largestRearTeeth: DEFAULT_LARGEST_REAR_TEETH,
+  selectedChainringTeeth: null,
+  drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null, gvwKg: null,
+  climbingRiderWeightKg: 75, climbingAssistanceModeKey: "eco", climbingPedalEffortKey: "normal",
+  accessoryIds: [], lightSpecs: {}, throttleStartMode: null, throttleSpeedGateKmh: 15, customAccessories: [],
+  bluetoothApp: null, bluetoothThirdPartyAcknowledged: false,
+  cableLengths: {}, cableLengthModes: {}, extensionCableLengths: {}, connectorSourcing: null, connectorCustomAcknowledged: false,
   hmiProtocolPreference: "can", bikeComponentSelections: {},
-  controllerSourcing: null, thirdPartyControllerAcknowledged: false,
-  drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null,
-  lightSpecs: {}, throttleStartMode: null, throttleSpeedGateKmh: 15, throttleSampleAcknowledged: false,
-  customAccessories: [], connectorSourcing: null, connectorCustomAcknowledged: false,
+  currentStep: 1, hasStarted: false,
 }
 
-function normalizePersisted(input: Partial<AnandaConfig> & Record<string, unknown>): Partial<AnandaConfig> {
-  return {
-    ...input,
-    sellRegion: input.sellRegion ?? (input.region as string | null | undefined) ?? null,
-    speedLimitKmh: input.speedLimitKmh ?? (input.speedLimit as number | null | undefined) ?? null,
-    tyreCircumferenceMm: input.tyreCircumferenceMm ?? null,
-    tyreWidth: input.tyreWidth ?? (input.tyreSize as string | null | undefined) ?? null,
-    tyreIsoSize: input.tyreIsoSize ?? null,
-    regulation: input.regulation ?? null,
-    ratedPowerW: input.ratedPowerW ?? null,
-    packageBaseline: input.packageBaseline ?? {},
-    productTargets: input.productTargets
-      ? {
-          ...defaultProductTargets,
-          ...(input.productTargets as Partial<ProductTargets>),
-          weight: { ...defaultProductTargets.weight, ...(input.productTargets as ProductTargets).weight },
-          performance: { ...defaultProductTargets.performance, ...(input.productTargets as ProductTargets).performance },
-          battery: { ...defaultProductTargets.battery, ...(input.productTargets as Partial<ProductTargets>).battery },
-          functions: {
-            ...defaultProductTargets.functions,
-            ...(input.productTargets as ProductTargets).functions,
-            lightsConfig: {
-              ...defaultProductTargets.functions.lightsConfig,
-              ...(input.productTargets as Partial<ProductTargets>).functions?.lightsConfig,
-            },
-          },
-          ambition: { ...defaultProductTargets.ambition, ...(input.productTargets as ProductTargets).ambition },
-        }
-      : defaultProductTargets,
+const PERSIST_VERSION = 2
+
+// Version 2 removed the "Recommended Solutions" stage (and the product-target
+// inputs that fed it), so stored step numbers shift down by one past stage 2.
+function migratePersisted(persisted: unknown, fromVersion: number): Partial<AnandaConfig> {
+  const input = { ...((persisted ?? {}) as Record<string, unknown>) }
+  if (fromVersion < 2) {
+    const oldStep = typeof input.currentStep === "number" ? input.currentStep : 1
+    input.currentStep = Math.max(1, oldStep <= 2 ? oldStep : oldStep - 1)
+    if (input.rearTeeth == null) input.rearTeeth = DEFAULT_SMALLEST_REAR_TEETH
+    if (input.largestRearTeeth == null) input.largestRearTeeth = DEFAULT_LARGEST_REAR_TEETH
   }
+  const known = new Set(Object.keys(defaultState))
+  return Object.fromEntries(Object.entries(input).filter(([key]) => known.has(key))) as Partial<AnandaConfig>
 }
 
 export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
@@ -234,67 +152,28 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       setField: (key, value) => set((state) => ({ ...state, [key]: value })),
       setMarket: (market) => set((state) => ({ ...state, sellRegion: market, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
-      setDriveType: (driveType) => set((state) => ({ ...state, driveType, packageId: null, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [] })),
-      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, packageId: null, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [] })),
+      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
+      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
       setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null })),
-      setProductTarget: (patch) => set((state) => ({
-        productTargets: {
-          ...state.productTargets,
-          ...(patch.mode !== undefined ? { mode: patch.mode } : {}),
-          ...(patch.presetId !== undefined ? { presetId: patch.presetId } : {}),
-    weight: { ...state.productTargets.weight, ...(patch.weight ?? {}) },
-    performance: { ...state.productTargets.performance, ...(patch.performance ?? {}) },
-    battery: { ...state.productTargets.battery, ...(patch.battery ?? {}) },
-    functions: { ...state.productTargets.functions, ...(patch.functions ?? {}) },
-          ambition: { ...state.productTargets.ambition, ...(patch.ambition ?? {}) },
-        },
-      })),
-      setAdvancedOverride: (driveType, voltagePlatform) => set(() => ({ advancedDriveType: driveType, advancedVoltagePlatform: voltagePlatform })),
-      clearAdvancedOverride: () => set(() => ({ advancedDriveType: null, advancedVoltagePlatform: null })),
-      applyRecommendedSolution: (solutionId, defaults) => set(() => ({
-        selectedSolutionId: solutionId,
-        driveType: defaults.driveType,
-        voltagePlatform: defaults.voltagePlatform,
-        packageId: defaults.motorId,
-        motorId: defaults.motorId,
-        controllerId: defaults.controllerId,
-        displayId: defaults.displayId,
-        batteryId: defaults.batteryId,
-        chargerId: defaults.chargerId,
-        chargingPortId: defaults.chargingPortId,
-        skippedItems: [],
-        targetStatusBaseline: defaults.baseline,
-        packageBaseline: {
-          motorId: defaults.motorId,
-          controllerId: defaults.controllerId,
-          displayId: defaults.displayId,
-          batteryId: defaults.batteryId,
-          chargerId: defaults.chargerId,
-          chargingPortId: defaults.chargingPortId,
-        },
-      })),
-      setPackageBaseline: (baseline) => set((state) => ({ packageBaseline: { ...state.packageBaseline, ...baseline } })),
-      selectCustomSolution: () => set(() => ({
-        selectedSolutionId: "custom",
-        packageId: null,
-        motorId: null,
-        controllerId: null,
-        torqueSensorId: null,
-        cadenceSensorId: null,
-        speedSensorId: null,
-        displayId: null,
-        remoteId: null,
-        batteryId: null,
-        chargerId: null,
-        chargingPortId: null,
-        skippedItems: [],
-        targetStatusBaseline: null,
-        packageBaseline: {},
-      })),
-      selectPackage: (packageId, defaults) => set((state) => ({ ...state, ...defaults, packageId, skippedItems: [] })),
       setItemSkipped: (key, skipped) => set((state) => ({
         skippedItems: skipped ? Array.from(new Set([...state.skippedItems, key])) : state.skippedItems.filter((item) => item !== key),
       })),
+      selectPackageItem: (key, id) => set((state) => {
+        const { [key]: _removed, ...suppliers } = state.thirdPartySuppliers
+        void _removed
+        return { [key]: id, thirdPartySuppliers: suppliers, skippedItems: state.skippedItems.filter((item) => item !== key) }
+      }),
+      enableThirdParty: (key) => set((state) => ({
+        [key]: null,
+        skippedItems: state.skippedItems.filter((item) => item !== key),
+        thirdPartySuppliers: { ...state.thirdPartySuppliers, [key]: state.thirdPartySuppliers[key] ?? "" },
+      })),
+      setThirdPartySupplierName: (key, name) => set((state) => ({ thirdPartySuppliers: { ...state.thirdPartySuppliers, [key]: name } })),
+      disableThirdParty: (key) => set((state) => {
+        const { [key]: _removed, ...suppliers } = state.thirdPartySuppliers
+        void _removed
+        return { thirdPartySuppliers: suppliers }
+      }),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length, mode = "standard") => set((state) => ({
         cableLengths: { ...state.cableLengths, [connection]: length },
@@ -308,26 +187,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
         }
         return { extensionCableLengths: { ...state.extensionCableLengths, [connection]: length } }
       }),
-      setDrivetrainType: (drivetrainType) => set((state) => ({
-        ...state, drivetrainType, transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null,
-        selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false,
-      })),
-      setTransmissionType: (transmissionType) => set((state) => ({
-        ...state, transmissionType, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null,
-        drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false,
-      })),
-      resetDrivetrainDownstream: (from) => set((state) => {
-        if (from === "type") {
-          return { transmissionType: null, selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
-        }
-        if (from === "transmission") {
-          return { selectedComponentIds: [], frontTeeth: null, rearTeeth: null, selectedBeltId: null, drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
-        }
-        return { drivetrainWarnings: [], drivetrainErrors: [], warningsAcknowledged: false }
-      }),
       setStep: (currentStep) => set({ currentStep }),
-      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 9) })),
-      prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
       resetConfig: () => set({ ...defaultState, hasStarted: true }),
       startConfiguration: () => set({ hasStarted: true }),
       setLightSpec: (accessoryId, patch) => set((state) => {
@@ -344,47 +204,45 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
     }),
     {
       name: "ananda-edrive-config-v1",
-      merge: (persisted, current) => ({ ...current, ...normalizePersisted((persisted ?? {}) as Partial<AnandaConfig> & Record<string, unknown>) }),
-      partialize: (state) => {
-        const { setField, setMarket, setRegulation, setDriveType, setVoltage, setBikeCategory, setProductTarget, setAdvancedOverride, clearAdvancedOverride, applyRecommendedSolution, setPackageBaseline, selectCustomSolution, selectPackage, setItemSkipped, toggleAccessory, setCableLength, setExtensionCableLength, setDrivetrainType, setTransmissionType, resetDrivetrainDownstream, setStep, nextStep, prevStep, resetConfig, startConfiguration, setLightSpec, addCustomAccessory, removeCustomAccessory, updateCustomAccessory, ...rest } = state
-        void setField; void setMarket; void setRegulation; void setDriveType; void setVoltage; void setBikeCategory; void setProductTarget; void setAdvancedOverride; void clearAdvancedOverride; void applyRecommendedSolution; void setPackageBaseline; void selectCustomSolution; void selectPackage; void setItemSkipped; void toggleAccessory; void setCableLength; void setExtensionCableLength; void setDrivetrainType; void setTransmissionType; void resetDrivetrainDownstream; void setStep; void nextStep; void prevStep; void resetConfig; void startConfiguration; void setLightSpec; void addCustomAccessory; void removeCustomAccessory; void updateCustomAccessory
-        return rest
-      },
+      version: PERSIST_VERSION,
+      migrate: (persisted, version) => migratePersisted(persisted, version) as AnandaConfig & AnandaActions,
+      partialize: (state) =>
+        Object.fromEntries(Object.entries(state).filter(([, value]) => typeof value !== "function")) as unknown as AnandaConfig & AnandaActions,
     },
   ),
 )
 
 export { defaultState }
+
 export const hasProjectContext = (state: AnandaConfig) => Boolean(state.sellRegion && state.regulation)
 export const hasBikeCategory = (state: AnandaConfig) => Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm)
-export const hasDrive = (state: AnandaConfig) => Boolean(state.driveType)
-export const hasVoltage = (state: AnandaConfig) => Boolean(state.voltagePlatform)
-export const hasDriveAndVoltage = (state: AnandaConfig) => hasDrive(state) && hasVoltage(state)
-export const hasMotor = (state: AnandaConfig) => Boolean(state.packageId && state.motorId)
-export const hasProductTargets = (state: AnandaConfig) =>
-  Boolean(
-    state.productTargets.ambition.positioning &&
-      state.productTargets.ambition.costPriority &&
-      (state.productTargets.weight.targetKg != null || state.productTargets.weight.maxKg != null) &&
-      state.productTargets.performance.rangeTargetKm != null,
-  )
-export const hasRecommendedSolution = (state: AnandaConfig) => Boolean(state.selectedSolutionId)
+export const hasDriveAndVoltage = (state: AnandaConfig) => Boolean(state.driveType && state.voltagePlatform)
+export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)
 
 export function packageItemKeys(driveType: AnandaConfig["driveType"]): (keyof AnandaConfig)[] {
   const base: (keyof AnandaConfig)[] = ["motorId", "displayId", "speedSensorId", "batteryId", "chargerId", "chargingPortId"]
   return driveType === "hub" ? ["motorId", "controllerId", "torqueSensorId", ...base.slice(1)] : base
 }
 
-const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
-  Boolean(state[key]) || state.skippedItems.includes(key)
+export const hasThirdPartySupplier = (state: AnandaConfig, key: string) => key in state.thirdPartySuppliers
+
+export const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
+  Boolean(state[key]) ||
+  state.skippedItems.includes(key) ||
+  (hasThirdPartySupplier(state, key) && state.thirdPartySuppliers[key].trim().length > 0)
 
 export const hasCoreComponents = (state: AnandaConfig) =>
   hasMotor(state) && packageItemKeys(state.driveType).every((key) => isItemSatisfied(state, key))
 
-// Drivetrain configuration now only requires three positive-integer tooth
-// counts (front chainring, smallest/largest rear sprocket) — no branded
-// chain/cassette/derailleur selection. See lib/ananda-climbing.ts for the
-// validation rule (smallest <= largest).
+/** Why the front chainring teeth do not match the chosen Bike Components chainring, or null when they agree. */
+export const chainringMismatch = (state: AnandaConfig) =>
+  state.selectedChainringTeeth != null && state.frontTeeth != null && state.frontTeeth !== state.selectedChainringTeeth
+    ? { entered: state.frontTeeth, expected: state.selectedChainringTeeth }
+    : null
+
+// The drivetrain stage needs three positive tooth counts (smallest rear
+// sprocket <= largest), and the front count must agree with the chainring
+// selected under Bike Components.
 export const hasDrivetrain = (state: AnandaConfig) =>
   Boolean(
     state.frontTeeth != null &&
@@ -393,8 +251,6 @@ export const hasDrivetrain = (state: AnandaConfig) =>
       state.rearTeeth > 0 &&
       state.largestRearTeeth != null &&
       state.largestRearTeeth > 0 &&
-      state.rearTeeth <= state.largestRearTeeth,
+      state.rearTeeth <= state.largestRearTeeth &&
+      !chainringMismatch(state),
   )
-export const hasBattery = (state: AnandaConfig) => Boolean(state.batteryId && state.chargerId) || state.skippedItems.includes("batteryId")
-export const hasAccessories = (_state: AnandaConfig) => true
-export const hasDiagram = (_state: AnandaConfig) => true

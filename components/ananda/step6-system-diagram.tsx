@@ -29,7 +29,7 @@ import {
 // solution — the latter carries an explicit cost/lead-time warning.
 function ConnectorSourcingPrompt() {
   const s = useAnandaStore()
-  const needsChoice = s.controllerSourcing === "third_party" || s.controllerSourcing === "not_needed" || s.customAccessories.length > 0
+  const needsChoice = (s.driveType === "hub" && "controllerId" in s.thirdPartySuppliers) || s.customAccessories.length > 0
   const [pendingCustom, setPendingCustom] = useState(false)
 
   if (!needsChoice) return null
@@ -356,7 +356,7 @@ function CableTable() {
 
 // ─── Step component ──────────────────────────────────────────────────────────
 
-export function Step9SystemDiagram() {
+export function Step6SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
 
@@ -392,7 +392,7 @@ export function Step9SystemDiagram() {
     return (
       <div>
         <StepHeader
-          step={7}
+          step={6}
           title="System Overview"
           subtitle="Review the physical component placement or inspect the system architecture and cable connections."
         />
@@ -455,7 +455,7 @@ export function Step9SystemDiagram() {
   return (
     <div>
       <StepHeader
-        step={7}
+        step={6}
         title="System Diagram Overview"
         subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
       />

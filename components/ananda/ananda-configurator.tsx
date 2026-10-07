@@ -3,39 +3,29 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight, AlertTriangle, Download, PanelRightOpen } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import {
-  useAnandaStore,
-  hasBikeCategory,
-  hasProductTargets,
-  hasRecommendedSolution,
-  hasCoreComponents,
-  hasDrivetrain,
-} from "@/lib/ananda-store"
+import { useAnandaStore, hasBikeCategory, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
-import { useMotors, useBatteries, useDisplays, useControllers } from "@/lib/ananda-packages"
-import { getPackageModifications } from "@/lib/ananda-package-diff"
-import { PackageChangeDialog } from "./package-change-dialog"
 import { WelcomeScreen } from "./welcome-screen"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
 import { Step1ProjectContext } from "./step1-project-context"
-import { Step3ProductTargets } from "./step3-product-targets"
-import { Step4RecommendedSolutions } from "./step4-recommended-solutions"
-import { Step5PackageConfiguration } from "./step5-package-configuration"
-import { Step6DrivetrainSelection } from "./step6-drivetrain"
-import { Step8Accessories } from "./step8-accessories"
-import { Step9SystemDiagram } from "./step9-system-diagram"
-import { Step10Report } from "./step10-report"
+import { Step2BikeCategory } from "./step2-bike-category"
+import { Step3PackageConfiguration } from "./step3-package-configuration"
+import { Step4Drivetrain } from "./step4-drivetrain"
+import { Step5Accessories } from "./step5-accessories"
+import { Step6SystemDiagram } from "./step6-system-diagram"
+import { Step7Report } from "./step7-report"
 
-const labels = ["Sell Region & Regulation", "Rider Profile & Targets", "Recommended Solutions", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
+const labels = ["Sell Region & Regulation", "Bike Category", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
+const LAST_STEP_INDEX = labels.length - 1
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
-  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), 7))
-  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), 7)) }, [state.currentStep])
+  const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX))
+  useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX)) }, [state.currentStep])
   const reportData = useReportData()
   const [downloadingReport, setDownloadingReport] = useState(false)
   const handleDownloadReport = async () => {
@@ -49,8 +39,8 @@ export function AnandaConfigurator() {
 
   const complete = useMemo(() => [
     Boolean(state.sellRegion && state.regulation),
-    Boolean(hasBikeCategory(state) && hasProductTargets(state)),
-    hasRecommendedSolution(state), hasCoreComponents(state),
+    hasBikeCategory(state),
+    hasCoreComponents(state),
     hasDrivetrain(state), true, true, false,
   ], [state])
   const unlocked = complete.map((_, index) => index === 0 || complete[index - 1])
@@ -69,21 +59,6 @@ export function AnandaConfigurator() {
   const openSection = (index: number) => { setOpen(index); setAttemptedNext(false); state.setStep(index + 1); window.scrollTo({ top: 0, behavior: "smooth" }) }
   const openStepNumber = (stepNumber: number) => { if (unlocked[stepNumber - 1]) openSection(stepNumber - 1) }
 
-  // Step 5 (index 4) is "Package Configuration" — before leaving it, diff the
-  // live selections against the recommended (Best Match) baseline captured
-  // when the Step 4 solution was applied, and block navigation with a
-  // confirmation dialog if the user has deviated from any recommendation.
-  const PACKAGE_CONFIG_STEP_INDEX = 3
-  const { motors } = useMotors()
-  const { batteries } = useBatteries()
-  const { displays } = useDisplays()
-  const { controllers } = useControllers()
-  const [changeDialogOpen, setChangeDialogOpen] = useState(false)
-  const packageModifications = useMemo(
-    () => (open === PACKAGE_CONFIG_STEP_INDEX ? getPackageModifications(state, { motors, batteries, displays, controllers }) : []),
-    [open, state, motors, batteries, displays, controllers],
-  )
-
   const goNext = () => {
     if (open >= labels.length - 1) return
     if (!complete[open]) {
@@ -92,18 +67,14 @@ export function AnandaConfigurator() {
       scrollToTarget(items[0]?.targetId ?? null)
       return
     }
-    if (open === PACKAGE_CONFIG_STEP_INDEX && packageModifications.length > 0) {
-      setChangeDialogOpen(true)
-      return
-    }
     openSection(open + 1)
   }
   const goBack = () => { if (open > 0) openSection(open - 1) }
   const content = [
-    <Step1ProjectContext key="sell-region" />, <Step3ProductTargets key="targets" />,
-    <Step4RecommendedSolutions key="solutions" />, <Step5PackageConfiguration key="config" />,
-    <Step6DrivetrainSelection key="drivetrain" onEditStep={openStepNumber} />, <Step8Accessories key="accessories" />,
-    <Step9SystemDiagram key="diagram" />, <Step10Report key="report" />,
+    <Step1ProjectContext key="sell-region" />, <Step2BikeCategory key="bike-category" />,
+    <Step3PackageConfiguration key="config" />,
+    <Step4Drivetrain key="drivetrain" onEditStep={openStepNumber} />, <Step5Accessories key="accessories" />,
+    <Step6SystemDiagram key="diagram" />, <Step7Report key="report" />,
   ]
 
   if (!hydrated || !state.hasStarted) return <WelcomeScreen />
@@ -190,12 +161,6 @@ export function AnandaConfigurator() {
           </main><aside className="hidden min-w-0 2xl:block"><ConfigSummaryPanel /></aside></div></div>
         </div>
       </div>
-      <PackageChangeDialog
-        open={changeDialogOpen}
-        onOpenChange={setChangeDialogOpen}
-        modifications={packageModifications}
-        onConfirm={() => openSection(open + 1)}
-      />
     </div>
   )
 }

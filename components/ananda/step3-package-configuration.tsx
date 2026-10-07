@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAnandaStore } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
 import {
   useControllers,
   useDisplays,
@@ -10,7 +10,7 @@ import {
   useSpeedSensors,
   useBikeComponents,
   chargersForVoltage,
-  resolveImageUrl,
+  productImages,
   speedSensorTypeLabel,
   BIKE_COMPONENT_CATEGORIES,
   CHARGING_PORTS,
@@ -25,8 +25,10 @@ import {
 } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
+import { ProductImageLightbox } from "./product-image-lightbox"
+import { FullSpecDialog, type Spec } from "./full-spec-dialog"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, ChevronDown, Image as ImageIcon, Ban, RotateCcw, Loader2, ShieldCheck, Radio } from "lucide-react"
+import { CheckCircle2, ChevronDown, Image as ImageIcon, Ban, RotateCcw, Loader2, Radio, ZoomIn, Truck, AlertTriangle } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,75 +40,99 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-type Spec = { label: string; value: string | number | null }
-
 function OptionCard({
   title,
-  imageUrl,
+  images = [],
   specs,
   selected,
-  isBestMatch,
   onSelect,
   fullSpecs,
+  datasheetUrl,
 }: {
   title: string
-  imageUrl?: string | null
+  /** Every image for the product — the first is the thumbnail, all are browsable in the pop-up. */
+  images?: string[]
   specs: Spec[]
   selected: boolean
-  isBestMatch?: boolean
   onSelect: () => void
-  /** Extra specs (certification, exact dimensions, etc.) shown behind a "Full Specification" disclosure. */
+  /** Extra specs shown, together with the overview specs, in the "Full Specification" pop-up. */
   fullSpecs?: Spec[]
+  datasheetUrl?: string | null
 }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [specOpen, setSpecOpen] = useState(false)
+  const allSpecs = [...specs, ...(fullSpecs ?? [])]
+  const hasFullSpecs = allSpecs.some((sp) => sp.value != null)
+
   return (
-    <div
-      onClick={onSelect}
-      className={cn(
-        "product-card relative cursor-pointer border-2 transition-all",
-        selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
-      )}
-    >
-      <div className={cn("h-1 w-full shrink-0", selected ? "bg-primary" : "bg-border")} />
-      {isBestMatch && (
-        <div className="absolute left-2 top-2 z-10">
-          <StatusBadge variant="recommended" label="Best Match" />
-        </div>
-      )}
-      {selected && (
-        <div className="absolute top-2 right-2 z-10 bg-primary rounded-full p-0.5">
-          <CheckCircle2 className="w-3 h-3 text-white" />
-        </div>
-      )}
-      <div className={cn("relative flex shrink-0 items-center justify-center h-24 overflow-hidden", selected ? "bg-primary/5" : "bg-surface")}>
-        {imageUrl ? (
-          <img src={imageUrl || "/placeholder.svg"} alt={title} className="relative z-10 max-h-16 object-contain" crossOrigin="anonymous" />
-        ) : (
-          <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />
+    <>
+      <div
+        onClick={onSelect}
+        className={cn(
+          "product-card relative flex cursor-pointer flex-col border-2 transition-all",
+          selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
         )}
-      </div>
-      <div className="min-w-0 p-3">
-        <p className={cn("text-sm font-sans font-bold uppercase mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
-        {specs.length > 0 && (
-          <div className="min-w-0 border border-border rounded-sm">
-            {specs.map((sp) => sp.value != null && (
-              <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
-            ))}
+      >
+        <div className={cn("h-1 w-full shrink-0", selected ? "bg-primary" : "bg-border")} />
+        {selected && (
+          <div className="absolute top-3 right-2 z-10 bg-primary rounded-full p-0.5">
+            <CheckCircle2 className="w-3 h-3 text-white" />
           </div>
         )}
-        {fullSpecs && fullSpecs.some((sp) => sp.value != null) && (
-          <details className="mt-2 border border-border/70 rounded-sm" onClick={(e) => e.stopPropagation()}>
-            <summary className="cursor-pointer select-none px-2 py-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary">
-              Full Specification
-            </summary>
-            <div className="border-t border-border">
-              {fullSpecs.map((sp) => sp.value != null && (
+        {images.length > 0 ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              setLightboxOpen(true)
+            }}
+            aria-label={`Enlarge image of ${title}${images.length > 1 ? ` (${images.length} images)` : ""}`}
+            className={cn(
+              "group relative flex h-24 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden",
+              selected ? "bg-primary/5" : "bg-surface",
+            )}
+          >
+            <img src={images[0] || "/placeholder.svg"} alt={title} className="relative z-10 max-h-16 object-contain" crossOrigin="anonymous" />
+            <span className="absolute bottom-1.5 right-1.5 z-20 flex h-6 w-6 items-center justify-center border border-border bg-background/90 text-muted-foreground transition-colors group-hover:border-primary group-hover:text-primary">
+              <ZoomIn className="h-3.5 w-3.5" />
+            </span>
+            {images.length > 1 && (
+              <span className="absolute bottom-1.5 left-1.5 z-20 border border-border bg-background/90 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                1 / {images.length}
+              </span>
+            )}
+          </button>
+        ) : (
+          <div className={cn("flex h-24 shrink-0 items-center justify-center", selected ? "bg-primary/5" : "bg-surface")}>
+            <ImageIcon className={cn("w-8 h-8", selected ? "text-primary/40" : "text-border")} />
+          </div>
+        )}
+        <div className="flex min-w-0 flex-1 flex-col p-3">
+          <p className={cn("text-sm font-sans font-bold uppercase mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
+          {specs.length > 0 && (
+            <div className="min-w-0 border border-border rounded-sm">
+              {specs.map((sp) => sp.value != null && (
                 <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
               ))}
             </div>
-          </details>
-        )}
+          )}
+          {hasFullSpecs && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSpecOpen(true)
+              }}
+              className="mt-2 w-full border border-primary/40 bg-primary/5 px-2 py-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+            >
+              Full Specification
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+      <ProductImageLightbox title={title} images={images} open={lightboxOpen} onOpenChange={setLightboxOpen} />
+      <FullSpecDialog title={title} specs={allSpecs} images={images} datasheetUrl={datasheetUrl} open={specOpen} onOpenChange={setSpecOpen} />
+    </>
   )
 }
 
@@ -115,9 +141,71 @@ function EmptyOptionsNotice() {
     <div className="border-2 border-dashed border-border p-6 text-center">
       <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-1">No Products Available</p>
       <p className="text-xs font-body text-muted-foreground">
-        There are no products in the database for this component yet. Mark it as not needed, or check back once products are added.
+        There are no products in the database for this component yet. Mark it as not needed, use a 3rd party supplier, or check back once products are added.
       </p>
     </div>
+  )
+}
+
+// Replaces the product grid once a part is customer-sourced: shows the
+// supplier-name field (required) and a way back to Ananda products.
+function ThirdPartyPanel({ itemKey, label }: { itemKey: PackageItemKey; label: string }) {
+  const s = useAnandaStore()
+  const name = s.thirdPartySuppliers[itemKey] ?? ""
+  const missing = name.trim().length === 0
+  return (
+    <div className="border-2 border-warning/50 bg-warning/10 p-4">
+      <div className="flex items-start gap-3">
+        <Truck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-sans font-bold uppercase text-graphite">3rd Party Supplier — {label}</p>
+          <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
+            Ananda will need full technical documents and a component sample for integration and compatibility testing. Extra cost and delivery time apply — contact sales for details.
+          </p>
+          <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-[10px] font-sans font-bold uppercase tracking-wider text-graphite">
+            Supplier name <span className="text-destructive">*</span>
+          </label>
+          <input
+            id={`${itemKey}-supplier`}
+            type="text"
+            value={name}
+            onChange={(e) => s.setThirdPartySupplierName(itemKey, e.target.value)}
+            placeholder={`Name of the ${label.toLowerCase()} supplier`}
+            aria-invalid={missing}
+            className={cn(
+              "mt-1 w-full max-w-md border bg-background px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-primary",
+              missing ? "border-destructive" : "border-border",
+            )}
+          />
+          {missing && <p className="mt-1 text-[11px] font-sans font-semibold text-destructive">Enter the supplier name to continue.</p>}
+          <button
+            type="button"
+            onClick={() => s.disableThirdParty(itemKey)}
+            className="mt-3 flex items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+          >
+            <RotateCcw className="h-3 w-3" /> Choose an Ananda product instead
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ThirdPartyOptionButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-warning/60 hover:bg-warning/5"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
+        <Truck className="h-4 w-4" />
+      </span>
+      <span>
+        <span className="block text-sm font-sans font-bold uppercase text-graphite">3rd Party Supplier</span>
+        <span className="block text-xs font-body text-muted-foreground">Source this component from your own supplier instead of Ananda.</span>
+      </span>
+    </button>
   )
 }
 
@@ -130,6 +218,8 @@ interface ConfigRowProps {
   skippable: boolean
   skipped: boolean
   onToggleSkip: () => void
+  /** Offer the "3rd Party Supplier" option (every part except the motor). */
+  thirdPartyKey?: PackageItemKey
   children: React.ReactNode
   hasOptions: boolean
   optionsLoading?: boolean
@@ -149,12 +239,27 @@ function ConfigRow({
   skippable,
   skipped,
   onToggleSkip,
+  thirdPartyKey,
   children,
   hasOptions,
   optionsLoading,
   expanded,
   onToggleExpanded,
 }: ConfigRowProps) {
+  const s = useAnandaStore()
+  const [warningOpen, setWarningOpen] = useState(false)
+  const isThirdParty = thirdPartyKey ? hasThirdPartySupplier(s, thirdPartyKey) : false
+  const supplierName = thirdPartyKey ? (s.thirdPartySuppliers[thirdPartyKey] ?? "") : ""
+
+  const thirdPartySummary = isThirdParty ? (
+    <div>
+      <p className="text-sm font-sans font-bold uppercase text-warning">3rd Party Supplier</p>
+      <p className={cn("text-xs font-body", supplierName.trim() ? "text-muted-foreground" : "font-semibold text-destructive")}>
+        {supplierName.trim() ? supplierName : "Supplier name required"}
+      </p>
+    </div>
+  ) : null
+
   return (
     <section
       id={`config-${itemKey}`}
@@ -166,13 +271,15 @@ function ConfigRow({
           {emphasize && <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Core Component</span>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {required && !skipped && <StatusBadge variant="required" />}
+          {isThirdParty && <StatusBadge variant="not-required" label="3rd Party Supplier" />}
+          {required && !skipped && !isThirdParty && <StatusBadge variant="required" />}
           {skipped && <StatusBadge variant="not-required" label="Marked Not Needed" />}
           <button
             type="button"
             onClick={onToggleExpanded}
             aria-expanded={expanded}
             aria-controls={`config-${itemKey}-panel`}
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
             className="flex items-center justify-center border border-border p-1 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
           >
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
@@ -192,37 +299,73 @@ function ConfigRow({
         </div>
       ) : expanded ? (
         <div id={`config-${itemKey}-panel`}>
-          {!selectedSummary && (
-            <div className="mb-3 text-xs font-sans font-semibold uppercase tracking-wider text-warning">No selection yet — choose an option below.</div>
-          )}
-          {optionsLoading ? (
-            <div className="flex items-center gap-2 py-8 justify-center text-sm font-sans text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
-            </div>
-          ) : hasOptions ? (
-            children
+          {isThirdParty && thirdPartyKey ? (
+            <ThirdPartyPanel itemKey={thirdPartyKey} label={label} />
           ) : (
-            <EmptyOptionsNotice />
-          )}
-          {skippable && (
-            <button
-              onClick={onToggleSkip}
-              className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-surface"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
-                <Ban className="h-4 w-4" />
-              </span>
-              <span>
-                <span className="block text-sm font-sans font-bold uppercase text-graphite">Not Needed</span>
-                <span className="block text-xs font-body text-muted-foreground">Choose this option if this component isn&apos;t required for the build.</span>
-              </span>
-            </button>
+            <>
+              {!selectedSummary && (
+                <div className="mb-3 text-xs font-sans font-semibold uppercase tracking-wider text-warning">No selection yet — choose an option below.</div>
+              )}
+              {optionsLoading ? (
+                <div className="flex items-center gap-2 py-8 justify-center text-sm font-sans text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
+                </div>
+              ) : hasOptions ? (
+                children
+              ) : (
+                <EmptyOptionsNotice />
+              )}
+              {thirdPartyKey && <ThirdPartyOptionButton onClick={() => setWarningOpen(true)} />}
+              {skippable && (
+                <button
+                  onClick={onToggleSkip}
+                  className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-surface"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
+                    <Ban className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-sans font-bold uppercase text-graphite">Not Needed</span>
+                    <span className="block text-xs font-body text-muted-foreground">Choose this option if this component isn&apos;t required for the build.</span>
+                  </span>
+                </button>
+              )}
+            </>
           )}
         </div>
       ) : (
         <div id={`config-${itemKey}-panel`} className="border-2 border-primary/30 bg-primary/5 px-4 py-3">
-          {selectedSummary ?? <p className="text-sm font-body text-muted-foreground">No selection yet.</p>}
+          {thirdPartySummary ?? selectedSummary ?? <p className="text-sm font-body text-muted-foreground">No selection yet.</p>}
         </div>
+      )}
+
+      {thirdPartyKey && (
+        <AlertDialog open={warningOpen} onOpenChange={setWarningOpen}>
+          <AlertDialogContent className="border-2 border-border font-sans">
+            <AlertDialogHeader>
+              <div className="flex items-center gap-2 text-warning">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="text-[11px] font-sans font-bold uppercase tracking-[0.2em]">Warning</span>
+              </div>
+              <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+                3rd Party {label}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="font-body text-sm leading-relaxed text-muted-foreground">
+                When using 3rd party components, we need full technical documents and a component sample for integration and
+                compatibility testing. This will introduce extra cost and delivery time. Please contact sales for details.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Back</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => s.enableThirdParty(thirdPartyKey)}
+                className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+              >
+                I Agree
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </section>
   )
@@ -233,10 +376,9 @@ function ConfigRow({
 // lifetime) independent of which product is selected in each section.
 const SECTION_KEYS = ["motorId", "batteryId", "displayId", "speedSensorId", "chargerId", "chargingPortId", "controllerId", "torqueSensorId"] as const
 
-export function Step5PackageConfiguration() {
+export function Step3PackageConfiguration() {
   const s = useAnandaStore()
   const isHub = s.driveType === "hub"
-  const baseline = s.packageBaseline ?? {}
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => Object.fromEntries(SECTION_KEYS.map((k) => [k, true])))
   const toggleExpanded = (key: string) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -251,7 +393,6 @@ export function Step5PackageConfiguration() {
   const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
   const compatibleChargers = chargersForVoltage(s.voltagePlatform)
   const { components: bikeComponents, isLoading: bikeComponentsLoading } = useBikeComponents()
-  const [pendingThirdPartyController, setPendingThirdPartyController] = useState(false)
 
   // Only filter the HMI list when at least one display actually declares the
   // *other* protocol — with every current display supporting both CAN and
@@ -270,35 +411,30 @@ export function Step5PackageConfiguration() {
   const selectedPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
   const selectedSpeedSensor = speedSensors.find((sensor) => sensor.id === s.speedSensorId) ?? null
 
-  // A Best Match tag only ever appears on a product that's actually present
-  // in the current compatible list — never invented, never shown on a stale
-  // recommendation that no longer applies (e.g. after a voltage change).
-  const bestMatchId = (key: string, options: { id: string }[]) => {
-    const id = baseline[key]
-    return id && options.some((o) => o.id === id) ? id : null
-  }
-  const bestMotorId = bestMatchId("motorId", compatibleMotors)
-  const bestBatteryId = bestMatchId("batteryId", compatibleBatteries)
-  const bestDisplayId = bestMatchId("displayId", displays)
-  const bestChargerId = bestMatchId("chargerId", compatibleChargers)
-  const bestPortId = bestMatchId("chargingPortId", CHARGING_PORTS)
-  const bestControllerId = bestMatchId("controllerId", compatibleControllers)
-  const bestSpeedSensorId = bestMatchId("speedSensorId", speedSensors)
-
   const toggleSkip = (key: string, idField: keyof typeof s) => {
     const currentlySkipped = s.skippedItems.includes(key)
     s.setItemSkipped(key, !currentlySkipped)
     if (!currentlySkipped) {
       s.setField(idField as never, null as never)
+      s.disableThirdParty(key as PackageItemKey)
+    }
+  }
+
+  const toggleBikeComponent = (category: BikeComponentRow["category"], component: BikeComponentRow) => {
+    const alreadySelected = s.bikeComponentSelections[category] === component.id
+    s.setField("bikeComponentSelections", { ...s.bikeComponentSelections, [category]: alreadySelected ? null : component.id })
+    if (category === "chainring") {
+      s.setField("selectedChainringTeeth", alreadySelected ? null : component.teeth)
+      if (!alreadySelected && component.teeth != null) s.setField("frontTeeth", component.teeth)
     }
   }
 
   return (
     <div>
       <StepHeader
-        step={4}
+        step={3}
         title="Package Configuration"
-        subtitle="Fine-tune the components bundled with your selected package. Each item defaults to the Best Match recommendation, can be customised from compatible alternatives, or marked as not needed where allowed."
+        subtitle="Choose the components for your system from compatible Ananda products. Every part except the motor can instead be sourced from your own 3rd party supplier, or marked as not needed where allowed."
       />
 
       <ConfigRow
@@ -319,6 +455,7 @@ export function Step5PackageConfiguration() {
               <p className="text-sm font-sans font-bold uppercase text-primary">{selectedMotor.model}</p>
               <p className="text-xs font-body text-muted-foreground">
                 {selectedMotor.voltage_v}V · {selectedMotor.torque_nm ?? "—"}Nm · {selectedMotor.rated_power_w ?? "—"}W rated
+                {selectedMotor.shaft_interface ? ` · ${selectedMotor.shaft_interface} shaft` : ""}
               </p>
             </div>
           )
@@ -329,15 +466,34 @@ export function Step5PackageConfiguration() {
             <OptionCard
               key={m.id}
               title={m.model}
-              imageUrl={resolveImageUrl(m.image_url, m.image_path)}
+              images={productImages(m.image_url, m.image_path)}
+              datasheetUrl={m.datasheet_url}
               specs={[
                 { label: "Torque", value: m.torque_nm ? `${m.torque_nm}Nm` : null },
                 { label: "Rated Power", value: m.rated_power_w ? `${m.rated_power_w}W` : null },
                 { label: "Peak Power", value: m.peak_power_w ? `${m.peak_power_w}W` : null },
                 { label: "Weight", value: m.weight_kg ? `${m.weight_kg}kg` : null },
+                { label: "Shaft Type", value: m.shaft_interface },
+              ]}
+              fullSpecs={[
+                { label: "Motor Type", value: m.motor_type === "mid_drive" ? "Mid-Drive" : "Hub Motor" },
+                { label: "Voltage", value: `${m.voltage_v}V` },
+                { label: "Speed", value: m.rpm ? `${m.rpm} rpm` : null },
+                { label: "Max Efficiency", value: m.max_efficiency },
+                { label: "Noise Grade", value: m.noise_grade_db ? `${m.noise_grade_db} dB` : null },
+                { label: "Size", value: m.size },
+                { label: "Mounting Interface", value: m.mounting_interface },
+                { label: "Controller", value: m.controller_requirement === "integrated" ? "Integrated" : "External" },
+                { label: "Pedal Sensing", value: m.pedal_sensing },
+                { label: "Sensor", value: m.sensor_description },
+                { label: "Communication", value: m.communication_protocol },
+                { label: "Waterproof", value: m.waterproof },
+                { label: "Light Drive Capacity", value: m.light_drive_capacity },
+                { label: "Construction", value: m.construction },
+                { label: "Colour", value: m.color },
+                { label: "Description", value: m.short_description },
               ]}
               selected={s.motorId === m.id}
-              isBestMatch={bestMotorId === m.id}
               onSelect={() => s.setField("motorId", m.id)}
             />
           ))}
@@ -352,6 +508,7 @@ export function Step5PackageConfiguration() {
         skippable={false}
         skipped={false}
         onToggleSkip={() => {}}
+        thirdPartyKey="batteryId"
         hasOptions={compatibleBatteries.length > 0}
         optionsLoading={batteriesLoading}
         expanded={expanded.batteryId}
@@ -370,7 +527,8 @@ export function Step5PackageConfiguration() {
             <OptionCard
               key={b.id}
               title={b.model}
-              imageUrl={resolveImageUrl(b.image_url, b.image_path)}
+              images={productImages(b.image_url, b.image_path)}
+              datasheetUrl={b.datasheet_url}
               specs={[
                 { label: "Capacity", value: b.capacity_wh ? `${b.capacity_wh}Wh` : null },
                 { label: "Weight", value: b.weight_kg ? `${b.weight_kg}kg` : null },
@@ -385,8 +543,7 @@ export function Step5PackageConfiguration() {
                 { label: "Communication", value: b.communication_protocol },
               ]}
               selected={s.batteryId === b.id}
-              isBestMatch={bestBatteryId === b.id}
-              onSelect={() => s.setField("batteryId", b.id)}
+              onSelect={() => s.selectPackageItem("batteryId", b.id)}
             />
           ))}
         </div>
@@ -399,6 +556,7 @@ export function Step5PackageConfiguration() {
         skippable={false}
         skipped={false}
         onToggleSkip={() => {}}
+        thirdPartyKey="displayId"
         hasOptions={protocolFilteredDisplays.length > 0}
         optionsLoading={displaysLoading}
         expanded={expanded.displayId}
@@ -438,7 +596,8 @@ export function Step5PackageConfiguration() {
             <OptionCard
               key={d.id}
               title={d.model}
-              imageUrl={resolveImageUrl(d.image_url, d.image_path)}
+              images={productImages(d.image_url, d.image_path)}
+              datasheetUrl={d.datasheet_url}
               specs={[
                 { label: "Size", value: d.size },
                 { label: "Mounting", value: d.mounting_position },
@@ -450,8 +609,7 @@ export function Step5PackageConfiguration() {
                 { label: "Certifications", value: d.certifications },
               ]}
               selected={s.displayId === d.id}
-              isBestMatch={bestDisplayId === d.id}
-              onSelect={() => s.setField("displayId", d.id)}
+              onSelect={() => s.selectPackageItem("displayId", d.id)}
             />
           ))}
         </div>
@@ -461,9 +619,10 @@ export function Step5PackageConfiguration() {
         itemKey="speedSensorId"
         label="Speed Sensor"
         required
-        skippable
-        skipped={s.skippedItems.includes("speedSensorId")}
-        onToggleSkip={() => toggleSkip("speedSensorId", "speedSensorId")}
+        skippable={false}
+        skipped={false}
+        onToggleSkip={() => {}}
+        thirdPartyKey="speedSensorId"
         hasOptions={speedSensors.length > 0}
         optionsLoading={speedSensorsLoading}
         expanded={expanded.speedSensorId}
@@ -492,8 +651,7 @@ export function Step5PackageConfiguration() {
                 { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
               ]}
               selected={s.speedSensorId === sensor.id}
-              isBestMatch={bestSpeedSensorId === sensor.id}
-              onSelect={() => s.setField("speedSensorId", sensor.id)}
+              onSelect={() => s.selectPackageItem("speedSensorId", sensor.id)}
             />
           ))}
         </div>
@@ -506,6 +664,7 @@ export function Step5PackageConfiguration() {
         skippable={false}
         skipped={false}
         onToggleSkip={() => {}}
+        thirdPartyKey="chargerId"
         hasOptions={compatibleChargers.length > 0}
         expanded={expanded.chargerId}
         onToggleExpanded={() => toggleExpanded("chargerId")}
@@ -530,8 +689,7 @@ export function Step5PackageConfiguration() {
                 { label: "Current", value: `${c.outputCurrentA}A` },
               ]}
               selected={s.chargerId === c.id}
-              isBestMatch={bestChargerId === c.id}
-              onSelect={() => s.setField("chargerId", c.id)}
+              onSelect={() => s.selectPackageItem("chargerId", c.id)}
             />
           ))}
         </div>
@@ -544,6 +702,7 @@ export function Step5PackageConfiguration() {
         skippable={false}
         skipped={false}
         onToggleSkip={() => {}}
+        thirdPartyKey="chargingPortId"
         hasOptions={CHARGING_PORTS.length > 0}
         expanded={expanded.chargingPortId}
         onToggleExpanded={() => toggleExpanded("chargingPortId")}
@@ -556,8 +715,7 @@ export function Step5PackageConfiguration() {
               title={p.model}
               specs={[{ label: "Type", value: p.description }]}
               selected={s.chargingPortId === p.id}
-              isBestMatch={bestPortId === p.id}
-              onSelect={() => s.setField("chargingPortId", p.id)}
+              onSelect={() => s.selectPackageItem("chargingPortId", p.id)}
             />
           ))}
         </div>
@@ -571,132 +729,39 @@ export function Step5PackageConfiguration() {
           skippable={false}
           skipped={false}
           onToggleSkip={() => {}}
+          thirdPartyKey="controllerId"
           hasOptions={compatibleControllers.length > 0}
           optionsLoading={controllersLoading}
           expanded={expanded.controllerId}
           onToggleExpanded={() => toggleExpanded("controllerId")}
           selectedSummary={
-            s.controllerSourcing === "not_needed" ? (
-              <p className="text-sm font-sans font-bold uppercase text-warning">Not Needed — Customer Supplied</p>
-            ) : s.controllerSourcing === "third_party" ? (
-              <p className="text-sm font-sans font-bold uppercase text-warning">3rd-Party Controller — Customer Supplied</p>
-            ) : (
-              selectedController && (
-                <div>
-                  <p className="text-sm font-sans font-bold uppercase text-primary">{selectedController.model}</p>
-                  <p className="text-xs font-body text-muted-foreground">
-                    {selectedController.voltage_v}V · {selectedController.rated_power_w ?? "—"}W rated
-                  </p>
-                </div>
-              )
+            selectedController && (
+              <div>
+                <p className="text-sm font-sans font-bold uppercase text-primary">{selectedController.model}</p>
+                <p className="text-xs font-body text-muted-foreground">
+                  {selectedController.voltage_v}V · {selectedController.rated_power_w ?? "—"}W rated
+                </p>
+              </div>
             )
           }
         >
-          <div className="mb-4 flex flex-col gap-2">
-            <p className="text-xs font-sans font-semibold text-graphite">Controller sourcing</p>
-            <div className="flex flex-wrap gap-2">
-              {(
-                [
-                  { id: "ananda" as const, label: "Ananda Controller" },
-                  { id: "third_party" as const, label: "3rd-Party / Customer Supplied" },
-                  { id: "not_needed" as const, label: "Not Needed" },
-                ]
-              ).map((opt) => {
-                const selected = (s.controllerSourcing ?? "ananda") === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      if (opt.id === "ananda") {
-                        s.setField("controllerSourcing", "ananda")
-                        s.setItemSkipped("controllerId", false)
-                        return
-                      }
-                      setPendingThirdPartyController(true)
-                      s.setField("controllerSourcing", opt.id)
-                    }}
-                    className={cn(
-                      "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
-                      selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                )
-              })}
-            </div>
+          <div className="product-option-grid">
+            {compatibleControllers.map((c: ControllerRow) => (
+              <OptionCard
+                key={c.id}
+                title={c.model}
+                images={productImages(c.image_url, c.image_path)}
+                datasheetUrl={c.datasheet_url}
+                specs={[
+                  { label: "Rated Power", value: c.rated_power_w ? `${c.rated_power_w}W` : null },
+                  { label: "Peak Current", value: c.peak_current_a ? `${c.peak_current_a}A` : null },
+                  { label: "Voltage", value: `${c.voltage_v}V` },
+                ]}
+                selected={s.controllerId === c.id}
+                onSelect={() => s.selectPackageItem("controllerId", c.id)}
+              />
+            ))}
           </div>
-
-          {(s.controllerSourcing ?? "ananda") === "ananda" ? (
-            <div className="product-option-grid">
-              {compatibleControllers.map((c: ControllerRow) => (
-                <OptionCard
-                  key={c.id}
-                  title={c.model}
-                  imageUrl={resolveImageUrl(c.image_url, c.image_path)}
-                  specs={[
-                    { label: "Rated Power", value: c.rated_power_w ? `${c.rated_power_w}W` : null },
-                    { label: "Peak Current", value: c.peak_current_a ? `${c.peak_current_a}A` : null },
-                    { label: "Voltage", value: `${c.voltage_v}V` },
-                  ]}
-                  selected={s.controllerId === c.id}
-                  isBestMatch={bestControllerId === c.id}
-                  onSelect={() => s.setField("controllerId", c.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="border border-warning/40 bg-warning/10 px-4 py-3">
-              <p className="text-xs font-body text-warning-foreground">
-                A customer-supplied controller is being used. This item will be listed on the Final Report as requiring a physical
-                sample and sales-team coordination.
-              </p>
-            </div>
-          )}
-
-          <AlertDialog open={pendingThirdPartyController} onOpenChange={(open) => {
-            if (!open && !s.thirdPartyControllerAcknowledged) {
-              s.setField("controllerSourcing", "ananda")
-              s.setItemSkipped("controllerId", false)
-            }
-            setPendingThirdPartyController(open)
-          }}>
-            <AlertDialogContent className="border-2 border-border font-sans">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
-                  Using a Non-Ananda Controller
-                </AlertDialogTitle>
-                <AlertDialogDescription className="font-body text-sm text-muted-foreground">
-                  Using Ananda is recommended. Choosing a 3rd-party controller (or none) will reduce your warranty coverage and
-                  increase engineering work on our side. We will require a physical sample of the 3rd-party component for system
-                  integration testing — Ananda is not responsible for product issues if that test was not conducted. Please inform
-                  our sales team of your chosen supplier.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel
-                  className="font-sans text-xs font-bold uppercase tracking-wider"
-                  onClick={() => {
-                    s.setField("controllerSourcing", "ananda")
-                    s.setItemSkipped("controllerId", false)
-                  }}
-                >
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    s.setField("controllerId", null)
-                    s.setItemSkipped("controllerId", true)
-                    s.setField("thirdPartyControllerAcknowledged", true)
-                  }}
-                  className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
-                >
-                  Confirm &amp; Continue
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </ConfigRow>
       )}
 
@@ -708,6 +773,7 @@ export function Step5PackageConfiguration() {
           skippable
           skipped={s.skippedItems.includes("torqueSensorId")}
           onToggleSkip={() => toggleSkip("torqueSensorId", "torqueSensorId")}
+          thirdPartyKey="torqueSensorId"
           hasOptions={false}
           expanded={expanded.torqueSensorId}
           onToggleExpanded={() => toggleExpanded("torqueSensorId")}
@@ -735,19 +801,23 @@ export function Step5PackageConfiguration() {
               return (
                 <div key={category.id}>
                   <p className="mb-3 text-xs font-sans font-bold uppercase tracking-wider text-graphite">{category.label}</p>
+                  {category.id === "chainring" && (
+                    <p className="mb-3 text-xs font-body text-muted-foreground">
+                      The chainring&apos;s tooth count is carried into the Drivetrain stage and must match the front chainring entered there.
+                    </p>
+                  )}
                   <div className="product-option-grid">
                     {options.map((c) => (
                       <OptionCard
                         key={c.id}
                         title={c.model}
                         specs={[
+                          { label: "Teeth", value: c.teeth != null ? `${c.teeth}T` : null },
                           { label: "Description", value: c.short_description },
                           { label: "Weight", value: c.weight_kg ? `${c.weight_kg}kg` : null },
                         ]}
                         selected={selectedId === c.id}
-                        onSelect={() =>
-                          s.setField("bikeComponentSelections", { ...s.bikeComponentSelections, [category.id]: c.id })
-                        }
+                        onSelect={() => toggleBikeComponent(category.id, c)}
                       />
                     ))}
                   </div>

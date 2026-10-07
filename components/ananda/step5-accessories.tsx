@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { useAnandaStore } from "@/lib/ananda-store"
+import { useAnandaStore, type BluetoothAppChoice } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import type { BluetoothAppChoice } from "@/lib/ananda-product-targets"
 
 const CATEGORIES = [
   { id: "lights", label: "Lighting", icon: Lightbulb },
@@ -25,32 +24,28 @@ const CATEGORIES = [
 ]
 
 // ─── IoT / Connectivity ──────────────────────────────────────────────────────
-// Moved here from Step 3 (Product Targets) — the companion-app choice now
-// lives alongside the rest of the accessory decisions instead of being set
-// up-front, while still writing to the same product-target fields the
-// recommendation engine already reads.
 function ConnectivitySection() {
   const s = useAnandaStore()
-  const t = s.productTargets
   const [pendingThirdParty, setPendingThirdParty] = useState(false)
 
   const choose = (app: BluetoothAppChoice | "no_app") => {
     if (app === "no_app") {
-      s.setProductTarget({ functions: { bluetoothApp: null, bluetooth: "not_required" } })
+      s.setField("bluetoothApp", null)
       return
     }
-    if (app === "third_party" && !t.functions.bluetoothThirdPartyAcknowledged) {
+    if (app === "third_party" && !s.bluetoothThirdPartyAcknowledged) {
       setPendingThirdParty(true)
       return
     }
-    s.setProductTarget({ functions: { bluetoothApp: app, bluetooth: "target" } })
+    s.setField("bluetoothApp", app)
   }
 
   const confirmThirdParty = () => {
-    s.setProductTarget({ functions: { bluetoothApp: "third_party", bluetooth: "target", bluetoothThirdPartyAcknowledged: true } })
+    s.setField("bluetoothThirdPartyAcknowledged", true)
+    s.setField("bluetoothApp", "third_party")
   }
 
-  const current: "ananda_app" | "no_app" | "third_party" = t.functions.bluetoothApp ?? "no_app"
+  const current: "ananda_app" | "no_app" | "third_party" = s.bluetoothApp ?? "no_app"
 
   const OPTIONS: { id: "ananda_app" | "no_app" | "third_party"; label: string; info: ReactNode }[] = [
     {
@@ -271,13 +266,13 @@ function OtherAccessoriesSection() {
   )
 }
 
-export function Step8Accessories() {
+export function Step5Accessories() {
   const s = useAnandaStore()
 
   return (
     <div>
       <StepHeader
-        step={6}
+        step={5}
         title="Accessories"
         subtitle="Select optional accessories for the system. All items show technical specifications and weight only. Toggle to add or remove."
       />

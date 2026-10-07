@@ -1,16 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { useAnandaStore } from "@/lib/ananda-store"
+import { useAnandaStore, chainringMismatch } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "./status-badge"
-import { TargetStatusPanel } from "./target-status-panel"
 import { AlertTriangle, CheckCircle2, Weight, Zap } from "lucide-react"
 
 export function ConfigSummaryPanel() {
-  const [tab, setTab] = useState<"summary" | "status">("summary")
   const s = useAnandaStore()
 
   const { motors } = useMotors()
@@ -50,33 +47,6 @@ export function ConfigSummaryPanel() {
       {/* Top green border stripe */}
       <div className="h-1 bg-primary" />
 
-      {/* Tab switcher */}
-      <div className="flex border-b border-border">
-        <button
-          type="button"
-          onClick={() => setTab("summary")}
-          className={cn(
-            "flex-1 px-3 py-2.5 text-[11px] font-sans font-black uppercase tracking-[0.15em] transition-colors",
-            tab === "summary" ? "bg-surface text-graphite border-b-2 border-primary" : "text-muted-foreground hover:text-graphite",
-          )}
-        >
-          Summary
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("status")}
-          className={cn(
-            "flex-1 px-3 py-2.5 text-[11px] font-sans font-black uppercase tracking-[0.15em] transition-colors",
-            tab === "status" ? "bg-surface text-graphite border-b-2 border-primary" : "text-muted-foreground hover:text-graphite",
-          )}
-        >
-          Target Status
-        </button>
-      </div>
-
-      {tab === "status" ? (
-        <TargetStatusPanel />
-      ) : (
       <div className="p-4 space-y-3 text-[12px]">
         <div className="flex items-center justify-end -mt-1 mb-1">
           {complete ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
@@ -112,23 +82,11 @@ export function ConfigSummaryPanel() {
         <Row
           label="Drivetrain"
           value={
-            s.drivetrainType
-              ? `${s.drivetrainType === "chain" ? "Chain" : "Belt"} · ${
-                  s.transmissionType === "derailleur"
-                    ? "Derailleur"
-                    : s.transmissionType === "internal_gear_hub"
-                      ? "Internal-Gear Hub"
-                      : s.transmissionType === "cvt"
-                        ? "CVT"
-                        : s.transmissionType === "single_speed"
-                          ? "Single Speed"
-                          : s.transmissionType === "gearbox"
-                            ? "Gearbox"
-                            : "—"
-                }`
+            s.frontTeeth && s.rearTeeth && s.largestRearTeeth
+              ? `${s.frontTeeth}T / ${s.rearTeeth}-${s.largestRearTeeth}T`
               : "—"
           }
-          warn={s.drivetrainErrors.length > 0}
+          warn={Boolean(chainringMismatch(s))}
         />
         <Row label="Display" value={display ? display.model : "—"} />
         <Row label="Accessories" value={accessories.length > 0 ? `${accessories.length} selected` : "None"} />
@@ -171,7 +129,6 @@ export function ConfigSummaryPanel() {
           </>
         )}
       </div>
-      )}
     </aside>
   )
 }
