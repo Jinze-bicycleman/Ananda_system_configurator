@@ -4,38 +4,35 @@ import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Search, Zap } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
-import {
-  RIDER_PROFILES,
-  BATTERY_CAPACITY_BANDS,
-  TERRAIN_BANDS,
-  TORQUE_BANDS,
-  applyRiderProfile,
-  type BatteryCapacityBand,
-  type TerrainBand,
-  type TorqueBand,
-} from "@/lib/ananda-product-targets"
-import { StepHeader, SectionLabel, ChoiceGroup } from "./ui-primitives"
+import { StepHeader, SectionLabel } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 
-// Each rider profile reuses the bicycle-application photography from the
-// (now-retired) standalone Bike Category step, and drives `bikeCategory`
-// directly — one rider-profile choice sets both the product targets and the
-// vehicle category in a single step. Profiles that don't map to one of the
-// original categories (Fat bike, Folding bike, Speed pedelec, Other) are
-// intentionally left unmatched and unshown here.
-const RIDER_PROFILE_IMAGES: Record<string, string> = {
-  commuter: "/images/bike-category-city.jpg",
-  family_cargo: "/images/bike-category-cargo-2wheeler.png",
-  trekking_adventure: "/images/bike-category-trekking.jpg",
-  performance: "/images/bike-category-mtb.jpg",
-}
-
-const RIDER_PROFILE_BIKE_CATEGORY: Record<string, string> = {
-  commuter: "City",
-  family_cargo: "Cargo bike",
-  trekking_adventure: "Trekking",
-  performance: "MTB",
-}
+const BIKE_CATEGORIES = [
+  {
+    id: "City",
+    label: "Commuter",
+    description: "Daily city riding, light loads, cost-conscious.",
+    image: "/images/bike-category-city.jpg",
+  },
+  {
+    id: "Cargo bike",
+    label: "Family / Cargo",
+    description: "Carrying children or heavy loads, needs climbing torque and range.",
+    image: "/images/bike-category-cargo-2wheeler.png",
+  },
+  {
+    id: "Trekking",
+    label: "Trekking / Adventure",
+    description: "Longer rides, mixed terrain, wants range and reliability.",
+    image: "/images/bike-category-trekking.jpg",
+  },
+  {
+    id: "MTB",
+    label: "Performance",
+    description: "High-power riding, hills and trails, torque-first.",
+    image: "/images/bike-category-mtb.jpg",
+  },
+]
 
 const DRIVE_UNITS = [
   { id: "mid" as const, label: "Mid Motor", disabled: false },
@@ -45,9 +42,8 @@ const DRIVE_UNITS = [
 const VOLTAGE_PLATFORMS = [36, 48] as const
 
 // Drive Unit Selection — sets the real `driveType` / `voltagePlatform`
-// fields directly (the same fields Step 4's recommendation engine and
-// Package Configuration already key off of), placed right after the Rider
-// Profile cards and before Wheel & Tyre Data.
+// fields directly (the same fields Package Configuration keys off of),
+// placed before Wheel & Tyre Data.
 function DriveUnitSection() {
   const s = useAnandaStore()
 
@@ -110,19 +106,18 @@ function DriveUnitSection() {
   )
 }
 
-export function Step3ProductTargets() {
+export function Step2BikeCategory() {
   const s = useAnandaStore()
-  const t = s.productTargets
 
   return (
     <div>
       <StepHeader
         step={2}
-        title="Rider Profile & Product Targets"
-        subtitle="Choose the bicycle application that best matches the rider, and define what this e-bike system needs to achieve. These targets drive the Recommended Solutions in the next step."
+        title="Bike Category"
+        subtitle="Choose the bicycle application that best matches the rider, then set the drive unit and wheel data for this e-bike system."
       />
 
-      {/* Inherited constraints — read-only context from Step 1 & 2 */}
+      {/* Inherited constraints — read-only context from Step 1 */}
       <div className="mb-8 border border-border bg-surface p-4">
         <SectionLabel>Inherited Constraints</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -133,22 +128,16 @@ export function Step3ProductTargets() {
         </div>
       </div>
 
-      {/* Rider profile presets — each one is a bicycle application (with its
-          reused category photo) that also sets the product targets below. */}
       <div id="field-bikeCategory" className="mb-8">
-        <SectionLabel>Rider Profile (Quick Assessment)</SectionLabel>
-        <div id="field-productTargets" className="grid gap-4 md:grid-cols-2">
-          {RIDER_PROFILES.map((preset) => {
-            const selected = t.presetId === preset.id
+        <SectionLabel>Bike Category</SectionLabel>
+        <div className="grid gap-4 md:grid-cols-2">
+          {BIKE_CATEGORIES.map((category) => {
+            const selected = s.bikeCategory === category.id
             return (
               <button
-                key={preset.id}
+                key={category.id}
                 type="button"
-                onClick={() => {
-                  s.setProductTarget(applyRiderProfile(preset))
-                  const category = RIDER_PROFILE_BIKE_CATEGORY[preset.id]
-                  if (category) s.setBikeCategory(category)
-                }}
+                onClick={() => s.setBikeCategory(category.id)}
                 className={cn(
                   "group relative overflow-hidden border text-left transition-colors",
                   selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/60",
@@ -156,12 +145,12 @@ export function Step3ProductTargets() {
               >
                 <div className="relative h-56 overflow-hidden bg-muted sm:h-64">
                   <img
-                    src={RIDER_PROFILE_IMAGES[preset.id]}
-                    alt={`${preset.label} bicycle application`}
+                    src={category.image}
+                    alt={`${category.label} bicycle application`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite/90 to-transparent p-4 pt-16">
-                    <span className="text-lg font-bold uppercase tracking-wide text-white">{preset.label}</span>
+                    <span className="text-lg font-bold uppercase tracking-wide text-white">{category.label}</span>
                   </div>
                   {selected && (
                     <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center bg-primary text-primary-foreground">
@@ -170,7 +159,7 @@ export function Step3ProductTargets() {
                   )}
                 </div>
                 <div className="p-4">
-                  <p className="text-sm leading-6 text-muted-foreground">{preset.description}</p>
+                  <p className="text-sm leading-6 text-muted-foreground">{category.description}</p>
                 </div>
               </button>
             )
@@ -187,83 +176,6 @@ export function Step3ProductTargets() {
           profile above, and feeds the drivetrain estimates further down the
           flow, so it belongs here rather than in Functions & Connectivity. */}
       <WheelAndTyreSection />
-
-      {/* Battery capacity / Riding terrain / Torque bands */}
-      <div className="mb-8 grid grid-cols-1 gap-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
-        <div id="field-weightTarget" className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Battery Capacity</p>
-          <ChoiceGroup
-            options={(Object.keys(BATTERY_CAPACITY_BANDS) as BatteryCapacityBand[]).map((id) => ({
-              id,
-              label: BATTERY_CAPACITY_BANDS[id].label,
-            }))}
-  value={t.battery.band}
-  selectedClassName="bg-primary/25 ring-2 ring-primary/40"
-  onChange={(band) => {
-              const b = BATTERY_CAPACITY_BANDS[band]
-              s.setProductTarget({ battery: { capacityWh: b.capacityWh, band } })
-            }}
-          />
-        </div>
-        <div id="field-rangeTarget" className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Riding Terrain</p>
-          <ChoiceGroup
-            options={(Object.keys(TERRAIN_BANDS) as TerrainBand[]).map((id) => ({ id, label: TERRAIN_BANDS[id].label }))}
-            value={t.performance.rangeBand}
-            onChange={(band) => {
-              const b = TERRAIN_BANDS[band]
-              s.setProductTarget({ performance: { rangeTargetKm: b.targetKm, rangeBand: band } })
-            }}
-          />
-        </div>
-        <div id="field-torqueTarget" className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Torque</p>
-          <ChoiceGroup
-            options={(Object.keys(TORQUE_BANDS) as TorqueBand[]).map((id) => ({ id, label: TORQUE_BANDS[id].label.split(" (")[0] }))}
-            value={t.performance.torqueBand}
-            onChange={(band) => {
-              const b = TORQUE_BANDS[band]
-              s.setProductTarget({ performance: { torqueTargetNm: b.targetNm, torqueBand: band } })
-            }}
-          />
-        </div>
-      </div>
-
-
-      {/* Product ambition */}
-      <div className="mb-8">
-        <SectionLabel>Product Ambition</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
-          <div className="min-w-0">
-            <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Market Positioning</p>
-            <ChoiceGroup
-              options={[
-                { id: "value" as const, label: "Value" },
-                { id: "mainstream" as const, label: "Mainstream" },
-                { id: "premium" as const, label: "Premium" },
-              ]}
-              value={t.ambition.positioning}
-              onChange={(positioning) => s.setProductTarget({ ambition: { positioning } })}
-            />
-          </div>
-          <div className="min-w-0">
-            <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-muted-foreground">Differentiation</p>
-            <select
-              value={t.ambition.differentiation ?? ""}
-              onChange={(e) => s.setProductTarget({ ambition: { differentiation: (e.target.value || null) as typeof t.ambition.differentiation } })}
-              className="w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
-            >
-              <option value="">No preference</option>
-              <option value="lightweight">Lightweight</option>
-              <option value="long_range">Long Range</option>
-              <option value="high_performance">High Performance</option>
-              <option value="connected">Connected</option>
-              <option value="design">Design</option>
-              <option value="low_cost">Low Cost</option>
-            </select>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

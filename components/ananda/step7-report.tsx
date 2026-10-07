@@ -1,23 +1,10 @@
 "use client"
 
-import { displayName } from "@/lib/ananda-drivetrain"
-import { useReportData, TRANSMISSION_LABEL } from "@/lib/ananda-report"
-import { StepHeader, SectionLabel } from "./ui-primitives"
-import { AlertTriangle, ArrowRight, CheckCircle2, RotateCcw } from "lucide-react"
+import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
+import { hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
+import { StepHeader } from "./ui-primitives"
+import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const FEASIBILITY_LABEL: Record<"go" | "conditional_go" | "no_go", { label: string; cls: string }> = {
-  go: { label: "Go", cls: "bg-primary/10 text-primary border-primary/30" },
-  conditional_go: { label: "Conditional Go", cls: "bg-warning/10 text-warning-foreground border-warning/30" },
-  no_go: { label: "No-Go", cls: "bg-destructive/10 text-destructive border-destructive/30" },
-}
-
-const STATUS_DOT: Record<string, string> = {
-  met: "bg-primary",
-  conditional: "bg-warning",
-  not_met: "bg-destructive",
-  missing: "bg-border",
-}
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -31,18 +18,52 @@ function ReportSection({ title, children }: { title: string; children: React.Rea
   )
 }
 
-function Row({ label, value, highlight, warn }: { label: string; value: string; highlight?: boolean; warn?: boolean }) {
+function Row({
+  label,
+  value,
+  highlight,
+  warn,
+  thirdParty,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+  warn?: boolean
+  thirdParty?: boolean
+}) {
   return (
-    <div className="spec-row py-1.5 border-b border-border/40 last:border-0">
+    <div
+      className={cn(
+        "spec-row py-1.5 border-b border-border/40 last:border-0",
+        thirdParty && "-mx-2 border-l-4 border-l-warning bg-warning/15 px-2",
+      )}
+    >
       <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className={cn("spec-value text-[12px] font-sans font-semibold tabular-nums", warn ? "text-warning" : highlight ? "text-primary" : "text-foreground")}>
+      <span
+        className={cn(
+          "spec-value text-[12px] font-sans font-semibold tabular-nums",
+          thirdParty ? "text-warning-foreground" : warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
+        )}
+      >
         {value}
       </span>
     </div>
   )
 }
 
-export function Step10Report() {
+function PackageRow({ s, itemKey, fallback }: { s: Parameters<typeof hasThirdPartySupplier>[0]; itemKey: PackageItemKey; fallback: string }) {
+  const thirdParty = hasThirdPartySupplier(s, itemKey)
+  return (
+    <Row
+      label={PACKAGE_ITEM_LABELS[itemKey]}
+      value={thirdParty ? thirdPartyValue(s.thirdPartySuppliers[itemKey] ?? "") : fallback}
+      thirdParty={thirdParty}
+      warn={!thirdParty && fallback === "—"}
+    />
+  )
+}
+
+export function Step7Report() {
   const {
     s,
     motor,
@@ -55,152 +76,56 @@ export function Step10Report() {
     torqueSensorSkipped,
     speedSensorSkipped,
     batterySkipped,
-    selectedDrivetrainComponents,
-    selectedBelt,
     systemWeightKg,
     isMid,
     cableRows,
-    targetStatusRows,
-    feasibility,
-    changeImpact,
+    thirdPartyItems,
     climbing,
     scopeOfSupplyItems,
     salesConsultationItems,
   } = useReportData()
 
-  const feasibilityInfo = FEASIBILITY_LABEL[feasibility]
-  const unmetRows = targetStatusRows.filter((r) => r.status === "not_met" || r.status === "missing")
-
   return (
     <div>
       <StepHeader
-        step={8}
+        step={7}
         title="Final Configuration Report"
-        subtitle="Complete system summary. Review all selections and drivetrain outputs, then download the PDF report below."
+        subtitle="Complete system summary. Review all selections, then download the PDF report below."
       />
 
-      {/* ─── Overall Feasibility ─── */}
-      <div className={cn("mb-5 flex flex-wrap items-center justify-between gap-4 border-2 px-5 py-4", feasibilityInfo.cls)}>
-        <div className="min-w-0">
-          <p className="text-[11px] font-sans font-bold uppercase tracking-[0.2em]">Overall Feasibility</p>
-          <p className="mt-1 text-2xl font-sans font-black uppercase tracking-tight">{feasibilityInfo.label}</p>
+      {/* ─── 3rd Party Supplier Components ─── */}
+      {thirdPartyItems.length > 0 && (
+        <div className="mb-5 border-2 border-warning bg-warning/10 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">
+                3rd Party Supplier Components
+              </p>
+              <ul className="mt-2 space-y-1">
+                {thirdPartyItems.map((item) => (
+                  <li key={item.key} className="text-sm font-sans text-graphite">
+                    <span className="font-bold uppercase">{item.label}:</span>{" "}
+                    {item.supplier.trim() || <span className="italic text-muted-foreground">supplier name not provided</span>}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs font-body leading-relaxed text-muted-foreground">
+                Full technical documents and component samples are required for integration and compatibility testing. This
+                introduces extra cost and delivery time; contact sales for details.
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="max-w-xs min-w-0 text-xs font-body leading-relaxed opacity-80 sm:text-right">
-          {feasibility === "go"
-            ? "All Must-have and Target requirements are currently met."
-            : feasibility === "conditional_go"
-              ? "Must-haves are met, but one or more Target requirements are not fully satisfied."
-              : "One or more Must-have requirements are not met by the current configuration."}
-        </p>
-      </div>
-
-      {/* ─── Product Target Summary ─── */}
-      <ReportSection title="Product Target Summary">
-        <Row label="Target Countries / Market" value={s.sellRegion ?? "—"} />
-        <Row label="Regulation" value={s.regulation ?? "—"} />
-        <Row
-          label="Weight Target"
-          value={s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set"}
-        />
-        <Row
-          label="Torque Target"
-          value={
-            s.productTargets.performance.torqueTargetNm != null
-              ? `≥ ${s.productTargets.performance.torqueTargetNm} Nm (${s.productTargets.performance.torqueLevel})`
-              : "No target set"
-          }
-        />
-        <Row
-          label="Range Target"
-          value={
-            s.productTargets.performance.rangeTargetKm != null
-              ? `≥ ${s.productTargets.performance.rangeTargetKm} km (${s.productTargets.performance.rangeLevel})`
-              : "No target set"
-          }
-        />
-        <Row label="Market Positioning" value={s.productTargets.ambition.positioning ?? "—"} />
-        <Row label="Cost Priority" value={s.productTargets.ambition.costPriority ?? "—"} />
-      </ReportSection>
-
-      {/* ─── Requirement Satisfaction Matrix ─── */}
-      <ReportSection title="Requirement Satisfaction Matrix">
-        <div className="space-y-1.5">
-          {targetStatusRows.map((r) => (
-            <div key={r.dimension} className="flex items-start justify-between gap-3 border-b border-border/40 py-1.5 last:border-0">
-              <div className="flex items-start gap-2 min-w-0">
-                <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", STATUS_DOT[r.status])} />
-                <div className="min-w-0">
-                  <p className="text-[12px] font-sans font-semibold text-foreground leading-tight">{r.dimension}</p>
-                  <p className="text-xs text-muted-foreground leading-snug">Target: {r.targetLabel}</p>
-                </div>
-              </div>
-              <span className="max-w-[42%] shrink-0 text-[12px] font-sans font-bold tabular-nums text-graphite text-right leading-tight">{r.currentLabel}</span>
-            </div>
-          ))}
-        </div>
-      </ReportSection>
-
-      {/* ─── Recommended Configuration & Rationale ─── */}
-      <ReportSection title="Recommended Configuration & Rationale">
-        <Row label="Selected Solution" value={s.selectedSolutionId ? s.selectedSolutionId.replace("_", " ").toUpperCase() : "—"} />
-        <Row label="Motor" value={motor ? motor.model : "—"} />
-        <Row label="Battery" value={battery ? battery.model : "—"} />
-        <Row label="Display" value={display ? display.model : "—"} />
-        <p className="mt-2 text-xs font-body text-muted-foreground">
-          {s.selectedSolutionId
-            ? "This configuration was selected from the ranked recommendations generated against the Product Targets on Step 3."
-            : "No recommended solution has been applied yet — components below reflect manual configuration."}
-        </p>
-        {changeImpact.weight && changeImpact.range && (
-          <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">Since Recommendation Applied</p>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="text-muted-foreground">Weight</span>
-              <span className="flex items-center gap-1.5 font-sans font-bold">
-                {changeImpact.weight[0].toFixed(1)} kg <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.weight[1].toFixed(1)} kg
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="text-muted-foreground">Range</span>
-              <span className="flex items-center gap-1.5 font-sans font-bold">
-                {changeImpact.range[0]} km <ArrowRight className="h-3 w-3 text-muted-foreground" /> {changeImpact.range[1]} km
-              </span>
-            </div>
-          </div>
-        )}
-      </ReportSection>
-
-      {/* ─── Unmet Requirements ─── */}
-      <ReportSection title="Unmet Requirements">
-        {unmetRows.length === 0 ? (
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-primary" />
-            <p className="text-sm font-body text-foreground">All defined requirements are currently met by the selected configuration.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {unmetRows.map((r) => (
-              <div key={r.dimension} className="flex items-start gap-2 border border-warning/30 bg-warning/10 px-3 py-2">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                <p className="text-xs font-body text-warning-foreground/90">
-                  <span className="font-semibold text-foreground">{r.dimension}:</span> target {r.targetLabel}, current {r.currentLabel}.
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </ReportSection>
+      )}
 
       {/* ─── Risks & Assumptions ─── */}
       <ReportSection title="Risks & Assumptions">
         <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
           Configuration is compatible with the selected regulation based on rated power and speed limit inputs.
         </p>
-        <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
-          Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.
-        </p>
         <p className="text-xs font-body leading-relaxed text-muted-foreground">
-          Range and cost-tier figures are heuristic estimates derived from battery capacity and motor model, not final priced or lab-tested values.
+          Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.
         </p>
       </ReportSection>
 
@@ -228,36 +153,25 @@ export function Step10Report() {
 
       {/* ─── Package Configuration ─── */}
       <ReportSection title="Package Configuration">
-        <Row label="Controller" value={isMid ? "Integrated" : controller ? controller.model : "—"} />
-        <Row label="Display (HMI)" value={display ? display.model : "—"} />
-        {!isMid && <Row label="Torque Sensor" value={torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ? s.torqueSensorId : "—"} warn={!torqueSensorSkipped && !s.torqueSensorId} />}
-        <Row label="Speed Sensor" value={speedSensorSkipped ? "Not Needed" : s.speedSensorId ? s.speedSensorId : "—"} warn={!speedSensorSkipped && !s.speedSensorId} />
+        {isMid ? (
+          <Row label="Controller" value="Integrated" />
+        ) : (
+          <PackageRow s={s} itemKey="controllerId" fallback={controller ? controller.model : "—"} />
+        )}
+        <PackageRow s={s} itemKey="displayId" fallback={display ? display.model : "—"} />
+        {!isMid && (
+          <PackageRow s={s} itemKey="torqueSensorId" fallback={torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ?? "—"} />
+        )}
+        <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—"} />
       </ReportSection>
 
       {/* ─── Drivetrain ─── */}
       <ReportSection title="Drivetrain">
-        <Row label="Drive Type" value={s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—"} highlight />
-        <Row label="Transmission Type" value={s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—"} />
-        {s.frontTeeth != null && <Row label="Front Chainring / Pulley" value={`${s.frontTeeth}T`} />}
+        {s.selectedChainringTeeth != null && <Row label="Chainring (Bike Components)" value={`${s.selectedChainringTeeth}T`} />}
+        {s.frontTeeth != null && <Row label="Front Chainring" value={`${s.frontTeeth}T`} />}
         {s.rearTeeth != null && <Row label="Smallest Rear Sprocket" value={`${s.rearTeeth}T`} />}
         {s.largestRearTeeth != null && <Row label="Largest Rear Sprocket" value={`${s.largestRearTeeth}T`} />}
         {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
-
-        {selectedDrivetrainComponents.length > 0 && (
-          <div className="pt-2">
-            <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground mb-1.5 mt-2">
-              Selected Components
-            </p>
-            {selectedDrivetrainComponents.map((c) => (
-              <Row key={c.id} label={c.category.replace(/_/g, " ")} value={displayName(c)} />
-            ))}
-            {selectedBelt && <Row label="Belt" value={displayName(selectedBelt)} />}
-          </div>
-        )}
-
-        {s.selectedComponentIds.length === 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">No drivetrain components have been selected yet.</p>
-        )}
 
         <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
           <p className="text-xs font-body text-muted-foreground">
@@ -266,28 +180,6 @@ export function Step10Report() {
               : "Hub motor torque is delivered directly at the wheel. Pedal drivetrain gearing mainly affects rider cadence and pedalling comfort."}
           </p>
         </div>
-
-        {s.drivetrainErrors.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {s.drivetrainErrors.map((msg, i) => (
-              <div key={i} className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 px-4 py-3">
-                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-body text-destructive">{msg}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {s.drivetrainErrors.length === 0 && s.drivetrainWarnings.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {s.drivetrainWarnings.map((msg, i) => (
-              <div key={i} className="flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
-                <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-                <p className="text-sm font-body text-warning-foreground">{msg}</p>
-              </div>
-            ))}
-          </div>
-        )}
       </ReportSection>
 
       {/* ─── Climbing Ability ──������� */}
@@ -368,11 +260,11 @@ export function Step10Report() {
 
       {/* ─── Battery / Charger ─── */}
       <ReportSection title="Battery & Charging">
-        <Row label="Battery" value={batterySkipped ? "Not Needed" : battery ? battery.model : "—"} />
+        <PackageRow s={s} itemKey="batteryId" fallback={batterySkipped ? "Not Needed" : battery ? battery.model : "—"} />
         {battery?.capacity_wh && <Row label="Capacity" value={`${battery.capacity_wh} Wh`} />}
         {battery?.weight_kg && <Row label="Battery Weight" value={`${battery.weight_kg} kg`} />}
-        <Row label="Charger" value={charger ? charger.model : "—"} />
-        <Row label="Charging Port" value={chargingPort ? chargingPort.model : "—"} />
+        <PackageRow s={s} itemKey="chargerId" fallback={charger ? charger.model : "—"} />
+        <PackageRow s={s} itemKey="chargingPortId" fallback={chargingPort ? chargingPort.model : "—"} />
       </ReportSection>
 
       {/* ─── Accessories ─── */}
@@ -404,7 +296,7 @@ export function Step10Report() {
         {scopeOfSupplyItems.length === 0 ? (
           <p className="text-xs text-muted-foreground">No components have been selected yet.</p>
         ) : (
-          scopeOfSupplyItems.map((item, i) => <Row key={`${item.label}-${i}`} label={item.label} value={item.value} />)
+          scopeOfSupplyItems.map((item, i) => <Row key={`${item.label}-${i}`} label={item.label} value={item.value} thirdParty={item.thirdParty} />)
         )}
       </ReportSection>
 
@@ -433,14 +325,14 @@ export function Step10Report() {
       <ReportSection title="System Compatibility Check">
         {[
           { ok: !!s.motorId, label: "Motor package selected" },
-          { ok: !(s.driveType === "hub" && !s.controllerId), label: "Controller configured" },
-          { ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped), label: "Pedal sensing configured" },
-          { ok: !!s.speedSensorId || speedSensorSkipped, label: "Speed sensor configured" },
-          { ok: !!s.batteryId || batterySkipped, label: "Battery configured" },
+          { ok: !(s.driveType === "hub" && !s.controllerId && !hasThirdPartySupplier(s, "controllerId")), label: "Controller configured" },
           {
-            ok: Boolean(s.drivetrainType && s.transmissionType && s.selectedComponentIds.length > 0 && s.drivetrainErrors.length === 0),
-            label: "Drivetrain system configured",
+            ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped && !hasThirdPartySupplier(s, "torqueSensorId")),
+            label: "Pedal sensing configured",
           },
+          { ok: !!s.speedSensorId || speedSensorSkipped || hasThirdPartySupplier(s, "speedSensorId"), label: "Speed sensor configured" },
+          { ok: !!s.batteryId || batterySkipped || hasThirdPartySupplier(s, "batteryId"), label: "Battery configured" },
+          { ok: Boolean(s.frontTeeth && s.rearTeeth && s.largestRearTeeth), label: "Drivetrain configured" },
         ].map(({ ok, label }) => (
           <div key={label} className="flex items-center gap-2 py-1.5 border-b border-border/40 last:border-0">
             {ok ? (

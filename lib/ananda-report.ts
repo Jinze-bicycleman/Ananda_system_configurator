@@ -1,26 +1,36 @@
 "use client"
 
-// Shared data shaping for the Final Configuration Report (Step 10) and its
+// Shared data shaping for the Final Configuration Report (Step 7) and its
 // PDF export. `useReportData` is the single source of truth for every value
-// rendered on-screen in Step10Report — the PDF export (`generateReportPdf`)
+// rendered on-screen in Step7Report — the PDF export (`generateReportPdf`)
 // consumes the exact same shape so the downloaded file can never drift from
 // what the user reviewed on screen.
 
-import { useAnandaStore, type AnandaConfig } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
-import { useDrivetrainData, displayName } from "@/lib/ananda-drivetrain"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
-import { estimateRangeKm, costTierForMotorModel, COST_LABELS } from "@/lib/ananda-recommendation"
-import { computeTargetStatus, computeOverallFeasibility, computeChangeImpact } from "@/lib/ananda-target-status"
 import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
-export const TRANSMISSION_LABEL: Record<string, string> = {
-  derailleur: "Derailleur & Cassette",
-  internal_gear_hub: "Internal-Gear Hub",
-  cvt: "CVT",
-  single_speed: "Single Speed",
-  gearbox: "Gearbox",
+export const PACKAGE_ITEM_LABELS: Record<PackageItemKey, string> = {
+  controllerId: "Controller",
+  torqueSensorId: "Torque Sensor",
+  speedSensorId: "Speed Sensor",
+  displayId: "Display (HMI)",
+  batteryId: "Battery",
+  chargerId: "Charger",
+  chargingPortId: "Charging Port",
+}
+
+export interface ScopeItem {
+  label: string
+  value: string
+  /** Set when the part is sourced from the customer's own 3rd-party supplier. */
+  thirdParty?: boolean
+}
+
+export function thirdPartyValue(supplier: string) {
+  return supplier.trim() ? `3rd party supplier: ${supplier.trim()}` : "3rd party supplier (name not provided)"
 }
 
 export interface CableRow {
@@ -40,7 +50,6 @@ export function useReportData() {
   const { controllers } = useControllers()
   const { displays } = useDisplays()
   const { batteries } = useBatteries()
-  const { catalogue } = useDrivetrainData()
   const { modes: assistModes } = useMotorAssistModes(s.motorId)
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
@@ -54,11 +63,6 @@ export function useReportData() {
   const torqueSensorSkipped = s.skippedItems.includes("torqueSensorId")
   const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
   const batterySkipped = s.skippedItems.includes("batteryId")
-
-  const selectedDrivetrainComponents = s.selectedComponentIds
-    .map((id) => catalogue.find((c) => c.id === id))
-    .filter((c): c is NonNullable<typeof c> => Boolean(c))
-  const selectedBelt = s.selectedBeltId ? catalogue.find((c) => c.id === s.selectedBeltId) ?? null : null
 
   let systemWeightKg = 0
   if (motor?.weight_kg) systemWeightKg += motor.weight_kg
@@ -81,21 +85,29 @@ export function useReportData() {
     extensionLengthM: s.extensionCableLengths[c.connection] ?? null,
   }))
 
-  // ─── Scope of Supply — every product/line item included in this build ───
-  const scopeOfSupplyItems: { label: string; value: string }[] = []
-  if (motor) scopeOfSupplyItems.push({ label: "Motor", value: motor.model })
-  if (!isMid) {
-    if (controller) scopeOfSupplyItems.push({ label: "Controller", value: controller.model })
-    else if (s.controllerSourcing === "third_party") scopeOfSupplyItems.push({ label: "Controller", value: "Customer-supplied (3rd-party)" })
+  // ─── Third-party sourced parts (every package part except the motor) ───
+  const thirdPartyItems = (Object.keys(PACKAGE_ITEM_LABELS) as PackageItemKey[])
+    .filter((key) => hasThirdPartySupplier(s, key) && !(isMid && (key === "controllerId" || key === "torqueSensorId")))
+    .map((key) => ({ key, label: PACKAGE_ITEM_LABELS[key], supplier: s.thirdPartySuppliers[key] ?? "" }))
+
+  const packageItemScope = (key: PackageItemKey, model: string | null): ScopeItem | null => {
+    if (hasThirdPartySupplier(s, key)) {
+      return { label: PACKAGE_ITEM_LABELS[key], value: thirdPartyValue(s.thirdPartySuppliers[key] ?? ""), thirdParty: true }
+    }
+    return model ? { label: PACKAGE_ITEM_LABELS[key], value: model } : null
   }
-  if (display) scopeOfSupplyItems.push({ label: "Display (HMI)", value: display.model })
-  if (battery) scopeOfSupplyItems.push({ label: "Battery", value: battery.model })
-  if (charger) scopeOfSupplyItems.push({ label: "Charger", value: charger.model })
-  if (chargingPort) scopeOfSupplyItems.push({ label: "Charging Port", value: chargingPort.model })
-  if (!speedSensorSkipped && s.speedSensorId) scopeOfSupplyItems.push({ label: "Speed Sensor", value: s.speedSensorId })
-  if (!torqueSensorSkipped && s.torqueSensorId) scopeOfSupplyItems.push({ label: "Torque Sensor", value: s.torqueSensorId })
-  for (const c of selectedDrivetrainComponents) scopeOfSupplyItems.push({ label: c.category.replace(/_/g, " "), value: displayName(c) })
-  if (selectedBelt) scopeOfSupplyItems.push({ label: "Belt", value: displayName(selectedBelt) })
+
+  // ─── Scope of Supply — every product/line item included in this build ───
+  const scopeOfSupplyItems: ScopeItem[] = []
+  const pushScope = (item: ScopeItem | null) => item && scopeOfSupplyItems.push(item)
+  if (motor) scopeOfSupplyItems.push({ label: "Motor", value: motor.model })
+  if (!isMid) pushScope(packageItemScope("controllerId", controller?.model ?? null))
+  pushScope(packageItemScope("displayId", display?.model ?? null))
+  pushScope(packageItemScope("batteryId", battery?.model ?? null))
+  pushScope(packageItemScope("chargerId", charger?.model ?? null))
+  pushScope(packageItemScope("chargingPortId", chargingPort?.model ?? null))
+  if (!speedSensorSkipped) pushScope(packageItemScope("speedSensorId", s.speedSensorId))
+  if (!isMid && !torqueSensorSkipped) pushScope(packageItemScope("torqueSensorId", s.torqueSensorId))
   for (const [category, id] of Object.entries(s.bikeComponentSelections)) {
     if (id) scopeOfSupplyItems.push({ label: category.charAt(0).toUpperCase() + category.slice(1), value: id })
   }
@@ -105,15 +117,15 @@ export function useReportData() {
 
   // ─── Items requiring a sample, additional cost, or sales-team consultation ───
   const salesConsultationItems: string[] = []
-  if (s.controllerSourcing === "third_party" || s.controllerSourcing === "not_needed") {
+  for (const item of thirdPartyItems) {
     salesConsultationItems.push(
-      "Controller: customer-supplied / 3rd-party — requires a physical sample for integration testing and sales-team coordination.",
+      `${item.label}: 3rd party supplier${item.supplier.trim() ? ` (${item.supplier.trim()})` : ""} — full technical documents and a component sample are required for integration and compatibility testing. Extra cost and delivery time apply; contact sales for details.`,
     )
   }
   if (s.connectorSourcing === "custom") {
     salesConsultationItems.push("Connectors: custom solution requested — additional cost and +15 day lead time; consult sales.")
   }
-  if (s.productTargets.functions.bluetoothApp === "third_party") {
+  if (s.bluetoothApp === "third_party") {
     salesConsultationItems.push("Connectivity: 3rd-party app integration — may incur additional cost; consult sales.")
   }
   if (s.accessoryIds.some((id) => id === "ACC-TH01" || id === "ACC-THO")) {
@@ -124,15 +136,6 @@ export function useReportData() {
       `Other Accessories: ${s.customAccessories.length} custom item${s.customAccessories.length > 1 ? "s" : ""} require sales-team scoping and cost confirmation.`,
     )
   }
-
-  const targetStatusRows = computeTargetStatus({ s, motor, battery, display })
-  const feasibility = computeOverallFeasibility(targetStatusRows)
-  const currentCostLabel = motor ? COST_LABELS[costTierForMotorModel(motor.model)] : "—"
-  const changeImpact = computeChangeImpact(s, {
-    weightKg: systemWeightKg,
-    rangeKm: battery ? estimateRangeKm(battery.capacity_wh) : 0,
-    costLabel: currentCostLabel,
-  })
 
   // Climbing Ability — mirrors the Step 6 panel exactly, using the
   // committed store values (frontTeeth/largestRearTeeth/rider inputs) so the
@@ -184,20 +187,15 @@ export function useReportData() {
     torqueSensorSkipped,
     speedSensorSkipped,
     batterySkipped,
-    selectedDrivetrainComponents,
-    selectedBelt,
     systemWeightKg,
     isMid,
     cableRows,
-  targetStatusRows,
-  feasibility,
-  changeImpact,
-  currentCostLabel,
-  climbing,
-  scopeOfSupplyItems,
-  salesConsultationItems,
+    thirdPartyItems,
+    climbing,
+    scopeOfSupplyItems,
+    salesConsultationItems,
   }
-  }
+}
 
 export type ReportData = ReturnType<typeof useReportData>
 
@@ -207,12 +205,12 @@ function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
 
 /**
  * Builds and downloads the Final Configuration Report as a PDF, mirroring
- * every section shown on screen in Step10Report plus the cable & harness
+ * every section shown on screen in Step7Report plus the cable & harness
  * length table. Runs client-side only (jsPDF has no server dependency).
  */
 export async function generateReportPdf(data: ReportData) {
   const { jsPDF } = await import("jspdf")
-  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, selectedDrivetrainComponents, selectedBelt, systemWeightKg, isMid, cableRows, targetStatusRows, feasibility, changeImpact, climbing, scopeOfSupplyItems, salesConsultationItems } = data
+  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, systemWeightKg, isMid, cableRows, thirdPartyItems, climbing, scopeOfSupplyItems, salesConsultationItems } = data
 
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -222,6 +220,8 @@ export async function generateReportPdf(data: ReportData) {
   const primary: [number, number, number] = [0, 143, 54] // matches --primary green
   const graphite: [number, number, number] = [31, 41, 55]
   const muted: [number, number, number] = [107, 114, 128]
+  const highlightFill: [number, number, number] = [255, 243, 205]
+  const highlightText: [number, number, number] = [150, 90, 0]
 
   function ensureSpace(rowsNeeded = 1) {
     const rowHeight = 16
@@ -246,14 +246,18 @@ export async function generateReportPdf(data: ReportData) {
     y += 14
   }
 
-  function row(label: string, value: string) {
+  function row(label: string, value: string, thirdParty = false) {
     ensureSpace(1)
+    if (thirdParty) {
+      doc.setFillColor(...highlightFill)
+      doc.rect(marginX - 4, y - 10, pageWidth - marginX * 2 + 8, 16, "F")
+    }
     doc.setFont("helvetica", "normal")
     doc.setFontSize(9)
-    doc.setTextColor(...muted)
+    doc.setTextColor(...(thirdParty ? highlightText : muted))
     doc.text(label.toUpperCase(), marginX, y)
     doc.setFont("helvetica", "bold")
-    doc.setTextColor(...graphite)
+    doc.setTextColor(...(thirdParty ? highlightText : graphite))
     doc.text(value, pageWidth - marginX, y, { align: "right" })
     y += 16
   }
@@ -306,74 +310,19 @@ export async function generateReportPdf(data: ReportData) {
   doc.text(`Generated ${new Date().toLocaleString()}`, marginX, y)
   y += 22
 
-  // ─── Overall Feasibility ───
-  const feasibilityLabel = feasibility === "go" ? "GO" : feasibility === "conditional_go" ? "CONDITIONAL GO" : "NO-GO"
-  sectionTitle("Overall Feasibility")
-  row("Feasibility Assessment", feasibilityLabel)
-  row("Selected Solution", s.selectedSolutionId ? s.selectedSolutionId.replace("_", " ").toUpperCase() : "—")
-
-  // ─── Product Target Summary ───
-  sectionTitle("Product Target Summary")
-  row("Target Countries / Market", s.sellRegion ?? "—")
-  row("Regulation", s.regulation ?? "—")
-  row("Weight Target", s.productTargets.weight.maxKg != null ? `≤ ${s.productTargets.weight.maxKg} kg (${s.productTargets.weight.level})` : "No target set")
-  row(
-    "Torque Target",
-    s.productTargets.performance.torqueTargetNm != null
-      ? `≥ ${s.productTargets.performance.torqueTargetNm} Nm (${s.productTargets.performance.torqueLevel})`
-      : "No target set",
-  )
-  row(
-    "Range Target",
-    s.productTargets.performance.rangeTargetKm != null
-      ? `≥ ${s.productTargets.performance.rangeTargetKm} km (${s.productTargets.performance.rangeLevel})`
-      : "No target set",
-  )
-  row("Market Positioning", s.productTargets.ambition.positioning ?? "—")
-  row("Cost Priority", s.productTargets.ambition.costPriority ?? "—")
-
-  // ─── Requirement Satisfaction Matrix ───
-  sectionTitle("Requirement Satisfaction Matrix")
-  const matrixColX = [marginX, marginX + 160, marginX + 300, marginX + 430]
-  tableHeader(["Dimension", "Target", "Current", "Status"], matrixColX)
-  targetStatusRows.forEach((r, i) => {
-    tableRow(
-      [r.dimension, r.targetLabel, r.currentLabel, r.status.replace("_", " ").toUpperCase()],
-      matrixColX,
-      i % 2 === 1,
+  // ─── 3rd Party Supplier Notice ───
+  if (thirdPartyItems.length > 0) {
+    sectionTitle("3rd Party Supplier Components")
+    for (const item of thirdPartyItems) row(item.label, item.supplier.trim() || "Name not provided", true)
+    paragraph(
+      "Using 3rd party components requires full technical documents and component samples for integration and compatibility testing. This introduces extra cost and delivery time; contact sales for details.",
     )
-  })
-
-  // ─── Recommended Configuration & Rationale ───
-  sectionTitle("Recommended Configuration & Rationale")
-  row("Motor", motor ? motor.model : "—")
-  row("Battery", battery ? battery.model : "—")
-  row("Display", display ? display.model : "—")
-  paragraph(
-    s.selectedSolutionId
-      ? "This configuration was selected from the ranked recommendations generated against the Product Targets on Step 3."
-      : "No recommended solution has been applied yet — components below reflect manual configuration.",
-  )
-
-  // ─── Unmet Requirements ───
-  const unmetRows = targetStatusRows.filter((r) => r.status === "not_met" || r.status === "missing")
-  sectionTitle("Unmet Requirements")
-  if (unmetRows.length === 0) {
-    paragraph("All defined requirements are currently met by the selected configuration.")
-  } else {
-    for (const r of unmetRows) paragraph(`${r.dimension}: target ${r.targetLabel}, current ${r.currentLabel}.`)
   }
 
   // ─── Risks & Assumptions ───
   sectionTitle("Risks & Assumptions")
   paragraph("Configuration is compatible with the selected regulation based on rated power and speed limit inputs.")
   paragraph("Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.")
-  paragraph("Range and cost-tier figures are heuristic estimates derived from battery capacity and motor model, not final priced or lab-tested values.")
-  if (changeImpact.weight) {
-    paragraph(
-      `Since the recommended solution was applied: weight ${changeImpact.weight[0].toFixed(1)} kg → ${changeImpact.weight[1].toFixed(1)} kg, range ${changeImpact.range?.[0]} km → ${changeImpact.range?.[1]} km.`,
-    )
-  }
 
   // ─── Project Context ───
   sectionTitle("Project Context")
@@ -397,40 +346,30 @@ export async function generateReportPdf(data: ReportData) {
 
   // ─── Package Configuration ───
   sectionTitle("Package Configuration")
-  row("Controller", isMid ? "Integrated" : controller ? controller.model : "—")
-  row("Display (HMI)", display ? display.model : "—")
-  if (!isMid) row("Torque Sensor", torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ? s.torqueSensorId : "—")
-  row("Speed Sensor", speedSensorSkipped ? "Not Needed" : s.speedSensorId ? s.speedSensorId : "—")
+  const pkgRow = (key: PackageItemKey, fallback: string) =>
+    hasThirdPartySupplier(s, key) ? row(PACKAGE_ITEM_LABELS[key], thirdPartyValue(s.thirdPartySuppliers[key] ?? ""), true) : row(PACKAGE_ITEM_LABELS[key], fallback)
+  if (isMid) row("Controller", "Integrated")
+  else pkgRow("controllerId", controller ? controller.model : "—")
+  pkgRow("displayId", display ? display.model : "—")
+  if (!isMid) pkgRow("torqueSensorId", torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ?? "—")
+  pkgRow("speedSensorId", speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—")
 
   // ─── Drivetrain ───
   sectionTitle("Drivetrain")
-  row("Drive Type", s.drivetrainType === "chain" ? "Chain Drive" : s.drivetrainType === "belt" ? "Belt Drive" : "—")
-  row("Transmission Type", s.transmissionType ? TRANSMISSION_LABEL[s.transmissionType] ?? s.transmissionType : "—")
-  if (s.frontTeeth != null) row("Front Chainring / Pulley", `${s.frontTeeth}T`)
+  if (s.selectedChainringTeeth != null) row("Chainring (Bike Components)", `${s.selectedChainringTeeth}T`)
+  if (s.frontTeeth != null) row("Front Chainring", `${s.frontTeeth}T`)
   if (s.rearTeeth != null) row("Smallest Rear Sprocket", `${s.rearTeeth}T`)
   if (s.largestRearTeeth != null) row("Largest Rear Sprocket", `${s.largestRearTeeth}T`)
   if (s.gvwKg != null) row("Estimated GVW", `${s.gvwKg} kg`)
-  if (selectedDrivetrainComponents.length > 0) {
-    for (const c of selectedDrivetrainComponents) {
-      row(c.category.replace(/_/g, " "), displayName(c))
-    }
-    if (selectedBelt) row("Belt", displayName(selectedBelt))
-  } else {
-    paragraph("No drivetrain components have been selected yet.")
-  }
-  if (s.drivetrainErrors.length > 0) {
-    for (const msg of s.drivetrainErrors) paragraph(`Error: ${msg}`)
-  } else if (s.drivetrainWarnings.length > 0) {
-    for (const msg of s.drivetrainWarnings) paragraph(`Warning: ${msg}`)
-  }
 
   // ─── Battery & Charging ───
   sectionTitle("Battery & Charging")
-  row("Battery", batterySkipped ? "Not Needed" : battery ? battery.model : "—")
+  if (hasThirdPartySupplier(s, "batteryId")) row("Battery", thirdPartyValue(s.thirdPartySuppliers.batteryId ?? ""), true)
+  else row("Battery", batterySkipped ? "Not Needed" : battery ? battery.model : "—")
   if (battery?.capacity_wh) row("Capacity", `${battery.capacity_wh} Wh`)
   if (battery?.weight_kg) row("Battery Weight", `${battery.weight_kg} kg`)
-  row("Charger", charger ? charger.model : "—")
-  row("Charging Port", chargingPort ? chargingPort.model : "—")
+  pkgRow("chargerId", charger ? charger.model : "—")
+  pkgRow("chargingPortId", chargingPort ? chargingPort.model : "—")
 
   // ─── Accessories ───
   if (accessories.length > 0) {
@@ -491,7 +430,7 @@ export async function generateReportPdf(data: ReportData) {
 
   // ─── Scope of Supply ───
   sectionTitle("Scope of Supply")
-  for (const item of scopeOfSupplyItems) row(item.label, item.value)
+  for (const item of scopeOfSupplyItems) row(item.label, item.value, item.thirdParty)
 
   // ─── Items Requiring Samples / Additional Cost / Sales Consultation ───
   sectionTitle("Requires Sample / Additional Cost / Sales Consultation")
@@ -505,14 +444,10 @@ export async function generateReportPdf(data: ReportData) {
   sectionTitle("System Compatibility Check")
   const checks = [
     { ok: !!s.motorId, label: "Motor package selected" },
-    { ok: !(s.driveType === "hub" && !s.controllerId), label: "Controller configured" },
-    { ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped), label: "Pedal sensing configured" },
-    { ok: !!s.speedSensorId || speedSensorSkipped, label: "Speed sensor configured" },
-    { ok: !!s.batteryId || batterySkipped, label: "Battery configured" },
-    {
-      ok: Boolean(s.drivetrainType && s.transmissionType && s.selectedComponentIds.length > 0 && s.drivetrainErrors.length === 0),
-      label: "Drivetrain system configured",
-    },
+    { ok: !(s.driveType === "hub" && !s.controllerId && !hasThirdPartySupplier(s, "controllerId")), label: "Controller configured" },
+    { ok: !!s.speedSensorId || speedSensorSkipped || hasThirdPartySupplier(s, "speedSensorId"), label: "Speed sensor configured" },
+    { ok: !!s.batteryId || batterySkipped || hasThirdPartySupplier(s, "batteryId"), label: "Battery configured" },
+    { ok: Boolean(s.frontTeeth && s.rearTeeth && s.largestRearTeeth), label: "Drivetrain configured" },
   ]
   for (const { ok, label } of checks) {
     ensureSpace(1)

@@ -4,13 +4,12 @@ import { cn } from "@/lib/utils"
 
 const STEPS = [
   { n: 1, label: "Sell Region & Regulation" },
-  { n: 2, label: "Rider Profile & Targets" },
-  { n: 3, label: "Recommended Solutions" },
-  { n: 4, label: "Package Configuration" },
-  { n: 5, label: "Drivetrain" },
-  { n: 6, label: "Accessories" },
-  { n: 7, label: "System Diagram" },
-  { n: 8, label: "Configuration Report" },
+  { n: 2, label: "Bike Category" },
+  { n: 3, label: "Package Configuration" },
+  { n: 4, label: "Drivetrain" },
+  { n: 5, label: "Accessories" },
+  { n: 6, label: "System Diagram" },
+  { n: 7, label: "Configuration Report" },
 ]
 
 export function ProgressIndicator({ current, onStep }: { current: number; onStep: (n: number) => void }) {

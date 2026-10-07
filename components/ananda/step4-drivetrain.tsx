@@ -10,8 +10,10 @@ import { SpeedCadenceGraph } from "./drivetrain/speed-cadence-graph"
 import { ClimbingAbilityPanel } from "./drivetrain/climbing-ability-panel"
 import { InlineError } from "./drivetrain/drivetrain-states"
 import { validateToothCounts, resolveWheelRadiusMetres, type MotorType, type PedalEffortKey } from "@/lib/ananda-climbing"
+import { DEFAULT_SMALLEST_REAR_TEETH, DEFAULT_LARGEST_REAR_TEETH } from "@/lib/ananda-store"
+import { Pencil } from "lucide-react"
 
-export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNumber: number) => void }) {
+export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: number) => void }) {
   const s = useAnandaStore()
   const { motors } = useMotors()
   const motor = motors.find((m) => m.id === s.motorId) ?? null
@@ -91,11 +93,22 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   const selectSystemKind = (kind: "derailleur" | "gear_hub") => {
     s.setField("drivetrainSystemKind", kind)
     // Switching kinds invalidates the previously computed rear-teeth values.
-    setSmallestInput("")
-    setLargestInput("")
-    s.setField("rearTeeth", null)
-    s.setField("largestRearTeeth", null)
+    if (kind === "derailleur") {
+      setSmallestInput(String(DEFAULT_SMALLEST_REAR_TEETH))
+      setLargestInput(String(DEFAULT_LARGEST_REAR_TEETH))
+      s.setField("rearTeeth", DEFAULT_SMALLEST_REAR_TEETH)
+      s.setField("largestRearTeeth", DEFAULT_LARGEST_REAR_TEETH)
+    } else {
+      setSmallestInput("")
+      setLargestInput("")
+      s.setField("rearTeeth", null)
+      s.setField("largestRearTeeth", null)
+    }
   }
+
+  const chainringTeeth = s.selectedChainringTeeth
+  const frontTeethEntered = parseTeeth(frontInput)
+  const chainringMismatched = chainringTeeth != null && frontTeethEntered != null && frontTeethEntered !== chainringTeeth
 
   const wheelRadiusMetres = useMemo(() => {
     const wheelSizeInch = s.wheelSize ? Number.parseFloat(s.wheelSize) || null : null
@@ -121,7 +134,7 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
   return (
     <div>
       <StepHeader
-        step={5}
+        step={4}
         title="Drivetrain & Climbing"
         subtitle="Enter the gearing on your bike and see the resulting speed range, cadence and climbing ability with the selected motor."
       />
@@ -196,6 +209,8 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
                 label="Chainring teeth"
                 value={frontInput}
                 onChange={commitFront}
+                invalid={chainringMismatched}
+                hint={chainringTeeth != null ? `Must match the ${chainringTeeth}T chainring from Bike Components` : undefined}
               />
               <RatioField id="hub-up-ratio" label="Hub gear up ratio" value={hubUpInput} onChange={commitHubUp} />
               <RatioField id="hub-down-ratio" label="Hub gear down ratio" value={hubDownInput} onChange={commitHubDown} />
@@ -212,19 +227,30 @@ export function Step6DrivetrainSelection({ onEditStep }: { onEditStep?: (stepNum
               label="Front chainring teeth"
               value={frontInput}
               onChange={commitFront}
+              invalid={chainringMismatched}
+              hint={chainringTeeth != null ? `Must match the ${chainringTeeth}T chainring from Bike Components` : undefined}
             />
             <ToothCountField
               id="smallest-rear-teeth"
               label="Smallest rear sprocket teeth"
               value={smallestInput}
               onChange={commitSmallest}
+              defaultValue={DEFAULT_SMALLEST_REAR_TEETH}
             />
             <ToothCountField
               id="largest-rear-teeth"
               label="Largest rear sprocket teeth"
               value={largestInput}
               onChange={commitLargest}
+              defaultValue={DEFAULT_LARGEST_REAR_TEETH}
             />
+          </div>
+        )}
+        {chainringMismatched && (
+          <div className="mt-4">
+            <InlineError>
+              Front chainring ({frontTeethEntered}T) does not match the {chainringTeeth}T chainring selected under Bike Components. Enter {chainringTeeth} or change the chainring selection.
+            </InlineError>
           </div>
         )}
         {!validation.isValid && (frontInput || smallestInput || largestInput) && (
@@ -301,28 +327,60 @@ function ToothCountField({
   label,
   value,
   onChange,
+  defaultValue,
+  invalid,
+  hint,
 }: {
   id: string
   label: string
   value: string
   onChange: (raw: string) => void
+  /** When set, the field is prefilled with this default and visibly flagged as editable. */
+  defaultValue?: number
+  invalid?: boolean
+  hint?: string
 }) {
+  const hasDefault = defaultValue != null
+  const isUntouchedDefault = hasDefault && value === String(defaultValue)
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-sans font-semibold text-graphite">
-        {label}
+      <label htmlFor={id} className="flex items-center justify-between gap-2 text-xs font-sans font-semibold text-graphite">
+        <span>{label}</span>
+        {hasDefault && (
+          <span
+            className={cn(
+              "shrink-0 px-1.5 py-0.5 text-[10px] font-sans font-bold uppercase tracking-wider",
+              isUntouchedDefault ? "bg-primary/10 text-primary" : "bg-surface text-muted-foreground",
+            )}
+          >
+            {isUntouchedDefault ? "Default - editable" : "Edited"}
+          </span>
+        )}
       </label>
-      <input
-        id={id}
-        type="number"
-        min={1}
-        step={1}
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={id === "largest-rear-teeth" ? "e.g. 43" : id === "smallest-rear-teeth" ? "e.g. 11" : "e.g. 34"}
-        className="w-full border border-border px-3 py-2 text-sm font-body font-semibold tabular-nums focus:border-primary outline-none"
-      />
+      <div className="relative">
+        <input
+          id={id}
+          type="number"
+          min={1}
+          step={1}
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={id === "largest-rear-teeth" ? "e.g. 43" : id === "smallest-rear-teeth" ? "e.g. 11" : "e.g. 34"}
+          aria-invalid={invalid || undefined}
+          className={cn(
+            "w-full border px-3 py-2 text-sm font-body font-semibold tabular-nums outline-none focus:border-primary",
+            hasDefault && "pr-9",
+            invalid
+              ? "border-destructive bg-destructive/5"
+              : hasDefault
+                ? "border-dashed border-primary/60 bg-primary/5"
+                : "border-border",
+          )}
+        />
+        {hasDefault && <Pencil className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" aria-hidden="true" />}
+      </div>
+      {hint && <p className="text-[11px] font-body text-muted-foreground">{hint}</p>}
     </div>
   )
 }
