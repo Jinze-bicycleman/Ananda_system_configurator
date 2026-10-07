@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAnandaStore, hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
 import {
   useControllers,
@@ -149,35 +149,93 @@ function EmptyOptionsNotice() {
 
 // Replaces the product grid once a part is customer-sourced: shows the
 // supplier-name field (required) and a way back to Ananda products.
-function ThirdPartyPanel({ itemKey, label }: { itemKey: PackageItemKey; label: string }) {
+function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItemKey; label: string; justEnabled: boolean }) {
   const s = useAnandaStore()
-  const name = s.thirdPartySuppliers[itemKey] ?? ""
-  const missing = name.trim().length === 0
+  // The store only ever holds the confirmed name, so "complete" is exactly
+  // "a name has been confirmed" — the draft below is local until then.
+  const savedName = (s.thirdPartySuppliers[itemKey] ?? "").trim()
+  const [draft, setDraft] = useState(savedName)
+  const [editing, setEditing] = useState(savedName.length === 0)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const confirmed = savedName.length > 0 && !editing
+  const canConfirm = draft.trim().length > 0
+
+  // Right after the agreement dialog closes the product grid collapses into
+  // this shorter panel, which shifts the page. Wait for the dialog's scroll
+  // lock to release, then glide the panel to the middle of the screen.
+  useEffect(() => {
+    if (!justEnabled) return
+    const timer = window.setTimeout(() => {
+      panelRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })
+      inputRef.current?.focus({ preventScroll: true })
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [justEnabled])
+
+  const confirm = () => {
+    if (!canConfirm) return
+    s.setThirdPartySupplierName(itemKey, draft.trim())
+    setDraft(draft.trim())
+    setEditing(false)
+  }
+
   return (
-    <div className="border-2 border-warning/50 bg-warning/10 p-4">
+    <div ref={panelRef} className={cn("scroll-mt-24 border-2 p-4 transition-colors", confirmed ? "border-primary/50 bg-primary/5" : "border-warning/50 bg-warning/10")}>
       <div className="flex items-start gap-3">
-        <Truck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+        {confirmed ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /> : <Truck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-sans font-bold uppercase text-graphite">3rd Party Supplier — {label}</p>
           <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
             Ananda will need full technical documents and a component sample for integration and compatibility testing. Extra cost and delivery time apply — contact sales for details.
           </p>
-          <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-[10px] font-sans font-bold uppercase tracking-wider text-graphite">
-            Supplier name <span className="text-destructive">*</span>
-          </label>
-          <input
-            id={`${itemKey}-supplier`}
-            type="text"
-            value={name}
-            onChange={(e) => s.setThirdPartySupplierName(itemKey, e.target.value)}
-            placeholder={`Name of the ${label.toLowerCase()} supplier`}
-            aria-invalid={missing}
-            className={cn(
-              "mt-1 w-full max-w-md border bg-background px-3 py-2 text-sm font-body text-foreground focus:outline-none focus:border-primary",
-              missing ? "border-destructive" : "border-border",
-            )}
-          />
-          {missing && <p className="mt-1 text-[11px] font-sans font-semibold text-destructive">Enter the supplier name to continue.</p>}
+          {confirmed ? (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border border-primary/40 bg-background px-3 py-2">
+              <div className="min-w-0">
+                <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Supplier confirmed</p>
+                <p className="text-sm font-body font-semibold text-graphite wrap-anywhere">{savedName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="shrink-0 border border-border px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              >
+                Edit
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                confirm()
+              }}
+            >
+              <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-[10px] font-sans font-bold uppercase tracking-wider text-graphite">
+                Supplier name <span className="text-destructive">*</span>
+              </label>
+              <div className="mt-1 flex max-w-md flex-wrap items-stretch gap-2">
+                <input
+                  ref={inputRef}
+                  id={`${itemKey}-supplier`}
+                  type="text"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={`Name of the ${label.toLowerCase()} supplier`}
+                  className="min-w-0 flex-1 border border-border bg-background px-3 py-2 text-sm font-body text-foreground focus:border-primary focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!canConfirm}
+                  className="flex shrink-0 items-center gap-1 bg-primary px-3 py-2 text-[11px] font-sans font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Confirm supplier
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] font-sans font-semibold text-destructive">
+                {canConfirm ? "Press Confirm supplier to save — this component is not complete until you do." : "Enter the supplier name, then confirm it to complete this component."}
+              </p>
+            </form>
+          )}
           <button
             type="button"
             onClick={() => s.disableThirdParty(itemKey)}
@@ -248,6 +306,7 @@ function ConfigRow({
 }: ConfigRowProps) {
   const s = useAnandaStore()
   const [warningOpen, setWarningOpen] = useState(false)
+  const [justEnabled, setJustEnabled] = useState(false)
   const isThirdParty = thirdPartyKey ? hasThirdPartySupplier(s, thirdPartyKey) : false
   const supplierName = thirdPartyKey ? (s.thirdPartySuppliers[thirdPartyKey] ?? "") : ""
 
@@ -300,7 +359,7 @@ function ConfigRow({
       ) : expanded ? (
         <div id={`config-${itemKey}-panel`}>
           {isThirdParty && thirdPartyKey ? (
-            <ThirdPartyPanel itemKey={thirdPartyKey} label={label} />
+            <ThirdPartyPanel itemKey={thirdPartyKey} label={label} justEnabled={justEnabled} />
           ) : (
             <>
               {!selectedSummary && (
@@ -341,7 +400,12 @@ function ConfigRow({
 
       {thirdPartyKey && (
         <AlertDialog open={warningOpen} onOpenChange={setWarningOpen}>
-          <AlertDialogContent className="border-2 border-border font-sans">
+          <AlertDialogContent
+            className="border-2 border-border font-sans"
+            onCloseAutoFocus={(e) => {
+              if (justEnabled) e.preventDefault()
+            }}
+          >
             <AlertDialogHeader>
               <div className="flex items-center gap-2 text-warning">
                 <AlertTriangle className="h-5 w-5" />
@@ -358,7 +422,10 @@ function ConfigRow({
             <AlertDialogFooter>
               <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Back</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => s.enableThirdParty(thirdPartyKey)}
+                onClick={() => {
+                  setJustEnabled(true)
+                  s.enableThirdParty(thirdPartyKey)
+                }}
                 className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
               >
                 I Agree
