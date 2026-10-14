@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { useBatteries, useDisplays, useMotors, useSpeedSensors, resolveImageUrl } from "@/lib/ananda-packages"
+import { useCableProfiles } from "./use-cable-profiles"
 import {
   BIKE_TEMPLATES,
   CABLE_META,
@@ -51,6 +52,7 @@ export function useBikeOverview() {
   const { batteries } = useBatteries()
   const { displays } = useDisplays()
   const { speedSensors } = useSpeedSensors()
+  const profiles = useCableProfiles()
 
   const template: BikeTemplate = BIKE_TEMPLATES[templateIdForCategory(s.bikeCategory)]
 
@@ -81,9 +83,38 @@ export function useBikeOverview() {
       speedSensor: resolve("speedSensor", sensorModel, null, "speedSensorId"),
     }
 
-    const cables: ResolvedCable[] = CABLE_ORDER.map((key) => {
-      const meta = CABLE_META[key]
-      const placement = template.cables[key]
+    const profileFor = (key: CableKey) => profiles?.find((p) => p.cableKey === key) ?? null
+    const orderedKeys = profiles
+      ? [...CABLE_ORDER].sort((a, b) => (profileFor(a)?.sortOrder ?? 999) - (profileFor(b)?.sortOrder ?? 999))
+      : CABLE_ORDER
+
+    const cables: ResolvedCable[] = orderedKeys.map((key) => {
+      const profile = profileFor(key)
+      const baseMeta = CABLE_META[key]
+      const meta: CableMeta = profile
+        ? {
+            ...baseMeta,
+            title: profile.title,
+            colorName: profile.colorName,
+            stroke: profile.colorHex,
+            from: profile.from,
+            to: profile.to,
+            requires: profile.requires,
+            connectorImage: profile.imageUrl ?? baseMeta.connectorImage,
+          }
+        : baseMeta
+      const basePlacement = template.cables[key]
+      const placement: CablePlacement =
+        profile && profile.lengthsMm.length > 0
+          ? {
+              ...basePlacement,
+              connectorLabel: profile.connectorModel,
+              defaultLengthMm: profile.defaultLengthMm,
+              standardLengthsMm: profile.lengthsMm,
+            }
+          : profile
+            ? { ...basePlacement, connectorLabel: profile.connectorModel, defaultLengthMm: profile.defaultLengthMm }
+            : basePlacement
       const spec = CABLE_SPECS.find((c) => c.connection === meta.connection)
       const storedM = s.cableLengths[meta.connection]
       const lengthMm = storedM != null ? Math.round(storedM * 1000) : placement.defaultLengthMm
@@ -96,12 +127,12 @@ export function useBikeOverview() {
         placement,
         lengthMm,
         mode,
-        pins: spec?.pins ?? null,
+        pins: profile?.pinCount ?? spec?.pins ?? null,
         visible,
         hiddenReason: visible && meta.requires ? null : meta.requires ? `${ROLE_LABEL[meta.requires]} is marked as not needed` : null,
       }
     })
 
     return { template, products, cables, hasReferenceProducts: Object.values(products).some((p) => p?.isReference) }
-  }, [template, s.motorId, s.batteryId, s.displayId, s.speedSensorId, s.skippedItems, s.cableLengths, s.cableLengthModes, motors, batteries, displays, speedSensors])
+  }, [template, s.motorId, s.batteryId, s.displayId, s.speedSensorId, s.skippedItems, s.cableLengths, s.cableLengthModes, motors, batteries, displays, speedSensors, profiles])
 }
