@@ -115,32 +115,30 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
     <>
       <div
         className={cn(
-          "mt-6 flex flex-col gap-3 border-2 p-4 sm:flex-row sm:items-center sm:justify-between",
+          "mt-6 flex flex-col items-center gap-4 border-2 px-4 py-8 text-center sm:px-8",
           revealed ? "border-primary/40 bg-primary/5" : "border-border bg-surface",
         )}
       >
-        <div className="flex items-start gap-3">
-          {revealed ? (
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-          ) : (
-            <Network className="mt-0.5 h-5 w-5 shrink-0 text-graphite" aria-hidden="true" />
-          )}
-          <div>
-            <p className="text-sm font-sans font-bold uppercase tracking-wide text-graphite">
-              {revealed ? "Cable configuration confirmed" : "View System Diagram"}
-            </p>
-            <p className="mt-1 text-xs font-body text-muted-foreground">
-              {revealed
-                ? "The system diagram is shown below. You can return to editing the cables at any time."
-                : "Finish defining the cables above, then confirm to see the system diagram."}
-            </p>
-          </div>
+        {revealed ? (
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+        ) : (
+          <Network className="h-6 w-6 shrink-0 text-graphite" aria-hidden="true" />
+        )}
+        <div className="max-w-md">
+          <h3 className="text-base font-sans font-black uppercase tracking-wide text-graphite text-balance">
+            {revealed ? "Cable configuration confirmed" : "System Diagram"}
+          </h3>
+          <p className="mt-2 text-sm font-body text-muted-foreground text-pretty">
+            {revealed
+              ? "The system diagram is shown below. You can return to editing the cables at any time."
+              : "Finish defining the cables above, then confirm to see the system diagram."}
+          </p>
         </div>
         {revealed ? (
           <button
             type="button"
             onClick={() => setRevealed(false)}
-            className="min-h-11 shrink-0 border-2 border-border px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide text-graphite transition-colors hover:border-primary/40"
+            className="min-h-11 border-2 border-border px-6 py-2 text-xs font-sans font-bold uppercase tracking-wide text-graphite transition-colors hover:border-primary/40"
           >
             Back to editing
           </button>
@@ -148,7 +146,7 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className="min-h-11 shrink-0 bg-primary px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide text-white transition-colors hover:bg-primary/90"
+            className="min-h-11 bg-primary px-6 py-2 text-xs font-sans font-bold uppercase tracking-wide text-white transition-colors hover:bg-primary/90"
           >
             View System Diagram
           </button>
