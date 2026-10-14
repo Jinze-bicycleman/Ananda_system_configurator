@@ -1,7 +1,7 @@
 /**
  * Content for the Ananda Ride app description panel (Step 5 -> IoT / Connectivity).
- * Set APP_UI_IMAGE_URL and OFFICIAL_APP_URL once the real assets are available;
- * each element stays hidden while its value is empty.
+ * Set APP_UI_IMAGE_URL once the real asset is available; the image stays
+ * hidden while its value is empty. OFFICIAL_APP_URL drives the "Learn more" link.
  */
 
 // Path under /public (e.g. "/images/ananda-ride-app-ui.png") or an absolute URL.
@@ -9,7 +9,7 @@ export const APP_UI_IMAGE_URL = ""
 
 export const APP_UI_IMAGE_ALT = "Ananda Ride app interface"
 
-export const OFFICIAL_APP_URL = ""
+export const OFFICIAL_APP_URL = "https://ananda-drive.com/innovative-R&D/ananda-ride-app"
 
 export const APP_LOGO_URL = "/images/ananda-ride-logo.png"
 
