@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react"
 import { useAnandaStore, type BluetoothAppChoice } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
+import { AnandaRideAppPanel } from "./ananda-ride-app-panel"
 import { cn } from "@/lib/utils"
 import { Wifi, Lightbulb, Gauge, MoreHorizontal, CheckCircle2, Plus, X, HelpCircle } from "lucide-react"
 import {
@@ -101,6 +102,8 @@ function ConnectivitySection() {
           </div>
         ))}
       </div>
+
+      {current === "ananda_app" && <AnandaRideAppPanel />}
 
       <AlertDialog open={pendingThirdParty} onOpenChange={setPendingThirdParty}>
         <AlertDialogContent className="border-2 border-border font-sans">

@@ -123,7 +123,7 @@ const defaultState: AnandaConfig = {
   drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null, gvwKg: null,
   climbingRiderWeightKg: 75, climbingAssistanceModeKey: "eco", climbingPedalEffortKey: "normal",
   accessoryIds: [], lightSpecs: {}, throttleStartMode: null, throttleSpeedGateKmh: 15, customAccessories: [],
-  bluetoothApp: null, bluetoothThirdPartyAcknowledged: false,
+  bluetoothApp: "ananda_app", bluetoothThirdPartyAcknowledged: false,
   cableLengths: {}, cableLengthModes: {}, extensionCableLengths: {}, connectorSourcing: null, connectorCustomAcknowledged: false,
   hmiProtocolPreference: "can", bikeComponentSelections: {},
   currentStep: 1, hasStarted: false,
