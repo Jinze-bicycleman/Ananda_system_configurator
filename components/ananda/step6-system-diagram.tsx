@@ -163,13 +163,13 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
               Please confirm your cable configuration is finished before viewing the system diagram.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">
+          <AlertDialogFooter className="min-w-0 flex-col-reverse gap-2 sm:flex-col-reverse sm:justify-stretch">
+            <AlertDialogCancel className="m-0 h-auto w-full whitespace-normal px-4 py-2.5 text-center font-sans text-xs font-bold uppercase tracking-wider">
               Back to editing
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => setRevealed(true)}
-              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+              className="h-auto w-full whitespace-normal bg-primary px-4 py-2.5 text-center font-sans text-xs font-bold uppercase leading-snug tracking-wider text-white hover:bg-primary/90"
             >
               I have completed the cable configuration
             </AlertDialogAction>
