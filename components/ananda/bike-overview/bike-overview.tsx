@@ -37,7 +37,7 @@ export function BikeOverview() {
         </p>
       )}
 
-      <ul className="grid gap-3 md:grid-cols-3">
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cables.map((cable) => {
           const isSelected = selectedCable?.key === cable.key
           return (
@@ -48,10 +48,18 @@ export function BikeOverview() {
                 aria-pressed={isSelected}
                 onClick={() => setSelected(cable.key)}
                 className={cn(
-                  "flex min-h-11 w-full flex-col gap-1 border-2 p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                  "flex min-h-11 h-full w-full flex-col gap-1 border-2 p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                   isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
                 )}
               >
+                <span className="mb-1 flex h-20 w-full items-center justify-center bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cable.meta.connectorImage}
+                    alt={`${cable.placement.connectorLabel} connector drawing`}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-8 shrink-0" style={{ backgroundColor: cable.meta.stroke }} aria-hidden="true" />
                   <span className="font-sans text-xs font-bold uppercase tracking-wide text-graphite">{cable.meta.title}</span>

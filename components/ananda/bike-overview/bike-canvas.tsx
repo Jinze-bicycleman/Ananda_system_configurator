@@ -33,6 +33,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
   const [hovered, setHovered] = useState<CableKey | null>(null)
   const { viewBox } = template
   const active = hovered ?? selected
+  const onBike = cables.filter((c) => c.visible && c.placement.points.length > 0)
 
   return (
     <svg
@@ -74,7 +75,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible).map((cable) => {
+      {onBike.map((cable) => {
         const d = smoothPath(cable.placement.points)
         const isActive = cable.key === active
         const dimmed = !isActive
@@ -95,7 +96,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible && c.placement.leader).map((cable) => {
+      {onBike.filter((c) => c.placement.leader).map((cable) => {
         const l = cable.placement.leader!
         return (
           <line
@@ -126,7 +127,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible).map((cable) => {
+      {onBike.map((cable) => {
         const { x, y } = cable.placement.label
         const isSelected = cable.key === selected
         const lines = [
@@ -182,7 +183,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
       })}
 
       {/* Wide invisible strokes so thin cables are easy to hover and click. */}
-      {cables.filter((c) => c.visible).map((cable) => (
+      {onBike.map((cable) => (
         <path
           key={cable.key}
           d={smoothPath(cable.placement.points)}

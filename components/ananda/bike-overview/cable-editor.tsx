@@ -60,20 +60,30 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
         <p className="ml-auto font-mono text-lg font-bold text-graphite">{formatLengthCm(cable.lengthMm)}</p>
       </header>
 
-      <dl className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
-        <div>
-          <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Connector</dt>
-          <dd className="mt-0.5 text-foreground">{cable.placement.connectorLabel}</dd>
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex h-28 w-full shrink-0 items-center justify-center border border-border bg-white p-2 sm:w-48">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cable.meta.connectorImage}
+            alt={`${cable.placement.connectorLabel} connector drawing`}
+            className="max-h-full max-w-full object-contain"
+          />
         </div>
-        <div>
-          <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Pins</dt>
-          <dd className="mt-0.5 text-foreground">{cable.pins ?? "—"}</dd>
-        </div>
-        <div>
-          <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Length</dt>
-          <dd className="mt-0.5 text-foreground">{cable.lengthMm} mm</dd>
-        </div>
-      </dl>
+        <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+          <div>
+            <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Connector</dt>
+            <dd className="mt-0.5 text-foreground">{cable.placement.connectorLabel}</dd>
+          </div>
+          <div>
+            <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Pins</dt>
+            <dd className="mt-0.5 text-foreground">{cable.pins ?? "—"}</dd>
+          </div>
+          <div>
+            <dt className="font-sans font-bold uppercase tracking-wider text-muted-foreground">Length</dt>
+            <dd className="mt-0.5 text-foreground">{cable.lengthMm} mm</dd>
+          </div>
+        </dl>
+      </div>
 
       <div className="space-y-3">
         <div role="group" aria-label="Length source" className="flex gap-2">

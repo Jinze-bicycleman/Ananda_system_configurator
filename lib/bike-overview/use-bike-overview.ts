@@ -89,7 +89,7 @@ export function useBikeOverview() {
       const lengthMm = storedM != null ? Math.round(storedM * 1000) : placement.defaultLengthMm
       const storedMode = s.cableLengthModes?.[meta.connection]
       const mode = storedMode ?? (placement.standardLengthsMm.includes(lengthMm) ? "standard" : "custom")
-      const visible = products[meta.requires] !== null
+      const visible = meta.requires === null || products[meta.requires] !== null
       return {
         key,
         meta,
@@ -98,7 +98,7 @@ export function useBikeOverview() {
         mode,
         pins: spec?.pins ?? null,
         visible,
-        hiddenReason: visible ? null : `${ROLE_LABEL[meta.requires]} is marked as not needed`,
+        hiddenReason: visible && meta.requires ? null : meta.requires ? `${ROLE_LABEL[meta.requires]} is marked as not needed` : null,
       }
     })
 
