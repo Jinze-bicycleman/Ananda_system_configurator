@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, Bike, Network, Plug } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Network, Plug } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
@@ -102,6 +102,85 @@ function ConnectorSourcingPrompt() {
         </p>
       )}
     </div>
+  )
+}
+
+// ─── Confirm banner that reveals the system diagram ──────────────────────────
+
+function ViewDiagramGate({ children }: { children: React.ReactNode }) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+
+  return (
+    <>
+      <div
+        className={cn(
+          "mt-6 flex flex-col gap-3 border-2 p-4 sm:flex-row sm:items-center sm:justify-between",
+          revealed ? "border-primary/40 bg-primary/5" : "border-border bg-surface",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          {revealed ? (
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          ) : (
+            <Network className="mt-0.5 h-5 w-5 shrink-0 text-graphite" aria-hidden="true" />
+          )}
+          <div>
+            <p className="text-sm font-sans font-bold uppercase tracking-wide text-graphite">
+              {revealed ? "Cable configuration confirmed" : "View System Diagram"}
+            </p>
+            <p className="mt-1 text-xs font-body text-muted-foreground">
+              {revealed
+                ? "The system diagram is shown below. You can return to editing the cables at any time."
+                : "Finish defining the cables above, then confirm to see the system diagram."}
+            </p>
+          </div>
+        </div>
+        {revealed ? (
+          <button
+            type="button"
+            onClick={() => setRevealed(false)}
+            className="min-h-11 shrink-0 border-2 border-border px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide text-graphite transition-colors hover:border-primary/40"
+          >
+            Back to editing
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            className="min-h-11 shrink-0 bg-primary px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide text-white transition-colors hover:bg-primary/90"
+          >
+            View System Diagram
+          </button>
+        )}
+      </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="border-2 border-border font-sans">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+              View System Diagram
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+              Please confirm your cable configuration is finished before viewing the system diagram.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">
+              Back to editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setRevealed(true)}
+              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+            >
+              I have completed the cable configuration
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {revealed && <div className="mt-6">{children}</div>}
+    </>
   )
 }
 
@@ -360,8 +439,6 @@ export function Step6SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
 
-  const [overviewView, setOverviewView] = useState<"bike" | "diagram">("bike")
-
   const { motors } = useMotors()
   const { displays } = useDisplays()
   const { batteries } = useBatteries()
@@ -394,60 +471,16 @@ export function Step6SystemDiagram() {
         <StepHeader
           step={6}
           title="System Overview"
-          subtitle="Review the physical component placement or inspect the system architecture and cable connections."
+          subtitle="Review the component placement on the bike and define the cables. Confirm your cable configuration to view the system diagram."
         />
 
         <ConnectorSourcingPrompt />
 
-        <div role="tablist" aria-label="System overview view" className="mb-6 grid grid-cols-2 gap-2 sm:inline-grid sm:w-auto">
-          <button
-            type="button"
-            role="tab"
-            id="overview-tab-bike"
-            aria-selected={overviewView === "bike"}
-            aria-controls="overview-panel-bike"
-            onClick={() => setOverviewView("bike")}
-            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
-              overviewView === "bike" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
-            }`}
-          >
-            <Bike className="h-4 w-4" aria-hidden="true" />
-            Bike View
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="overview-tab-diagram"
-            aria-selected={overviewView === "diagram"}
-            aria-controls="overview-panel-diagram"
-            onClick={() => setOverviewView("diagram")}
-            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
-              overviewView === "diagram" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
-            }`}
-          >
-            <Network className="h-4 w-4" aria-hidden="true" />
-            System Diagram
-          </button>
-        </div>
+        <BikeOverview />
 
-        <div style={{ minHeight: 620 }}>
-          <div
-            id="overview-panel-bike"
-            role="tabpanel"
-            aria-labelledby="overview-tab-bike"
-            hidden={overviewView !== "bike"}
-          >
-            <BikeOverview />
-          </div>
-          <div
-            id="overview-panel-diagram"
-            role="tabpanel"
-            aria-labelledby="overview-tab-diagram"
-            hidden={overviewView !== "diagram"}
-          >
-            <FixedSystemDiagram />
-          </div>
-        </div>
+        <ViewDiagramGate>
+          <FixedSystemDiagram />
+        </ViewDiagramGate>
       </div>
     )
   }
@@ -457,27 +490,13 @@ export function Step6SystemDiagram() {
       <StepHeader
         step={6}
         title="System Diagram Overview"
-        subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
+        subtitle="Define your cable lengths to match your frame layout, then confirm to view the system diagram."
       />
 
       <ConnectorSourcingPrompt />
 
-      {/* Diagram */}
-      <div className="border border-border bg-white p-4 mb-6 overflow-x-auto">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
-            System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
-          </p>
-          <div className="flex items-center gap-4 text-[10px] font-body text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
-          </div>
-        </div>
-        <SystemDiagramSVG driveType={driveType} labels={labels} />
-      </div>
-
       {/* Cable length table */}
-      <div className="mb-6">
+      <div>
         <SectionLabel>Cable Length Configuration</SectionLabel>
         <p className="text-xs font-body text-muted-foreground mb-3">
           Edit cable lengths to match your frame layout. These values carry through to the final configuration report.
@@ -487,6 +506,20 @@ export function Step6SystemDiagram() {
         </div>
       </div>
 
+      <ViewDiagramGate>
+        <div className="border border-border bg-white p-4 overflow-x-auto">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
+              System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
+            </p>
+            <div className="flex items-center gap-4 text-[10px] font-body text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
+            </div>
+          </div>
+          <SystemDiagramSVG driveType={driveType} labels={labels} />
+        </div>
+      </ViewDiagramGate>
     </div>
   )
 }
