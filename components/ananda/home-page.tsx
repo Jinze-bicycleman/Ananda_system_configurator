@@ -6,6 +6,7 @@ import { useProjectsStore } from "@/lib/ananda-projects"
 import { BrandNameField } from "./home/brand-name-field"
 import { ProjectRow } from "./home/project-row"
 import { ProjectReportRunner } from "./home/project-report-runner"
+import { BrandLogo } from "./brand-logo"
 
 export function HomePage() {
   const brandName = useProjectsStore((s) => s.brandName)
@@ -18,7 +19,7 @@ export function HomePage() {
     <div className="flex min-h-screen flex-col bg-secondary/60">
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <img src="/images/ananda-logo.png" alt="Ananda eDriveALL" className="h-11 w-auto sm:h-12" />
+          <BrandLogo className="h-11 w-auto sm:h-12" />
           <BrandNameField />
         </div>
       </header>

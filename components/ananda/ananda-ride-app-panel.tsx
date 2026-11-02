@@ -1,15 +1,19 @@
+"use client"
+
 import { ExternalLink } from "lucide-react"
-import {
-  APP_CTA,
-  APP_FEATURES,
-  APP_INTRO,
-  APP_LOGO_URL,
-  APP_UI_IMAGE_ALT,
-  APP_UI_IMAGE_URL,
-  OFFICIAL_APP_URL,
-} from "@/lib/ananda-ride-app-content"
+import { APP_FEATURES, APP_UI_IMAGE_ALT } from "@/lib/ananda-ride-app-content"
+import { useSiteContent } from "@/lib/site-content"
 
 export function AnandaRideAppPanel() {
+  const content = useSiteContent()
+  const APP_UI_IMAGE_URL = content.get("app.ui_image")
+  const APP_LOGO_URL = content.get("app.logo")
+  const OFFICIAL_APP_URL = content.get("app.cta.url")
+  const APP_INTRO = { headline: content.get("app.headline") }
+  const APP_CTA = { text: content.get("app.cta.text"), label: content.get("app.cta.label") }
+  const features = [1, 2, 3, 4, 5, 6]
+    .map((n) => content.get(`app.feature.${n}`) || APP_FEATURES[n - 1] || "")
+    .filter((f) => f.trim() !== "")
   const hasImage = APP_UI_IMAGE_URL.trim() !== ""
   const hasLink = OFFICIAL_APP_URL.trim() !== ""
 
@@ -28,7 +32,7 @@ export function AnandaRideAppPanel() {
           <div>
             <p className="mb-2 text-xs font-semibold text-primary">Key Features</p>
             <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-              {APP_FEATURES.map((feature) => (
+              {features.map((feature) => (
                 <li
                   key={feature}
                   className="flex items-center gap-2 text-xs font-semibold text-graphite"
