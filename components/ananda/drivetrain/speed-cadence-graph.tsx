@@ -52,8 +52,8 @@ export function SpeedCadenceGraph({
     if (!ready) return []
     return CADENCES.map((cadence) => ({
       cadence,
-      "Hardest gear": Math.round(speedAtCadenceKmh(cadence, frontTeeth as number, smallestRearTeeth as number, wheelCircumferenceMetres as number) * 10) / 10,
-      "Easiest gear": Math.round(speedAtCadenceKmh(cadence, frontTeeth as number, largestRearTeeth as number, wheelCircumferenceMetres as number) * 10) / 10,
+ "Hardest gear": Math.round(speedAtCadenceKmh(cadence, frontTeeth as number, smallestRearTeeth as number, wheelCircumferenceMetres as number) * 10) / 10,
+ "Easiest gear": Math.round(speedAtCadenceKmh(cadence, frontTeeth as number, largestRearTeeth as number, wheelCircumferenceMetres as number) * 10) / 10,
     }))
   }, [ready, frontTeeth, smallestRearTeeth, largestRearTeeth, wheelCircumferenceMetres])
 
@@ -62,7 +62,7 @@ export function SpeedCadenceGraph({
       <div className="flex flex-col gap-2">
         <SectionLabel>Speed vs. Cadence</SectionLabel>
         <div className="flex h-[220px] items-center justify-center border border-dashed border-border bg-surface px-6 text-center">
-          <p className="max-w-xs text-sm font-body text-muted-foreground">
+          <p className="max-w-xs text-sm text-muted-foreground">
             Enter the front chainring and rear sprocket tooth counts above to plot rider speed against pedalling cadence.
           </p>
         </div>
@@ -73,7 +73,7 @@ export function SpeedCadenceGraph({
   return (
     <div className="flex flex-col gap-2">
       <SectionLabel>Speed vs. Cadence</SectionLabel>
-      <div className="h-[260px] w-full border border-border bg-white p-2">
+      <div className="h-[260px] w-full border border-border bg-card p-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

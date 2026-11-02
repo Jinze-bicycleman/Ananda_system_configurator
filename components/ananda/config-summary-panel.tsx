@@ -43,14 +43,13 @@ export function ConfigSummaryPanel() {
   const complete = issues.length === 0
 
   return (
-    <aside className="bg-white border border-border rounded-sm shadow-sm overflow-hidden">
-      {/* Top green border stripe */}
-      <div className="h-1 bg-primary" />
-
-      <div className="p-4 space-y-3 text-[12px]">
-        <div className="flex items-center justify-end -mt-1 mb-1">
-          {complete ? <CheckCircle2 className="w-4 h-4 text-primary" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
+    <aside className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="space-y-3 p-4 text-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-graphite">Configuration summary</h2>
+          {complete ? <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Complete" /> : <AlertTriangle className="h-4 w-4 text-warning" aria-label="Incomplete" />}
         </div>
+        <Divider />
         <Row label="Sell Market" value={s.sellRegion ?? "—"} />
         <Row label="Regulation" value={s.regulation ?? "—"} />
         <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
@@ -97,8 +96,8 @@ export function ConfigSummaryPanel() {
             <Divider />
             <div className="flex items-center gap-2 pt-1">
               <Weight className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">Est. System Weight</span>
-              <span className="ml-auto text-sm font-sans font-black tabular-nums text-graphite">{totalKg.toFixed(1)} kg</span>
+              <span className="text-xs text-muted-foreground">Est. System Weight</span>
+              <span className="ml-auto text-sm font-semibold tabular-nums text-graphite">{totalKg.toFixed(1)} kg</span>
             </div>
           </>
         )}
@@ -108,11 +107,11 @@ export function ConfigSummaryPanel() {
           <>
             <Divider />
             <div className="space-y-1.5">
-              <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-warning">Compatibility Checks</p>
+              <p className="text-xs font-semibold text-warning">Compatibility Checks</p>
               {issues.map((issue, i) => (
                 <div key={i} className="flex items-start gap-1.5">
                   <AlertTriangle className="w-3 h-3 text-warning flex-shrink-0 mt-0.5" />
-                  <span className="text-[11px] text-warning-foreground/80">{issue}</span>
+                  <span className="text-xs text-warning-foreground/80">{issue}</span>
                 </div>
               ))}
             </div>
@@ -124,7 +123,7 @@ export function ConfigSummaryPanel() {
             <Divider />
             <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-sm px-3 py-2">
               <Zap className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-              <span className="text-[11px] font-sans font-semibold text-primary">System configuration complete</span>
+              <span className="text-xs font-semibold text-primary">System configuration complete</span>
             </div>
           </>
         )}
@@ -152,12 +151,12 @@ function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <span className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground flex-shrink-0">{label}</span>
+      <span className="text-xs text-muted-foreground flex-shrink-0">{label}</span>
       <div className="flex items-center gap-1.5 flex-wrap justify-end">
         {badge && <StatusBadge variant={badge} />}
         <span
           className={cn(
-            "text-[12px] font-sans font-semibold text-right leading-tight tabular-nums",
+ "text-sm font-semibold text-right leading-snug tabular-nums",
             warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
           )}
         >

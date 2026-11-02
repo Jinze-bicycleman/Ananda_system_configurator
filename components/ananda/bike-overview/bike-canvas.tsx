@@ -33,6 +33,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
   const [hovered, setHovered] = useState<CableKey | null>(null)
   const { viewBox } = template
   const active = hovered ?? selected
+  const onBike = cables.filter((c) => c.visible && c.placement.points.length > 0)
 
   return (
     <svg
@@ -74,7 +75,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible).map((cable) => {
+      {onBike.map((cable) => {
         const d = smoothPath(cable.placement.points)
         const isActive = cable.key === active
         const dimmed = !isActive
@@ -95,7 +96,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible && c.placement.leader).map((cable) => {
+      {onBike.filter((c) => c.placement.leader).map((cable) => {
         const l = cable.placement.leader!
         return (
           <line
@@ -116,7 +117,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         const label = template.products[role].label
         if (!product || !label) return null
         return (
-          <text key={role} x={label.x} y={label.y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black font-sans">
+          <text key={role} x={label.x} y={label.y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black">
             {productLabelLines(role, product.model).map((line, i) => (
               <tspan key={line} x={label.x} dy={i === 0 ? 0 : LINE_HEIGHT}>
                 {line}
@@ -126,13 +127,13 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         )
       })}
 
-      {cables.filter((c) => c.visible).map((cable) => {
+      {onBike.map((cable) => {
         const { x, y } = cable.placement.label
         const isSelected = cable.key === selected
         const lines = [
           null,
-          `connector:${cable.placement.connectorLabel}`,
-          `length: ${formatLengthCm(cable.lengthMm)}`,
+ `connector:${cable.placement.connectorLabel}`,
+ `length: ${formatLengthCm(cable.lengthMm)}`,
         ]
         return (
           <g
@@ -163,7 +164,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
               className={isSelected ? "fill-primary/10 stroke-primary" : "fill-transparent stroke-transparent"}
               strokeWidth={1}
             />
-            <text x={x} y={y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black font-sans">
+            <text x={x} y={y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black">
               {lines.map((line, i) =>
                 line === null ? (
                   <tspan key="title" x={x} dy={0}>
@@ -182,7 +183,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
       })}
 
       {/* Wide invisible strokes so thin cables are easy to hover and click. */}
-      {cables.filter((c) => c.visible).map((cable) => (
+      {onBike.map((cable) => (
         <path
           key={cable.key}
           d={smoothPath(cable.placement.points)}

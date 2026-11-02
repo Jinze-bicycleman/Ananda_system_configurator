@@ -30,7 +30,7 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="gap-0 overflow-hidden rounded-none border-2 border-border p-0 sm:max-w-3xl"
+        className="gap-0 overflow-hidden rounded-lg border border-border p-0 sm:max-w-3xl"
         onKeyDown={(e) => {
           if (count < 2) return
           if (e.key === "ArrowLeft") go(-1)
@@ -38,16 +38,16 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
         }}
       >
         <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-5 py-3 pr-12">
-          <DialogTitle className="min-w-0 truncate font-sans text-sm font-bold uppercase tracking-wider text-graphite">{title}</DialogTitle>
+          <DialogTitle className="min-w-0 truncate text-sm font-semibold text-graphite">{title}</DialogTitle>
           {count > 1 && (
-            <span className="shrink-0 font-mono text-xs text-muted-foreground" aria-live="polite">
+            <span className="shrink-0 tabular-nums text-xs text-muted-foreground" aria-live="polite">
               {index + 1} / {count}
             </span>
           )}
           <DialogDescription className="sr-only">Enlarged product image{count > 1 ? "s. Use the arrows to browse." : "."}</DialogDescription>
         </div>
 
-        <div className="relative flex h-[60vh] max-h-[560px] items-center justify-center bg-white p-6">
+        <div className="relative flex h-[60vh] max-h-[560px] items-center justify-center bg-card p-6">
           <img
             src={images[index] || "/placeholder.svg"}
             alt={`${title}${count > 1 ? ` — image ${index + 1} of ${count}` : ""}`}
@@ -86,7 +86,7 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
                 aria-label={`Show image ${i + 1}`}
                 aria-current={i === index}
                 className={cn(
-                  "flex h-14 w-14 shrink-0 items-center justify-center border-2 bg-white p-1 transition-colors",
+ "flex h-14 w-14 shrink-0 items-center justify-center border bg-card p-1 transition-colors",
                   i === index ? "border-primary" : "border-border hover:border-primary/40",
                 )}
               >

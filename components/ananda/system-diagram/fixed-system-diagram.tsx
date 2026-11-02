@@ -208,13 +208,13 @@ export function FixedSystemDiagram() {
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
+          <p className="text-xs font-semibold text-graphite-light">
             System Diagram — Mid-Drive
           </p>
         </div>
         <span
           className={cn(
-            "flex items-center gap-1.5 border px-2.5 py-1 text-[11px] font-sans font-bold uppercase tracking-wide",
+ "flex items-center gap-1.5 border px-2.5 py-1 text-xs font-semibold ",
             statusOk ? "border-primary/30 bg-primary/5 text-primary" : "border-warning/40 bg-warning/10 text-warning",
           )}
         >
@@ -232,7 +232,7 @@ export function FixedSystemDiagram() {
           type="button"
           onClick={handleLockToggle}
           className={cn(
-            "flex items-center gap-1.5 border-2 px-3 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wide transition-colors",
+ "flex items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold   transition-colors",
             editing ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
           )}
         >
@@ -244,7 +244,7 @@ export function FixedSystemDiagram() {
             <button
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-1.5 border-2 border-border px-3 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wide text-graphite transition-colors hover:border-primary/40"
+              className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-semibold text-graphite transition-colors hover:border-primary/40"
             >
               <Save className="h-3.5 w-3.5" aria-hidden="true" />
               {justSaved ? "Saved" : "Save layout"}
@@ -252,7 +252,7 @@ export function FixedSystemDiagram() {
             <button
               type="button"
               onClick={handleReset}
-              className="flex items-center gap-1.5 border-2 border-border px-3 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wide text-graphite transition-colors hover:border-destructive/40 hover:text-destructive"
+              className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-semibold text-graphite transition-colors hover:border-destructive/40 hover:text-destructive"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               Reset layout
@@ -268,7 +268,7 @@ export function FixedSystemDiagram() {
           >
             <Minus className="h-3.5 w-3.5" aria-hidden="true" />
           </button>
-          <span className="w-10 text-center text-[11px] font-mono text-muted-foreground">{Math.round(zoom * 100)}%</span>
+          <span className="w-10 text-center text-xs tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
           <button
             type="button"
             aria-label="Zoom in"
@@ -346,7 +346,7 @@ export function FixedSystemDiagram() {
         />
       )}
 
-      <p className="mt-2 text-[10px] font-body text-muted-foreground sm:hidden">Pinch or scroll to pan the diagram.</p>
+      <p className="mt-2 text-xs text-muted-foreground sm:hidden">Pinch or scroll to pan the diagram.</p>
     </div>
   )
 }
@@ -365,13 +365,13 @@ function SelectionPanel({
   onChangeLabel: (key: ConnectionKey, patch: Partial<LabelRect>) => void
 }) {
   const numberField = (label: string, value: number, onChange: (v: number) => void) => (
-    <label className="flex flex-col gap-1 text-[10px] font-sans font-bold uppercase tracking-wide text-muted-foreground">
+    <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
       {label}
       <input
         type="number"
         value={Math.round(value)}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-20 border border-border bg-white px-2 py-1 text-xs font-sans text-foreground focus:outline-none focus:border-primary"
+        className="w-20 border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
       />
     </label>
   )
@@ -380,17 +380,17 @@ function SelectionPanel({
     const rect = frames[selection.key]
     return (
       <div className="mt-3 flex flex-wrap items-end gap-3 border border-border bg-card p-3">
-        <p className="w-full text-[11px] font-sans font-bold uppercase tracking-wider text-primary">Editing: {selection.key}</p>
+        <p className="w-full text-xs font-semibold text-primary">Editing: {selection.key}</p>
         {numberField("X", rect.x, (v) => onChangeFrame(selection.key, { x: v }))}
         {numberField("Y", rect.y, (v) => onChangeFrame(selection.key, { y: v }))}
         {numberField("Width", rect.w, (v) => onChangeFrame(selection.key, { w: Math.max(MIN_CARD_W, v) }))}
         {numberField("Height", rect.h, (v) => onChangeFrame(selection.key, { h: Math.max(MIN_CARD_H, v) }))}
-        <label className="flex flex-col gap-1 text-[10px] font-sans font-bold uppercase tracking-wide text-muted-foreground">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
           Orientation
           <select
             value={rect.orientation}
             onChange={(e) => onChangeFrame(selection.key, { orientation: e.target.value as FrameRect["orientation"] })}
-            className="w-32 border border-border bg-white px-2 py-1 text-xs font-sans text-foreground focus:outline-none focus:border-primary"
+            className="w-32 border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
           >
             <option value="image-left">Image left</option>
             <option value="image-top">Image top</option>
@@ -403,17 +403,17 @@ function SelectionPanel({
   const rect = labels[selection.key]
   return (
     <div className="mt-3 flex flex-wrap items-end gap-3 border border-border bg-card p-3">
-      <p className="w-full text-[11px] font-sans font-bold uppercase tracking-wider text-primary">Editing label: {selection.key}</p>
+      <p className="w-full text-xs font-semibold text-primary">Editing label: {selection.key}</p>
       {numberField("X", rect.x, (v) => onChangeLabel(selection.key, { x: v }))}
       {numberField("Y", rect.y, (v) => onChangeLabel(selection.key, { y: v }))}
       {numberField("Width", rect.w, (v) => onChangeLabel(selection.key, { w: v }))}
       {numberField("Height", rect.h, (v) => onChangeLabel(selection.key, { h: v }))}
-      <label className="flex flex-col gap-1 text-[10px] font-sans font-bold uppercase tracking-wide text-muted-foreground">
+      <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
         Label mode
         <select
           value={rect.mode}
           onChange={(e) => onChangeLabel(selection.key, { mode: e.target.value as LabelRect["mode"] })}
-          className="w-32 border border-border bg-white px-2 py-1 text-xs font-sans text-foreground focus:outline-none focus:border-primary"
+          className="w-32 border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
         >
           <option value="compact">Compact</option>
           <option value="expanded">Expanded</option>

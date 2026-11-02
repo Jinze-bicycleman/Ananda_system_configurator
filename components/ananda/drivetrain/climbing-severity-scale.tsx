@@ -24,7 +24,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-sans font-bold uppercase tracking-[0.15em] text-muted-foreground">Climb severity</p>
+      <p className="text-xs font-semibold text-muted-foreground">Climb severity</p>
 
       <div className="relative pt-6">
         <div
@@ -32,7 +32,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
           style={{ left: `${markerPosition}%` }}
           aria-hidden="true"
         >
-          <span className="whitespace-nowrap text-[10px] font-sans font-bold uppercase tracking-wide text-primary">
+          <span className="whitespace-nowrap text-xs font-semibold text-primary">
             You are here
           </span>
           <span className="h-2.5 w-px bg-primary" />
@@ -55,7 +55,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
           {SEGMENTS.map((seg) => (
             <span
               key={seg.label}
-              className="min-w-0 flex-shrink-0 truncate text-center text-[11px] font-sans font-semibold text-graphite"
+              className="min-w-0 flex-shrink-0 truncate text-center text-xs font-semibold text-graphite"
               style={{ width: `${((seg.to - seg.from) / SCALE_MAX) * 100}%` }}
             >
               {seg.label}
@@ -63,7 +63,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
           ))}
         </div>
 
-        <div className="relative mt-1 h-4 text-[11px] font-body tabular-nums text-muted-foreground" aria-hidden="true">
+        <div className="relative mt-1 h-4 text-xs tabular-nums text-muted-foreground" aria-hidden="true">
           {BOUNDARIES.map((b, i) => (
             <span
               key={b}

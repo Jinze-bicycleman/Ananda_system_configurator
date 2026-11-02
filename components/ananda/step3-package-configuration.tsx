@@ -69,14 +69,13 @@ function OptionCard({
       <div
         onClick={onSelect}
         className={cn(
-          "product-card relative flex cursor-pointer flex-col border-2 transition-all",
-          selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
+          "product-card relative flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-card transition-all",
+          selected ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40",
         )}
       >
-        <div className={cn("h-1 w-full shrink-0", selected ? "bg-primary" : "bg-border")} />
         {selected && (
-          <div className="absolute top-3 right-2 z-10 bg-primary rounded-full p-0.5">
-            <CheckCircle2 className="w-3 h-3 text-white" />
+          <div className="absolute right-2 top-2 z-10 rounded-full bg-primary p-0.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" aria-hidden="true" />
           </div>
         )}
         {images.length > 0 ? (
@@ -88,16 +87,16 @@ function OptionCard({
             }}
             aria-label={`Enlarge image of ${title}${images.length > 1 ? ` (${images.length} images)` : ""}`}
             className={cn(
-              "group relative flex h-24 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden",
+ "group relative flex h-24 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden",
               selected ? "bg-primary/5" : "bg-surface",
             )}
           >
             <img src={images[0] || "/placeholder.svg"} alt={title} className="relative z-10 max-h-16 object-contain" crossOrigin="anonymous" />
-            <span className="absolute bottom-1.5 right-1.5 z-20 flex h-6 w-6 items-center justify-center border border-border bg-background/90 text-muted-foreground transition-colors group-hover:border-primary group-hover:text-primary">
+            <span className="absolute bottom-1.5 right-1.5 z-20 flex h-6 w-6 items-center justify-center rounded-md border border-border bg-background/90 text-muted-foreground transition-colors group-hover:border-primary group-hover:text-primary">
               <ZoomIn className="h-3.5 w-3.5" />
             </span>
             {images.length > 1 && (
-              <span className="absolute bottom-1.5 left-1.5 z-20 border border-border bg-background/90 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+              <span className="absolute bottom-1.5 left-1.5 z-20 rounded-md border border-border bg-background/90 px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
                 1 / {images.length}
               </span>
             )}
@@ -108,9 +107,9 @@ function OptionCard({
           </div>
         )}
         <div className="flex min-w-0 flex-1 flex-col p-3">
-          <p className={cn("text-sm font-sans font-bold uppercase mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
+          <p className={cn("text-sm font-semibold mb-1 wrap-anywhere", selected ? "text-primary" : "text-graphite")}>{title}</p>
           {specs.length > 0 && (
-            <div className="min-w-0 border border-border rounded-sm">
+            <div className="min-w-0 overflow-hidden rounded-md border border-border">
               {specs.map((sp) => sp.value != null && (
                 <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
               ))}
@@ -123,7 +122,7 @@ function OptionCard({
                 e.stopPropagation()
                 setSpecOpen(true)
               }}
-              className="mt-2 w-full border border-primary/40 bg-primary/5 px-2 py-1.5 text-[10px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+              className="mt-2 w-full rounded-md border border-primary/40 bg-primary/5 px-2 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Full Specification
             </button>
@@ -138,9 +137,9 @@ function OptionCard({
 
 function EmptyOptionsNotice() {
   return (
-    <div className="border-2 border-dashed border-border p-6 text-center">
-      <p className="text-sm font-sans font-semibold text-muted-foreground uppercase tracking-wider mb-1">No Products Available</p>
-      <p className="text-xs font-body text-muted-foreground">
+    <div className="rounded-lg border border-dashed border-border p-6 text-center">
+      <p className="mb-1 text-sm font-semibold text-muted-foreground">No products available</p>
+      <p className="text-sm text-muted-foreground">
         There are no products in the database for this component yet. Mark it as not needed, use a 3rd party supplier, or check back once products are added.
       </p>
     </div>
@@ -181,24 +180,24 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
   }
 
   return (
-    <div ref={panelRef} className={cn("scroll-mt-24 border-2 p-4 transition-colors", confirmed ? "border-primary/50 bg-primary/5" : "border-warning/50 bg-warning/10")}>
+    <div ref={panelRef} className={cn("scroll-mt-24 rounded-lg border p-4 transition-colors", confirmed ? "border-primary/40 bg-primary/5" : "border-warning/50 bg-warning/10")}>
       <div className="flex items-start gap-3">
         {confirmed ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /> : <Truck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-sans font-bold uppercase text-graphite">3rd Party Supplier — {label}</p>
-          <p className="mt-1 text-xs font-body leading-relaxed text-muted-foreground">
+          <p className="text-sm font-semibold text-graphite">3rd party supplier — {label}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             Ananda will need full technical documents and a component sample for integration and compatibility testing. Extra cost and delivery time apply — contact sales for details.
           </p>
           {confirmed ? (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border border-primary/40 bg-background px-3 py-2">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/40 bg-background px-3 py-2">
               <div className="min-w-0">
-                <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Supplier confirmed</p>
-                <p className="text-sm font-body font-semibold text-graphite wrap-anywhere">{savedName}</p>
+                <p className="text-xs font-semibold text-primary">Supplier confirmed</p>
+                <p className="text-sm font-semibold text-graphite wrap-anywhere">{savedName}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="shrink-0 border border-border px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                className="shrink-0 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
               >
                 Edit
               </button>
@@ -210,7 +209,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                 confirm()
               }}
             >
-              <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-[10px] font-sans font-bold uppercase tracking-wider text-graphite">
+              <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-sm font-medium text-graphite">
                 Supplier name <span className="text-destructive">*</span>
               </label>
               <div className="mt-1 flex max-w-md flex-wrap items-stretch gap-2">
@@ -221,17 +220,17 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder={`Name of the ${label.toLowerCase()} supplier`}
-                  className="min-w-0 flex-1 border border-border bg-background px-3 py-2 text-sm font-body text-foreground focus:border-primary focus:outline-none"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 />
                 <button
                   type="submit"
                   disabled={!canConfirm}
-                  className="flex shrink-0 items-center gap-1 bg-primary px-3 py-2 text-[11px] font-sans font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
+                  className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" /> Confirm supplier
                 </button>
               </div>
-              <p className="mt-1 text-[11px] font-sans font-semibold text-destructive">
+              <p className="mt-1.5 text-sm font-medium text-destructive">
                 {canConfirm ? "Press Confirm supplier to save — this component is not complete until you do." : "Enter the supplier name, then confirm it to complete this component."}
               </p>
             </form>
@@ -239,9 +238,9 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
           <button
             type="button"
             onClick={() => s.disableThirdParty(itemKey)}
-            className="mt-3 flex items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+            className="mt-3 flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
           >
-            <RotateCcw className="h-3 w-3" /> Choose an Ananda product instead
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Choose an Ananda product instead
           </button>
         </div>
       </div>
@@ -254,14 +253,14 @@ function ThirdPartyOptionButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-warning/60 hover:bg-warning/5"
+      className="mt-4 flex w-full items-center gap-3 rounded-lg border border-dashed border-border px-4 py-3 text-left transition-colors hover:border-warning/60 hover:bg-warning/5"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
-        <Truck className="h-4 w-4" />
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground">
+        <Truck className="h-4 w-4" aria-hidden="true" />
       </span>
       <span>
-        <span className="block text-sm font-sans font-bold uppercase text-graphite">3rd Party Supplier</span>
-        <span className="block text-xs font-body text-muted-foreground">Source this component from your own supplier instead of Ananda.</span>
+        <span className="block text-sm font-semibold text-graphite">3rd party supplier</span>
+        <span className="block text-sm text-muted-foreground">Source this component from your own supplier instead of Ananda.</span>
       </span>
     </button>
   )
@@ -312,8 +311,8 @@ function ConfigRow({
 
   const thirdPartySummary = isThirdParty ? (
     <div>
-      <p className="text-sm font-sans font-bold uppercase text-warning">3rd Party Supplier</p>
-      <p className={cn("text-xs font-body", supplierName.trim() ? "text-muted-foreground" : "font-semibold text-destructive")}>
+      <p className="text-sm font-semibold text-warning">3rd party supplier</p>
+      <p className={cn("text-sm", supplierName.trim() ? "text-muted-foreground" : "font-semibold text-destructive")}>
         {supplierName.trim() ? supplierName : "Supplier name required"}
       </p>
     </div>
@@ -322,12 +321,12 @@ function ConfigRow({
   return (
     <section
       id={`config-${itemKey}`}
-      className={cn("mb-6 border", emphasize ? "border-2 border-primary/40 bg-primary/[0.02] p-4" : "border-transparent")}
+      className={cn("mb-6 rounded-lg border", emphasize ? "border-primary/40 bg-primary/[0.02] p-4" : "border-transparent")}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SectionLabel>{label}</SectionLabel>
-          {emphasize && <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary">Core Component</span>}
+          {emphasize && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Core component</span>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isThirdParty && <StatusBadge variant="not-required" label="3rd Party Supplier" />}
@@ -339,21 +338,21 @@ function ConfigRow({
             aria-expanded={expanded}
             aria-controls={`config-${itemKey}-panel`}
             aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
-            className="flex items-center justify-center border border-border p-1 text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
+            <ChevronDown className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} aria-hidden="true" />
           </button>
         </div>
       </div>
 
       {skipped ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-surface px-4 py-3">
-          <p className="min-w-0 text-sm font-body text-muted-foreground">This component has been marked as not needed for this build.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-secondary/50 px-4 py-3">
+          <p className="min-w-0 text-sm text-muted-foreground">This component has been marked as not needed for this build.</p>
           <button
             onClick={onToggleSkip}
-            className="flex shrink-0 items-center gap-1 border border-primary bg-primary/5 px-2 py-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
           >
-            <RotateCcw className="w-3 h-3" /> Restore
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Restore
           </button>
         </div>
       ) : expanded ? (
@@ -363,10 +362,10 @@ function ConfigRow({
           ) : (
             <>
               {!selectedSummary && (
-                <div className="mb-3 text-xs font-sans font-semibold uppercase tracking-wider text-warning">No selection yet — choose an option below.</div>
+                <div className="mb-3 text-sm font-medium text-warning">No selection yet — choose an option below.</div>
               )}
               {optionsLoading ? (
-                <div className="flex items-center gap-2 py-8 justify-center text-sm font-sans text-muted-foreground">
+                <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
                 </div>
               ) : hasOptions ? (
@@ -378,14 +377,14 @@ function ConfigRow({
               {skippable && (
                 <button
                   onClick={onToggleSkip}
-                  className="mt-4 flex w-full items-center gap-3 border-2 border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-surface"
+                  className="mt-4 flex w-full items-center gap-3 rounded-lg border border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/40 hover:bg-secondary/60"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border bg-surface text-muted-foreground">
-                    <Ban className="h-4 w-4" />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-secondary text-muted-foreground">
+                    <Ban className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block text-sm font-sans font-bold uppercase text-graphite">Not Needed</span>
-                    <span className="block text-xs font-body text-muted-foreground">Choose this option if this component isn&apos;t required for the build.</span>
+                    <span className="block text-sm font-semibold text-graphite">Not needed</span>
+                    <span className="block text-sm text-muted-foreground">Choose this option if this component isn&apos;t required for the build.</span>
                   </span>
                 </button>
               )}
@@ -393,40 +392,40 @@ function ConfigRow({
           )}
         </div>
       ) : (
-        <div id={`config-${itemKey}-panel`} className="border-2 border-primary/30 bg-primary/5 px-4 py-3">
-          {thirdPartySummary ?? selectedSummary ?? <p className="text-sm font-body text-muted-foreground">No selection yet.</p>}
+        <div id={`config-${itemKey}-panel`} className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          {thirdPartySummary ?? selectedSummary ?? <p className="text-sm text-muted-foreground">No selection yet.</p>}
         </div>
       )}
 
       {thirdPartyKey && (
         <AlertDialog open={warningOpen} onOpenChange={setWarningOpen}>
           <AlertDialogContent
-            className="border-2 border-border font-sans"
+            className="rounded-lg border border-border"
             onCloseAutoFocus={(e) => {
               if (justEnabled) e.preventDefault()
             }}
           >
             <AlertDialogHeader>
               <div className="flex items-center gap-2 text-warning">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-[11px] font-sans font-bold uppercase tracking-[0.2em]">Warning</span>
+                <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                <span className="text-sm font-semibold">Warning</span>
               </div>
-              <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
-                3rd Party {label}
+              <AlertDialogTitle className="text-lg font-semibold text-graphite">
+                3rd party {label}
               </AlertDialogTitle>
-              <AlertDialogDescription className="font-body text-sm leading-relaxed text-muted-foreground">
+              <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
                 When using 3rd party components, we need full technical documents and a component sample for integration and
                 compatibility testing. This will introduce extra cost and delivery time. Please contact sales for details.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Back</AlertDialogCancel>
+              <AlertDialogCancel className="text-sm font-semibold">Back</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   setJustEnabled(true)
                   s.enableThirdParty(thirdPartyKey)
                 }}
-                className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+                className="bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 I Agree
               </AlertDialogAction>
@@ -519,8 +518,8 @@ export function Step3PackageConfiguration() {
         selectedSummary={
           selectedMotor && (
             <div>
-              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedMotor.model}</p>
-              <p className="text-xs font-body text-muted-foreground">
+              <p className="text-sm font-semibold text-primary">{selectedMotor.model}</p>
+              <p className="text-xs text-muted-foreground">
                 {selectedMotor.voltage_v}V · {selectedMotor.torque_nm ?? "—"}Nm · {selectedMotor.rated_power_w ?? "—"}W rated
                 {selectedMotor.shaft_interface ? ` · ${selectedMotor.shaft_interface} shaft` : ""}
               </p>
@@ -583,8 +582,8 @@ export function Step3PackageConfiguration() {
         selectedSummary={
           selectedBattery && (
             <div>
-              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedBattery.model}</p>
-              <p className="text-xs font-body text-muted-foreground">{selectedBattery.capacity_wh ?? "—"}Wh</p>
+              <p className="text-sm font-semibold text-primary">{selectedBattery.model}</p>
+              <p className="text-xs text-muted-foreground">{selectedBattery.capacity_wh ?? "—"}Wh</p>
             </div>
           )
         }
@@ -631,15 +630,15 @@ export function Step3PackageConfiguration() {
         selectedSummary={
           selectedDisplay && (
             <div>
-              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedDisplay.model}</p>
-              <p className="text-xs font-body text-muted-foreground">{selectedDisplay.size ?? "—"}</p>
+              <p className="text-sm font-semibold text-primary">{selectedDisplay.model}</p>
+              <p className="text-xs text-muted-foreground">{selectedDisplay.size ?? "—"}</p>
             </div>
           )
         }
       >
         <div className="mb-4 flex items-center gap-3 border border-border bg-surface px-3 py-2">
           <Radio className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-          <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite">Communication protocol</span>
+          <span className="text-xs font-semibold text-graphite">Communication protocol</span>
           <div role="tablist" aria-label="HMI communication protocol" className="ml-auto inline-grid grid-cols-2 border border-border">
             {(["can", "uart"] as const).map((protocol) => (
               <button
@@ -649,8 +648,8 @@ export function Step3PackageConfiguration() {
                 aria-selected={s.hmiProtocolPreference === protocol}
                 onClick={() => s.setField("hmiProtocolPreference", protocol)}
                 className={cn(
-                  "px-3 py-1.5 text-[11px] font-sans font-bold uppercase tracking-wide transition-colors",
-                  s.hmiProtocolPreference === protocol ? "bg-primary text-white" : "bg-white text-muted-foreground hover:text-primary",
+ "px-3 py-1.5 text-xs font-semibold   transition-colors",
+                  s.hmiProtocolPreference === protocol ? "bg-primary text-white" : "bg-card text-muted-foreground hover:text-primary",
                 )}
               >
                 {protocol === "can" ? "CAN Bus" : "UART"}
@@ -697,8 +696,8 @@ export function Step3PackageConfiguration() {
         selectedSummary={
           selectedSpeedSensor && (
             <div>
-              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedSpeedSensor.model}</p>
-              <p className="text-xs font-body text-muted-foreground">
+              <p className="text-sm font-semibold text-primary">{selectedSpeedSensor.model}</p>
+              <p className="text-xs text-muted-foreground">
                 {speedSensorTypeLabel(selectedSpeedSensor.mounting_position)} · {selectedSpeedSensor.connector_type ?? "—"}
                 {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m lead` : ""}
               </p>
@@ -738,8 +737,8 @@ export function Step3PackageConfiguration() {
         selectedSummary={
           selectedCharger && (
             <div>
-              <p className="text-sm font-sans font-bold uppercase text-primary">{selectedCharger.model}</p>
-              <p className="text-xs font-body text-muted-foreground">
+              <p className="text-sm font-semibold text-primary">{selectedCharger.model}</p>
+              <p className="text-xs text-muted-foreground">
                 {selectedCharger.voltage_v}V · {selectedCharger.outputCurrentA}A
               </p>
             </div>
@@ -773,7 +772,7 @@ export function Step3PackageConfiguration() {
         hasOptions={CHARGING_PORTS.length > 0}
         expanded={expanded.chargingPortId}
         onToggleExpanded={() => toggleExpanded("chargingPortId")}
-        selectedSummary={selectedPort && <p className="text-sm font-sans font-bold uppercase text-primary">{selectedPort.model}</p>}
+        selectedSummary={selectedPort && <p className="text-sm font-semibold text-primary">{selectedPort.model}</p>}
       >
         <div className="product-option-grid">
           {CHARGING_PORTS.map((p: ChargingPortOption) => (
@@ -804,8 +803,8 @@ export function Step3PackageConfiguration() {
           selectedSummary={
             selectedController && (
               <div>
-                <p className="text-sm font-sans font-bold uppercase text-primary">{selectedController.model}</p>
-                <p className="text-xs font-body text-muted-foreground">
+                <p className="text-sm font-semibold text-primary">{selectedController.model}</p>
+                <p className="text-xs text-muted-foreground">
                   {selectedController.voltage_v}V · {selectedController.rated_power_w ?? "—"}W rated
                 </p>
               </div>
@@ -844,7 +843,7 @@ export function Step3PackageConfiguration() {
           hasOptions={false}
           expanded={expanded.torqueSensorId}
           onToggleExpanded={() => toggleExpanded("torqueSensorId")}
-          selectedSummary={s.torqueSensorId ? <p className="text-sm font-sans font-bold text-primary">{s.torqueSensorId}</p> : null}
+          selectedSummary={s.torqueSensorId ? <p className="text-sm font-semibold text-primary">{s.torqueSensorId}</p> : null}
         >
           <EmptyOptionsNotice />
         </ConfigRow>
@@ -853,10 +852,10 @@ export function Step3PackageConfiguration() {
       <section id="config-bikeComponents-panel" className="mb-6 border border-transparent">
         <div className="mb-4 flex items-center gap-2">
           <SectionLabel>Bike Components</SectionLabel>
-          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">Optional</span>
+          <span className="text-xs font-semibold text-muted-foreground">Optional</span>
         </div>
         {bikeComponentsLoading ? (
-          <div className="flex items-center gap-2 py-8 justify-center text-sm font-sans text-muted-foreground">
+          <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
           </div>
         ) : (
@@ -867,9 +866,9 @@ export function Step3PackageConfiguration() {
               if (options.length === 0) return null
               return (
                 <div key={category.id}>
-                  <p className="mb-3 text-xs font-sans font-bold uppercase tracking-wider text-graphite">{category.label}</p>
+                  <p className="mb-3 text-xs font-semibold text-graphite">{category.label}</p>
                   {category.id === "chainring" && (
-                    <p className="mb-3 text-xs font-body text-muted-foreground">
+                    <p className="mb-3 text-xs text-muted-foreground">
                       The chainring&apos;s tooth count is carried into the Drivetrain stage and must match the front chainring entered there.
                     </p>
                   )}

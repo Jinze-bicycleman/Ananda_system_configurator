@@ -5,7 +5,7 @@
 
 export type BikeTemplateId = "city" | "mountain"
 export type ProductRole = "motor" | "battery" | "display" | "speedSensor"
-export type CableKey = "hmi" | "power" | "sensor"
+export type CableKey = "hmi" | "power" | "sensor" | "charger"
 
 export interface Box {
   x: number
@@ -25,7 +25,7 @@ export interface ProductPlacement {
 }
 
 export interface CablePlacement {
-  /** Route through the bike, converted from the Figma vector. Smoothed at render time. */
+  /** Route through the bike, converted from the Figma vector. Smoothed at render time. Empty for cables that are not drawn on the bike. */
   points: [number, number][]
   /** Top-left of the cable's text label. */
   label: { x: number; y: number }
@@ -61,11 +61,16 @@ export interface CableMeta {
   connection: string
   from: string
   to: string
-  requires: ProductRole
+  /** Product that must be part of the build for this cable to show. Null means always shown. */
+  requires: ProductRole | null
+  /** Connector drawing shown on the cable card and in the editor. */
+  connectorImage: string
 }
 
 // Colours come from the Figma cable strokes. Power uses the mountain frame's
 // pure red because the label reads "Red" (the city vector is a more orange red).
+const CONNECTORS = "/bike-overview/connectors"
+
 export const CABLE_META: Record<CableKey, CableMeta> = {
   hmi: {
     key: "hmi",
@@ -76,6 +81,7 @@ export const CABLE_META: Record<CableKey, CableMeta> = {
     from: "Display",
     to: "Motor",
     requires: "display",
+    connectorImage: `${CONNECTORS}/hmi-signal-slim-6pin.png`,
   },
   power: {
     key: "power",
@@ -86,6 +92,7 @@ export const CABLE_META: Record<CableKey, CableMeta> = {
     from: "Battery",
     to: "Motor",
     requires: "battery",
+    connectorImage: `${CONNECTORS}/motor-cable.png`,
   },
   sensor: {
     key: "sensor",
@@ -96,10 +103,31 @@ export const CABLE_META: Record<CableKey, CableMeta> = {
     from: "Wheel speed sensor",
     to: "Motor",
     requires: "speedSensor",
+    connectorImage: `${CONNECTORS}/signal-6pin.png`,
+  },
+  charger: {
+    key: "charger",
+    title: "Charger Connector",
+    colorName: "Purple",
+    stroke: "#9333EA",
+    connection: "Charger → Battery",
+    from: "Charger",
+    to: "Battery",
+    requires: null,
+    connectorImage: `${CONNECTORS}/charger-head.png`,
   },
 }
 
-export const CABLE_ORDER: CableKey[] = ["hmi", "power", "sensor"]
+export const CABLE_ORDER: CableKey[] = ["hmi", "power", "sensor", "charger"]
+
+// The charger cable is not routed through the frame, so it has no path or label on the bike drawing.
+const CHARGER_PLACEMENT: CablePlacement = {
+  points: [],
+  label: { x: 0, y: 0 },
+  connectorLabel: "Charger connector",
+  defaultLengthMm: 1500,
+  standardLengthsMm: [1000, 1500, 2000],
+}
 
 export const CUSTOM_LENGTH_LIMITS_MM = { min: 100, max: 3000 }
 
@@ -125,7 +153,7 @@ export const BIKE_TEMPLATES: Record<BikeTemplateId, BikeTemplate> = {
         points: [[292.8, 101.4], [291.6, 118.7], [297.9, 134.1], [310.2, 144], [325, 149.9], [332.7, 158.4], [387.6, 262.8], [395.7, 294.8], [427.1, 323.3]],
         label: { x: 175, y: 412 },
         leader: { x1: 307, y1: 158, x2: 243, y2: 403 },
-        connectorLabel: "cusmade A",
+        connectorLabel: "HMI signal slim",
         defaultLengthMm: 1000,
         standardLengthsMm: [500, 800, 1000, 1500],
       },
@@ -133,7 +161,7 @@ export const BIKE_TEMPLATES: Record<BikeTemplateId, BikeTemplate> = {
         points: [[394.5, 270.3], [398.1, 280.6], [407.6, 294], [427, 312.3], [432, 320.7]],
         label: { x: 361, y: 412 },
         leader: { x1: 420, y1: 307, x2: 405, y2: 408 },
-        connectorLabel: "cusmade B",
+        connectorLabel: "Motor cable",
         defaultLengthMm: 300,
         standardLengthsMm: [200, 300, 500, 800],
       },
@@ -141,10 +169,11 @@ export const BIKE_TEMPLATES: Record<BikeTemplateId, BikeTemplate> = {
         points: [[522.5, 297.2], [491.5, 296.9], [452.6, 304.2], [430, 327.1]],
         label: { x: 541, y: 412 },
         leader: { x1: 497, y1: 306, x2: 553, y2: 408 },
-        connectorLabel: "cusmade C",
+        connectorLabel: "Signal 6 pin",
         defaultLengthMm: 700,
         standardLengthsMm: [400, 700, 1000, 1400],
       },
+      charger: CHARGER_PLACEMENT,
     },
   },
   mountain: {
@@ -165,24 +194,25 @@ export const BIKE_TEMPLATES: Record<BikeTemplateId, BikeTemplate> = {
       hmi: {
         points: [[330.7, 152.7], [333.7, 174.9], [395.7, 266.8], [408.3, 282.1], [426.1, 294.4], [430.6, 302.1], [433, 320.2]],
         label: { x: 145, y: 149 },
-        connectorLabel: "cusmade A",
+        connectorLabel: "HMI signal slim",
         defaultLengthMm: 1000,
         standardLengthsMm: [500, 800, 1000, 1500],
       },
       power: {
         points: [[385.9, 268.5], [417.3, 294.9], [422.4, 303.1], [425.8, 317]],
         label: { x: 327, y: 360 },
-        connectorLabel: "cusmade B",
+        connectorLabel: "Motor cable",
         defaultLengthMm: 300,
         standardLengthsMm: [200, 300, 500, 800],
       },
       sensor: {
         points: [[519.6, 297.3], [462, 292.7], [456.2, 294.6], [439.9, 318.4], [432.1, 324.6]],
         label: { x: 465, y: 195 },
-        connectorLabel: "cusmade C",
+        connectorLabel: "Signal 6 pin",
         defaultLengthMm: 700,
         standardLengthsMm: [400, 700, 1000, 1400],
       },
+      charger: CHARGER_PLACEMENT,
     },
   },
 }

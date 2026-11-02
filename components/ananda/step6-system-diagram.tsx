@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, Bike, Network, Plug } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Network, Plug } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
@@ -35,12 +35,12 @@ function ConnectorSourcingPrompt() {
   if (!needsChoice) return null
 
   return (
-    <div className="mb-6 border-2 border-warning/40 bg-warning/5 p-4">
+    <div className="mb-6 border border-warning/40 bg-warning/5 p-4">
       <div className="mb-3 flex items-start gap-2">
         <Plug className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
         <div>
-          <p className="text-sm font-sans font-bold uppercase tracking-wide text-graphite">Non-Ananda Components Detected</p>
-          <p className="mt-1 text-xs font-body text-muted-foreground">
+          <p className="text-sm font-semibold text-graphite">Non-Ananda Components Detected</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             This build includes a customer-supplied controller and/or custom accessories. Choose how connectors for these
             components should be sourced.
           </p>
@@ -51,7 +51,7 @@ function ConnectorSourcingPrompt() {
           type="button"
           onClick={() => s.setField("connectorSourcing", "standard")}
           className={cn(
-            "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+ "border px-3 py-1.5 text-xs font-semibold   transition-colors",
             s.connectorSourcing === "standard" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
           )}
         >
@@ -61,7 +61,7 @@ function ConnectorSourcingPrompt() {
           type="button"
           onClick={() => setPendingCustom(true)}
           className={cn(
-            "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
+ "border px-3 py-1.5 text-xs font-semibold   transition-colors",
             s.connectorSourcing === "custom" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
           )}
         >
@@ -70,24 +70,24 @@ function ConnectorSourcingPrompt() {
       </div>
 
       <AlertDialog open={pendingCustom} onOpenChange={setPendingCustom}>
-        <AlertDialogContent className="border-2 border-border font-sans">
+        <AlertDialogContent className="border border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-sans text-lg font-black uppercase tracking-tight text-graphite">
+            <AlertDialogTitle className="text-lg font-semibold text-graphite">
               Custom Connector Solution
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-body text-sm text-muted-foreground">
+            <AlertDialogDescription className="text-sm text-muted-foreground">
               Customization incurs additional cost and extends the turnaround time by at least 15 days. Please consult our sales
               team before proceeding.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="font-sans text-xs font-bold uppercase tracking-wider">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="text-xs font-semibold ">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 s.setField("connectorSourcing", "custom")
                 s.setField("connectorCustomAcknowledged", true)
               }}
-              className="bg-primary font-sans text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90"
+              className="bg-primary text-xs font-semibold text-white hover:bg-primary/90"
             >
               Confirm &amp; Continue
             </AlertDialogAction>
@@ -96,12 +96,89 @@ function ConnectorSourcingPrompt() {
       </AlertDialog>
 
       {s.connectorSourcing === "custom" && (
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] font-sans font-bold uppercase tracking-wide text-warning">
+        <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-warning">
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
           Custom solution requested — additional cost and +15 day lead time apply. Sales team consultation required.
         </p>
       )}
     </div>
+  )
+}
+
+// ─── Confirm banner that reveals the system diagram ──────────────────────────
+
+function ViewDiagramGate({ children }: { children: React.ReactNode }) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+
+  return (
+    <>
+      <div
+        className={cn(
+ "mt-6 flex flex-col items-center gap-4 border px-4 py-8 text-center sm:px-8",
+          revealed ? "border-primary/40 bg-primary/5" : "border-border bg-surface",
+        )}
+      >
+        {revealed ? (
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+        ) : (
+          <Network className="h-6 w-6 shrink-0 text-graphite" aria-hidden="true" />
+        )}
+        <div className="max-w-md">
+          <h3 className="text-base font-semibold text-graphite text-balance">
+            {revealed ? "Cable configuration confirmed" : "System Diagram"}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground text-pretty">
+            {revealed
+              ? "The system diagram is shown below. You can return to editing the cables at any time."
+              : "Finish defining the cables above, then confirm to see the system diagram."}
+          </p>
+        </div>
+        {revealed ? (
+          <button
+            type="button"
+            onClick={() => setRevealed(false)}
+            className="min-h-11 border border-border px-6 py-2 text-xs font-semibold text-graphite transition-colors hover:border-primary/40"
+          >
+            Back to editing
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            className="min-h-11 bg-primary px-6 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90"
+          >
+            View System Diagram
+          </button>
+        )}
+      </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="border border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-semibold text-graphite">
+              View System Diagram
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Please confirm your cable configuration is finished before viewing the system diagram.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="min-w-0 flex-col-reverse gap-2 sm:flex-col-reverse sm:justify-stretch">
+            <AlertDialogCancel className="m-0 h-auto w-full whitespace-normal px-4 py-2.5 text-center text-xs font-semibold ">
+              Back to editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => setRevealed(true)}
+              className="h-auto w-full whitespace-normal bg-primary px-4 py-2.5 text-center text-xs font-semibold leading-snug text-white hover:bg-primary/90"
+            >
+              I have completed the cable configuration
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {revealed && <div className="mt-6">{children}</div>}
+    </>
   )
 }
 
@@ -141,14 +218,14 @@ function Block({
       {/* Labels */}
       <text x={x + w / 2} y={y + h / 2 + labelOffset}
         textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
-        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}
+        fontFamily="var(--font-sans), Inter, sans-serif" style={{ textTransform: "" }}
         textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
         {label}
       </text>
       {sublabel && (
         <text x={x + w / 2} y={y + h / 2 + sublabelOffset}
           textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
-          fontFamily="Barlow, sans-serif"
+          fontFamily="var(--font-sans), Inter, sans-serif"
           textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
           {sublabel}
         </text>
@@ -169,7 +246,7 @@ function Arrow({
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrowhead)" />
       {label && (
         <text x={mx} y={my - 4} textAnchor="middle" fill={color} fontSize={7}
-          fontFamily="Barlow, sans-serif">{label}</text>
+          fontFamily="var(--font-sans), Inter, sans-serif">{label}</text>
       )}
     </g>
   )
@@ -229,7 +306,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           {/* Central motor block */}
           <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
           {/* Integrated sub-labels */}
-          <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
+          <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="var(--font-sans), Inter, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
           </text>
 
@@ -251,10 +328,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           
           {/* Note */}
           <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
-          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
             Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.
           </text>
-          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
             External controller and external sensors are not required.
           </text>
         </>
@@ -296,10 +373,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
 
           {/* Note */}
           <rect x={20} y={310} width={600} height={36} rx={3} fill="#fffbeb" stroke="#fde68a" strokeWidth={1} />
-          <text x={320} y={327} textAnchor="middle" fill="#b45309" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <text x={320} y={327} textAnchor="middle" fill="#b45309" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
             Hub motor system requires an external controller and external pedal sensing.
           </text>
-          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
             Torque sensor and cadence sensor must be specified as separate components.
           </text>
         </>
@@ -322,7 +399,7 @@ function CableTable() {
         <thead>
           <tr className="bg-graphite text-white">
             {["Connection", "Connector", "Pins", "Cable Type", "Cable (catalog)", "Length", "Extension cable"].map(h => (
-              <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[11px]">{h}</th>
+              <th key={h} className="px-3 py-2 font-semibold text-left text-xs">{h}</th>
             ))}
           </tr>
         </thead>
@@ -331,11 +408,11 @@ function CableTable() {
             const assignedCable = assignCable(cables, i)
             const lengthOptions = assignedCable ? connectionCableLengthOptionsFor(options, assignedCable.id) : []
             return (
-              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-surface"}>
-                <td className="px-3 py-2 font-sans font-semibold text-foreground">{p.connection}</td>
-                <td className="px-3 py-2 font-body text-muted-foreground">{p.connector}</td>
-                <td className="px-3 py-2 font-sans font-bold text-foreground">{p.pins}</td>
-                <td className="px-3 py-2 font-body text-muted-foreground">{p.cableType}</td>
+              <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-surface"}>
+                <td className="px-3 py-2 font-semibold text-foreground">{p.connection}</td>
+                <td className="px-3 py-2 text-muted-foreground">{p.connector}</td>
+                <td className="px-3 py-2 font-semibold text-foreground">{p.pins}</td>
+                <td className="px-3 py-2 text-muted-foreground">{p.cableType}</td>
                 <td className="px-3 py-2">
                   <CableCatalogInfo cable={assignedCable} />
                 </td>
@@ -359,8 +436,6 @@ function CableTable() {
 export function Step6SystemDiagram() {
   const s = useAnandaStore()
   const driveType = s.driveType ?? "mid"
-
-  const [overviewView, setOverviewView] = useState<"bike" | "diagram">("bike")
 
   const { motors } = useMotors()
   const { displays } = useDisplays()
@@ -394,60 +469,16 @@ export function Step6SystemDiagram() {
         <StepHeader
           step={6}
           title="System Overview"
-          subtitle="Review the physical component placement or inspect the system architecture and cable connections."
+          subtitle="Review the component placement on the bike and define the cables. Confirm your cable configuration to view the system diagram."
         />
 
         <ConnectorSourcingPrompt />
 
-        <div role="tablist" aria-label="System overview view" className="mb-6 grid grid-cols-2 gap-2 sm:inline-grid sm:w-auto">
-          <button
-            type="button"
-            role="tab"
-            id="overview-tab-bike"
-            aria-selected={overviewView === "bike"}
-            aria-controls="overview-panel-bike"
-            onClick={() => setOverviewView("bike")}
-            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
-              overviewView === "bike" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
-            }`}
-          >
-            <Bike className="h-4 w-4" aria-hidden="true" />
-            Bike View
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="overview-tab-diagram"
-            aria-selected={overviewView === "diagram"}
-            aria-controls="overview-panel-diagram"
-            onClick={() => setOverviewView("diagram")}
-            className={`flex min-h-11 items-center justify-center gap-2 border-2 px-4 py-2 text-xs font-sans font-bold uppercase tracking-wide transition-colors ${
-              overviewView === "diagram" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40"
-            }`}
-          >
-            <Network className="h-4 w-4" aria-hidden="true" />
-            System Diagram
-          </button>
-        </div>
+        <BikeOverview />
 
-        <div style={{ minHeight: 620 }}>
-          <div
-            id="overview-panel-bike"
-            role="tabpanel"
-            aria-labelledby="overview-tab-bike"
-            hidden={overviewView !== "bike"}
-          >
-            <BikeOverview />
-          </div>
-          <div
-            id="overview-panel-diagram"
-            role="tabpanel"
-            aria-labelledby="overview-tab-diagram"
-            hidden={overviewView !== "diagram"}
-          >
-            <FixedSystemDiagram />
-          </div>
-        </div>
+        <ViewDiagramGate>
+          <FixedSystemDiagram />
+        </ViewDiagramGate>
       </div>
     )
   }
@@ -457,29 +488,15 @@ export function Step6SystemDiagram() {
       <StepHeader
         step={6}
         title="System Diagram Overview"
-        subtitle="Dynamic system architecture diagram based on your configuration. Review connection topology and edit cable lengths below."
+        subtitle="Define your cable lengths to match your frame layout, then confirm to view the system diagram."
       />
 
       <ConnectorSourcingPrompt />
 
-      {/* Diagram */}
-      <div className="border border-border bg-white p-4 mb-6 overflow-x-auto">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-sans font-bold uppercase tracking-wider text-graphite-light">
-            System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
-          </p>
-          <div className="flex items-center gap-4 text-[10px] font-body text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
-          </div>
-        </div>
-        <SystemDiagramSVG driveType={driveType} labels={labels} />
-      </div>
-
       {/* Cable length table */}
-      <div className="mb-6">
+      <div>
         <SectionLabel>Cable Length Configuration</SectionLabel>
-        <p className="text-xs font-body text-muted-foreground mb-3">
+        <p className="text-xs text-muted-foreground mb-3">
           Edit cable lengths to match your frame layout. These values carry through to the final configuration report.
         </p>
         <div className="border border-border overflow-hidden">
@@ -487,6 +504,20 @@ export function Step6SystemDiagram() {
         </div>
       </div>
 
+      <ViewDiagramGate>
+        <div className="border border-border bg-card p-4 overflow-x-auto">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-semibold text-graphite-light">
+              System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
+            </p>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
+            </div>
+          </div>
+          <SystemDiagramSVG driveType={driveType} labels={labels} />
+        </div>
+      </ViewDiagramGate>
     </div>
   )
 }
