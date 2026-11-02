@@ -218,14 +218,14 @@ function Block({
       {/* Labels */}
       <text x={x + w / 2} y={y + h / 2 + labelOffset}
         textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
-        fontFamily="Barlow Condensed, sans-serif" style={{ textTransform: "uppercase" }}
+        fontFamily="var(--font-sans), Inter, sans-serif" style={{ textTransform: "uppercase" }}
         textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
         {label}
       </text>
       {sublabel && (
         <text x={x + w / 2} y={y + h / 2 + sublabelOffset}
           textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
-          fontFamily="Barlow, sans-serif"
+          fontFamily="var(--font-sans), Inter, sans-serif"
           textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
           {sublabel}
         </text>
@@ -246,7 +246,7 @@ function Arrow({
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrowhead)" />
       {label && (
         <text x={mx} y={my - 4} textAnchor="middle" fill={color} fontSize={7}
-          fontFamily="Barlow, sans-serif">{label}</text>
+          fontFamily="var(--font-sans), Inter, sans-serif">{label}</text>
       )}
     </g>
   )
@@ -306,7 +306,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           {/* Central motor block */}
           <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
           {/* Integrated sub-labels */}
-          <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="Barlow, sans-serif">
+          <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="var(--font-sans), Inter, sans-serif">
             ↳ Integrated Controller · Torque Sensing · Cadence Sensing
           </text>
 
@@ -328,10 +328,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           
           {/* Note */}
           <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
-          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
             Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.
           </text>
-          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
             External controller and external sensors are not required.
           </text>
         </>
@@ -373,10 +373,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
 
           {/* Note */}
           <rect x={20} y={310} width={600} height={36} rx={3} fill="#fffbeb" stroke="#fde68a" strokeWidth={1} />
-          <text x={320} y={327} textAnchor="middle" fill="#b45309" fontSize={8.5} fontFamily="Barlow, sans-serif" fontWeight="600">
+          <text x={320} y={327} textAnchor="middle" fill="#b45309" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
             Hub motor system requires an external controller and external pedal sensing.
           </text>
-          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="Barlow, sans-serif">
+          <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
             Torque sensor and cadence sensor must be specified as separate components.
           </text>
         </>
