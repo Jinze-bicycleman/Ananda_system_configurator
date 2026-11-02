@@ -43,14 +43,20 @@ export interface CableRow {
   extensionLengthM: number | null
 }
 
-export function useReportData() {
-  const s = useAnandaStore()
+/**
+ * Derives every report value. Pass `config` to build the report for a saved
+ * project instead of the live working configuration.
+ */
+export function useReportData(config?: AnandaConfig) {
+  const live = useAnandaStore()
+  const s: AnandaConfig = config ?? live
 
-  const { motors } = useMotors()
-  const { controllers } = useControllers()
-  const { displays } = useDisplays()
-  const { batteries } = useBatteries()
-  const { modes: assistModes } = useMotorAssistModes(s.motorId)
+  const { motors, isLoading: motorsLoading } = useMotors()
+  const { controllers, isLoading: controllersLoading } = useControllers()
+  const { displays, isLoading: displaysLoading } = useDisplays()
+  const { batteries, isLoading: batteriesLoading } = useBatteries()
+  const { modes: assistModes, isLoading: modesLoading } = useMotorAssistModes(s.motorId)
+  const loading = motorsLoading || controllersLoading || displaysLoading || batteriesLoading || modesLoading
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
   const controller = controllers.find((c) => c.id === s.controllerId) ?? null
@@ -176,6 +182,7 @@ export function useReportData() {
   }
 
   return {
+    loading,
     s,
     motor,
     controller,
@@ -208,7 +215,16 @@ function driveTypeLabel(driveType: AnandaConfig["driveType"]) {
  * every section shown on screen in Step7Report plus the cable & harness
  * length table. Runs client-side only (jsPDF has no server dependency).
  */
-export async function generateReportPdf(data: ReportData) {
+export interface ReportMeta {
+  projectName?: string
+  brandName?: string
+}
+
+function fileSafe(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+}
+
+export async function generateReportPdf(data: ReportData, meta: ReportMeta = {}) {
   const { jsPDF } = await import("jspdf")
   const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, systemWeightKg, isMid, cableRows, thirdPartyItems, climbing, scopeOfSupplyItems, salesConsultationItems } = data
 
@@ -307,7 +323,10 @@ export async function generateReportPdf(data: ReportData) {
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
   doc.setTextColor(...muted)
-  doc.text(`Generated ${new Date().toLocaleString()}`, marginX, y)
+  const projectLine = [meta.projectName?.trim() && `Project: ${meta.projectName.trim()}`, meta.brandName?.trim() && `Brand: ${meta.brandName.trim()}`]
+    .filter(Boolean)
+    .join("   |   ")
+  doc.text([projectLine, `Generated ${new Date().toLocaleString()}`].filter(Boolean).join("   |   "), marginX, y)
   y += 22
 
   // ─── 3rd Party Supplier Notice ───
@@ -462,5 +481,6 @@ export async function generateReportPdf(data: ReportData) {
     y += 16
   }
 
-  doc.save("ananda-configuration-report.pdf")
+  const safeName = meta.projectName ? fileSafe(meta.projectName) : ""
+  doc.save(safeName ? `ananda-${safeName}-report.pdf` : "ananda-configuration-report.pdf")
 }

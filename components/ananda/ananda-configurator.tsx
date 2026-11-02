@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, ArrowRight, AlertTriangle, Download, PanelRightOpen } from "lucide-react"
+import { ArrowLeft, ArrowRight, AlertTriangle, Download, FolderOpen, PanelRightOpen } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useAnandaStore, hasBikeCategory, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
-import { WelcomeScreen } from "./welcome-screen"
+import { useProjectsStore } from "@/lib/ananda-projects"
+import { HomePage } from "./home-page"
 import { ProgressIndicator } from "./progress-indicator"
 import { ConfigSummaryPanel } from "./config-summary-panel"
 import { Step1ProjectContext } from "./step1-project-context"
@@ -26,12 +27,31 @@ export function AnandaConfigurator() {
   useEffect(() => { setHydrated(true) }, [])
   const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX))
   useEffect(() => { setOpen(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX)) }, [state.currentStep])
+  const activeProjectId = useProjectsStore((s) => s.activeProjectId)
+  const activeProjectName = useProjectsStore((s) => s.projects.find((p) => p.id === s.activeProjectId)?.name ?? null)
+  const brandName = useProjectsStore((s) => s.brandName)
+  const saveActive = useProjectsStore((s) => s.saveActive)
+  const closeActive = useProjectsStore((s) => s.closeActive)
+  const adoptCurrent = useProjectsStore((s) => s.adoptCurrent)
+
+  // A configuration started before projects existed becomes a project.
+  useEffect(() => {
+    if (hydrated && state.hasStarted && !activeProjectId) adoptCurrent()
+  }, [hydrated, state.hasStarted, activeProjectId, adoptCurrent])
+
+  // Every change is written to the active project shortly after it happens.
+  useEffect(() => {
+    if (!hydrated || !state.hasStarted || !activeProjectId) return
+    const timer = window.setTimeout(saveActive, 400)
+    return () => window.clearTimeout(timer)
+  }, [hydrated, state, activeProjectId, saveActive])
+
   const reportData = useReportData()
   const [downloadingReport, setDownloadingReport] = useState(false)
   const handleDownloadReport = async () => {
     setDownloadingReport(true)
     try {
-      await generateReportPdf(reportData)
+      await generateReportPdf(reportData, { projectName: activeProjectName ?? undefined, brandName })
     } finally {
       setDownloadingReport(false)
     }
@@ -77,14 +97,22 @@ export function AnandaConfigurator() {
     <Step6SystemDiagram key="diagram" />, <Step7Report key="report" />,
   ]
 
-  if (!hydrated || !state.hasStarted) return <WelcomeScreen />
+  if (!hydrated || !state.hasStarted) return <HomePage />
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 border-b border-graphite-light bg-graphite">
         <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center bg-primary"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none"><path d="M13 3 4 14h7v7l9-11h-7z" fill="white" /></svg></div><div><span className="font-sans text-base font-black uppercase tracking-widest text-white">Ananda</span><span className="ml-2 hidden font-sans text-sm text-white/40 sm:inline">E-Drive System Configurator</span></div></div>
+          <div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center bg-primary"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none"><path d="M13 3 4 14h7v7l9-11h-7z" fill="white" /></svg></div><div><span className="font-sans text-base font-black uppercase tracking-widest text-white">Ananda</span><span className="ml-2 hidden max-w-48 truncate align-bottom font-sans text-sm text-white/40 sm:inline-block">{activeProjectName ?? "E-Drive System Configurator"}</span></div></div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={closeActive}
+              className="flex items-center gap-1.5 border border-white/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-primary hover:text-white"
+            >
+              <FolderOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">My Projects</span>
+            </button>
             <span className="hidden font-sans text-xs uppercase tracking-wider text-white/50 sm:inline">{complete.filter(Boolean).length} / {labels.length} complete</span>
             <div className="hidden h-1 w-20 overflow-hidden rounded-full bg-white/10 sm:block"><div className="h-full bg-primary transition-all" style={{ width: `${(complete.filter(Boolean).length / labels.length) * 100}%` }} /></div>
             <Sheet>

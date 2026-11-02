@@ -3,7 +3,9 @@
 import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
 import { hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
 import { StepHeader } from "./ui-primitives"
-import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react"
+import { useState } from "react"
+import { useProjectsStore } from "@/lib/ananda-projects"
+import { AlertTriangle, Check, CheckCircle2, FolderOpen, Save } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -84,6 +86,14 @@ export function Step7Report() {
     scopeOfSupplyItems,
     salesConsultationItems,
   } = useReportData()
+  const saveActive = useProjectsStore((state) => state.saveActive)
+  const closeActive = useProjectsStore((state) => state.closeActive)
+  const [saved, setSaved] = useState(false)
+  const handleSave = () => {
+    saveActive()
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 2000)
+  }
 
   return (
     <div>
@@ -346,13 +356,22 @@ export function Step7Report() {
       </ReportSection>
 
       {/* Footer actions */}
-      <div className="flex items-center justify-end mt-6">
+      <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
         <button
-          onClick={s.resetConfig}
-          className="flex items-center gap-2 px-4 py-2 border border-border text-sm font-sans font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+          type="button"
+          onClick={closeActive}
+          className="flex items-center gap-2 border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Start New Configuration
+          <FolderOpen className="h-3.5 w-3.5" aria-hidden="true" />
+          Back to My Projects
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          className="flex items-center gap-2 border-2 border-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          {saved ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Save className="h-3.5 w-3.5" aria-hidden="true" />}
+          {saved ? "Saved" : "Save Configuration"}
         </button>
       </div>
     </div>
