@@ -17,12 +17,15 @@ import { Step4Drivetrain } from "./step4-drivetrain"
 import { Step5Accessories } from "./step5-accessories"
 import { Step6SystemDiagram } from "./step6-system-diagram"
 import { Step7Report } from "./step7-report"
+import { BrandLogo } from "./brand-logo"
+import { useCatalogSync } from "@/lib/catalog-sync"
 
 const labels = ["Sell Region & Regulation", "Bike Category", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
 const LAST_STEP_INDEX = labels.length - 1
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
+  useCatalogSync()
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
   const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX))
@@ -103,7 +106,7 @@ export function AnandaConfigurator() {
     <div className="flex min-h-screen flex-col bg-secondary/60">
       <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-4"><img src="/images/ananda-logo.png" alt="Ananda eDriveALL" className="h-8 w-auto shrink-0" /><span className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" /><span className="hidden max-w-64 truncate text-sm font-medium text-graphite sm:block">{activeProjectName ?? "E-Drive System Configurator"}</span></div>
+          <div className="flex min-w-0 items-center gap-4"><BrandLogo className="h-8 w-auto shrink-0" /><span className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" /><span className="hidden max-w-64 truncate text-sm font-medium text-graphite sm:block">{activeProjectName ?? "E-Drive System Configurator"}</span></div>
           <div className="flex items-center gap-3">
             <button
               type="button"

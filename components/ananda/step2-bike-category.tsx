@@ -6,28 +6,33 @@ import { useAnandaStore } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { cn } from "@/lib/utils"
+import { useSiteContent } from "@/lib/site-content"
 
 const BIKE_CATEGORIES = [
   {
     id: "City",
+    contentKey: "city",
     label: "Commuter",
     description: "Daily city riding, light loads, cost-conscious.",
     image: "/images/bike-category-city.jpg",
   },
   {
     id: "Cargo bike",
+    contentKey: "cargo",
     label: "Family / Cargo",
     description: "Carrying children or heavy loads, needs climbing torque and range.",
     image: "/images/bike-category-cargo-2wheeler.png",
   },
   {
     id: "Trekking",
+    contentKey: "trekking",
     label: "Trekking / Adventure",
     description: "Longer rides, mixed terrain, wants range and reliability.",
     image: "/images/bike-category-trekking.jpg",
   },
   {
     id: "MTB",
+    contentKey: "mtb",
     label: "Performance",
     description: "High-power riding, hills and trails, torque-first.",
     image: "/images/bike-category-mtb.jpg",
@@ -112,6 +117,13 @@ function DriveUnitSection() {
 
 export function Step2BikeCategory() {
   const s = useAnandaStore()
+  const content = useSiteContent()
+  const categories = BIKE_CATEGORIES.map((c) => ({
+    ...c,
+    label: content.get(`category.${c.contentKey}.label`) || c.label,
+    description: content.get(`category.${c.contentKey}.description`) || c.description,
+    image: content.get(`category.${c.contentKey}.image`) || c.image,
+  }))
 
   return (
     <div>
@@ -135,7 +147,7 @@ export function Step2BikeCategory() {
       <div id="field-bikeCategory" className="mb-8">
         <SectionLabel>Bike Category</SectionLabel>
         <div className="grid gap-4 md:grid-cols-2">
-          {BIKE_CATEGORIES.map((category) => {
+          {categories.map((category) => {
             const selected = s.bikeCategory === category.id
             return (
               <button
