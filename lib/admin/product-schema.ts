@@ -10,7 +10,17 @@ export type ProductField = {
 }
 
 export type ProductTable = {
-  table: "motors" | "controllers" | "hmi_displays" | "batteries"
+  table:
+    | "motors"
+    | "controllers"
+    | "hmi_displays"
+    | "batteries"
+    | "chargers"
+    | "charging_ports"
+    | "sensors"
+    | "speed_sensors"
+    | "accessories"
+    | "bike_components"
   label: string
   singular: string
   fields: ProductField[]
@@ -20,6 +30,18 @@ const common: ProductField[] = [
   { name: "image_url", label: "Picture", type: "image" },
   { name: "short_description", label: "Description", type: "textarea" },
   { name: "datasheet_url", label: "Datasheet link", type: "url" },
+  { name: "sort_order", label: "Display order", type: "integer", hint: "Lower numbers appear first." },
+  { name: "is_active", label: "Visible in configurator", type: "boolean" },
+]
+
+const simple: ProductField[] = [
+  { name: "image_url", label: "Picture", type: "image" },
+  { name: "short_description", label: "Description", type: "textarea" },
+  { name: "sort_order", label: "Display order", type: "integer", hint: "Lower numbers appear first." },
+  { name: "is_active", label: "Visible in configurator", type: "boolean" },
+]
+
+const listing: ProductField[] = [
   { name: "sort_order", label: "Display order", type: "integer", hint: "Lower numbers appear first." },
   { name: "is_active", label: "Visible in configurator", type: "boolean" },
 ]
@@ -130,6 +152,108 @@ export const PRODUCT_TABLES: ProductTable[] = [
       { name: "communication_protocol", label: "Communication protocol", type: "text" },
       { name: "safety_certificate", label: "Safety certificate", type: "text" },
       ...common,
+    ],
+  },
+  {
+    table: "chargers",
+    label: "Chargers",
+    singular: "charger",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      { name: "voltage_v", label: "Voltage (V)", type: "integer", required: true },
+      { name: "current_a", label: "Current (A)", type: "number", required: true },
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...simple,
+    ],
+  },
+  {
+    table: "charging_ports",
+    label: "Charging ports",
+    singular: "charging port",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      { name: "connector_type", label: "Connector type", type: "text" },
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...simple,
+    ],
+  },
+  {
+    table: "sensors",
+    label: "Sensors",
+    singular: "sensor",
+    fields: [
+      { name: "model", label: "Name", type: "text", required: true },
+      {
+        name: "sensor_type",
+        label: "Sensor type",
+        type: "select",
+        required: true,
+        options: [
+          { value: "torque", label: "Torque" },
+          { value: "cadence", label: "Cadence" },
+          { value: "speed", label: "Speed" },
+        ],
+      },
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...simple,
+    ],
+  },
+  {
+    table: "speed_sensors",
+    label: "Speed sensors",
+    singular: "speed sensor",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      { name: "name", label: "Display name", type: "text" },
+      { name: "mounting_position", label: "Mounting position", type: "text" },
+      { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
+      { name: "connector_type", label: "Connector type", type: "text" },
+      ...listing,
+    ],
+  },
+  {
+    table: "accessories",
+    label: "Accessories",
+    singular: "accessory",
+    fields: [
+      { name: "model", label: "Name", type: "text", required: true },
+      {
+        name: "category",
+        label: "Category",
+        type: "select",
+        required: true,
+        options: [
+          { value: "lights", label: "Lights" },
+          { value: "throttle", label: "Throttle" },
+          { value: "iot", label: "IoT" },
+          { value: "other", label: "Other" },
+        ],
+      },
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...simple,
+    ],
+  },
+  {
+    table: "bike_components",
+    label: "Bike components",
+    singular: "bike component",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      {
+        name: "category",
+        label: "Category",
+        type: "select",
+        required: true,
+        options: [
+          { value: "chainring", label: "Chainring" },
+          { value: "crank", label: "Crank" },
+          { value: "spider", label: "Spider" },
+        ],
+      },
+      { name: "teeth", label: "Teeth", type: "integer", hint: "Chainrings only." },
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      { name: "short_description", label: "Description", type: "textarea" },
+      ...listing,
     ],
   },
 ]

@@ -18,12 +18,14 @@ import { Step5Accessories } from "./step5-accessories"
 import { Step6SystemDiagram } from "./step6-system-diagram"
 import { Step7Report } from "./step7-report"
 import { BrandLogo } from "./brand-logo"
+import { useCatalogSync } from "@/lib/catalog-sync"
 
 const labels = ["Sell Region & Regulation", "Bike Category", "Package Configuration", "Drivetrain", "Accessories", "System Diagram", "Final Report"]
 const LAST_STEP_INDEX = labels.length - 1
 
 export function AnandaConfigurator() {
   const state = useAnandaStore()
+  useCatalogSync()
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => { setHydrated(true) }, [])
   const [open, setOpen] = useState(Math.min(Math.max(state.currentStep - 1, 0), LAST_STEP_INDEX))
