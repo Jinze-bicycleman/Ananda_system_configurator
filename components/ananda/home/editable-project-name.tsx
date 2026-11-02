@@ -29,14 +29,14 @@ export function EditableProjectName({ id, name }: { id: string; name: string }) 
             if (event.key === "Enter") commit()
             if (event.key === "Escape") setEditing(false)
           }}
-          className="min-w-0 flex-1 border-0 border-b-2 border-primary bg-transparent px-0 py-0.5 font-sans text-lg font-black text-graphite outline-none"
+          className="min-w-0 flex-1 rounded-md border border-primary bg-background px-2 py-1 font-sans text-lg font-semibold text-graphite outline-none ring-2 ring-primary/20"
         />
         <button
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={commit}
           aria-label="Save project name"
-          className="flex h-7 w-7 items-center justify-center bg-primary text-primary-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground"
         >
           <Check className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -52,10 +52,10 @@ export function EditableProjectName({ id, name }: { id: string; name: string }) 
         setEditing(true)
       }}
       aria-label={`Rename project ${name}`}
-      className="group flex max-w-full items-center gap-2 text-left"
+      className="group -mx-1 flex max-w-full items-center gap-2 rounded-md px-1 text-left focus-visible:outline-2 focus-visible:outline-primary"
     >
-      <span className="truncate font-sans text-lg font-black text-graphite">{name}</span>
-      <Pencil className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-primary" aria-hidden="true" />
+      <span className="truncate font-sans text-lg font-semibold text-graphite">{name}</span>
+      <Pencil className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden="true" />
     </button>
   )
 }

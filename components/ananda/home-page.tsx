@@ -15,8 +15,8 @@ export function HomePage() {
   const downloadingProject = projects.find((p) => p.id === downloadingId) ?? null
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border">
+    <div className="flex min-h-screen flex-col bg-secondary/60">
+      <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <img src="/images/ananda-logo.png" alt="Ananda eDriveALL" className="h-11 w-auto sm:h-12" />
           <BrandNameField />
@@ -26,11 +26,11 @@ export function HomePage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            <p className="text-sm font-semibold text-primary">
               {brandName.trim() ? brandName.trim() : "E-Drive System Configurator"}
             </p>
-            <h1 className="mt-2 font-sans text-3xl font-black uppercase tracking-tight text-graphite sm:text-4xl">My Projects</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="mt-1 text-balance font-sans text-3xl font-semibold tracking-tight text-graphite sm:text-4xl">My Projects</h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {projects.length === 0
                 ? "Your saved configurations will appear here."
                 : `${projects.length} saved configuration${projects.length === 1 ? "" : "s"}. Open one to keep editing, or start a new one.`}
@@ -39,14 +39,14 @@ export function HomePage() {
           <button
             type="button"
             onClick={createProject}
-            className="flex items-center gap-2 bg-primary px-5 py-3 text-xs font-bold uppercase tracking-wider text-primary-foreground transition-colors hover:bg-primary/90"
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             New Configuration
           </button>
         </div>
 
-        <ul className="mt-8 border border-border bg-card">
+        <ul className="mt-8 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           {projects.map((project) => (
             <ProjectRow
               key={project.id}
@@ -59,7 +59,7 @@ export function HomePage() {
             <button
               type="button"
               onClick={createProject}
-              className="flex w-full items-center justify-center gap-2 px-5 py-6 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/5"
+              className="flex w-full items-center justify-center gap-2 px-5 py-5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               Start a new configuration

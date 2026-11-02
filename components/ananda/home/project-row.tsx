@@ -35,7 +35,7 @@ function formatEdited(timestamp: number) {
 }
 
 const actionClass =
-  "flex items-center gap-1.5 border border-border px-2.5 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-wait disabled:opacity-60"
+  "flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-graphite-light transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
 
 export function ProjectRow({
   project,
@@ -55,8 +55,8 @@ export function ProjectRow({
     <li className="flex flex-col gap-4 border-t border-border px-5 py-4 first:border-t-0 lg:flex-row lg:items-center lg:gap-6">
       <div className="min-w-0 flex-1">
         <EditableProjectName id={project.id} name={project.name} />
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {summarize(project)} <span className="text-border-strong">/</span> Edited {formatEdited(project.updatedAt)}
+        <p className="mt-1 truncate text-sm text-muted-foreground">
+          {summarize(project)} <span aria-hidden="true">&middot;</span> Edited {formatEdited(project.updatedAt)}
         </p>
         <div className="mt-3 flex items-center gap-3">
           <div className="flex gap-0.5" role="img" aria-label={`Stage ${stage} of ${TOTAL_STAGES}`}>
@@ -64,8 +64,8 @@ export function ProjectRow({
               <span key={i} className={cn("h-1.5 w-6 -skew-x-[20deg]", i < stage ? "bg-primary" : "bg-border")} />
             ))}
           </div>
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Stage {stage} / {TOTAL_STAGES}
+          <span className="text-xs font-medium text-muted-foreground">
+            Stage {stage} of {TOTAL_STAGES}
           </span>
         </div>
       </div>
@@ -74,7 +74,7 @@ export function ProjectRow({
         <button
           type="button"
           onClick={() => openProject(project.id)}
-          className="flex items-center gap-1.5 bg-graphite px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary"
+          className="flex items-center gap-1.5 rounded-md bg-graphite px-3.5 py-1.5 text-sm font-semibold text-background transition-colors hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
           Edit
