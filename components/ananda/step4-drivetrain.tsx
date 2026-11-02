@@ -142,7 +142,7 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
       <DrivetrainSummary onEditStep={(step) => onEditStep?.(step)} />
 
       <div className="mb-6 max-w-xs">
-        <label className="block text-xs font-sans font-semibold text-graphite mb-2">
+        <label className="block text-xs font-semibold text-graphite mb-2">
           Estimated System Weight (rider + bike + cargo)
         </label>
         <div className="flex items-center gap-2">
@@ -153,29 +153,29 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
             onBlur={handleGvwBlur}
             disabled={gvwSkipped}
             placeholder={gvwSkipped ? "Skipped" : "e.g. 120"}
-            className="w-full border border-border px-3 py-1.5 text-sm font-body tabular-nums focus:border-primary outline-none disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted-foreground"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm tabular-nums focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground"
           />
-          <span className="text-xs font-sans font-semibold text-muted-foreground">kg</span>
+          <span className="text-sm font-medium text-muted-foreground">kg</span>
           <button
             type="button"
             onClick={toggleGvwSkip}
             className={cn(
-              "shrink-0 whitespace-nowrap border px-2.5 py-1.5 text-xs font-sans font-semibold transition-colors",
+              "shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               gvwSkipped ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary",
             )}
           >
             {gvwSkipped ? "Restore" : "Skip"}
           </button>
         </div>
-        <p className="mt-1 text-xs font-body text-muted-foreground">
+        <p className="mt-1.5 text-sm text-muted-foreground">
           {gvwSkipped
             ? "Skipped — estimated system weight will not be validated."
             : "Used alongside rider weight to estimate total system weight for the climbing calculation."}
         </p>
       </div>
 
-      <div id="field-drivetrainTeeth" className="mb-8 border border-border bg-white p-5">
-        <p className="mb-4 text-sm font-sans font-semibold text-graphite">Drivetrain gearing</p>
+      <div id="field-drivetrainTeeth" className="mb-8 rounded-lg border border-border bg-card p-5">
+        <p className="mb-4 text-base font-semibold text-graphite">Drivetrain gearing</p>
 
         <div className="mb-5 flex flex-wrap gap-2">
           {(
@@ -189,10 +189,11 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
               <button
                 key={opt.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => selectSystemKind(opt.id)}
                 className={cn(
-                  "border-2 px-3 py-1.5 text-xs font-sans font-bold uppercase tracking-wide transition-colors",
-                  selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+                  "rounded-md border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  selected ? "border-primary bg-primary/5 font-semibold text-primary ring-1 ring-primary" : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
                 )}
               >
                 {opt.label}
@@ -215,7 +216,7 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
               <RatioField id="hub-up-ratio" label="Hub gear up ratio" value={hubUpInput} onChange={commitHubUp} />
               <RatioField id="hub-down-ratio" label="Hub gear down ratio" value={hubDownInput} onChange={commitHubDown} />
             </div>
-            <p className="mt-3 text-xs font-body text-muted-foreground">
+            <p className="mt-3 text-sm text-muted-foreground">
               Enter the up (highest) and down (lowest) internal gear ratios from your gear hub&apos;s datasheet — e.g. a
               Shimano Alfine 8 is 1.615 (up) / 0.527 (down).
             </p>
@@ -304,7 +305,7 @@ function RatioField({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-sans font-semibold text-graphite">
+      <label htmlFor={id} className="text-xs font-semibold text-graphite">
         {label}
       </label>
       <input
@@ -316,7 +317,7 @@ function RatioField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={id === "hub-down-ratio" ? "e.g. 0.8" : "e.g. 1.615"}
-        className="w-full border border-border px-3 py-2 text-sm font-body font-semibold tabular-nums focus:border-primary outline-none"
+        className="w-full border border-border px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary outline-none"
       />
     </div>
   )
@@ -344,12 +345,12 @@ function ToothCountField({
   const isUntouchedDefault = hasDefault && value === String(defaultValue)
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="flex items-center justify-between gap-2 text-xs font-sans font-semibold text-graphite">
+      <label htmlFor={id} className="flex items-center justify-between gap-2 text-xs font-semibold text-graphite">
         <span>{label}</span>
         {hasDefault && (
           <span
             className={cn(
-              "shrink-0 px-1.5 py-0.5 text-[10px] font-sans font-bold uppercase tracking-wider",
+ "shrink-0 px-1.5 py-0.5 text-xs font-semibold ",
               isUntouchedDefault ? "bg-primary/10 text-primary" : "bg-surface text-muted-foreground",
             )}
           >
@@ -369,7 +370,7 @@ function ToothCountField({
           placeholder={id === "largest-rear-teeth" ? "e.g. 43" : id === "smallest-rear-teeth" ? "e.g. 11" : "e.g. 34"}
           aria-invalid={invalid || undefined}
           className={cn(
-            "w-full border px-3 py-2 text-sm font-body font-semibold tabular-nums outline-none focus:border-primary",
+ "w-full border px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-primary",
             hasDefault && "pr-9",
             invalid
               ? "border-destructive bg-destructive/5"
@@ -380,7 +381,7 @@ function ToothCountField({
         />
         {hasDefault && <Pencil className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" aria-hidden="true" />}
       </div>
-      {hint && <p className="text-[11px] font-body text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   )
 }

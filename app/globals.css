@@ -107,6 +107,12 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-sans;
   }
+  button:not([role="tab"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    border-radius: var(--radius-md);
+  }
 }
 
 /* Ananda-style diagonal clip utilities */

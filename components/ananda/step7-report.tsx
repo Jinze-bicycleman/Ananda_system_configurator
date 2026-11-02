@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils"
 
 function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5 min-w-0 border border-border bg-white">
+    <div className="mb-5 min-w-0 border border-border bg-card">
       <div className="h-1 shrink-0 bg-primary" />
       <div className="border-b border-border bg-surface px-5 py-3">
-        <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">{title}</p>
+        <p className="text-xs font-semibold text-graphite">{title}</p>
       </div>
       <div className="min-w-0 p-5">{children}</div>
     </div>
@@ -36,14 +36,14 @@ function Row({
   return (
     <div
       className={cn(
-        "spec-row py-1.5 border-b border-border/40 last:border-0",
+ "spec-row py-1.5 border-b border-border/40 last:border-0",
         thirdParty && "-mx-2 border-l-4 border-l-warning bg-warning/15 px-2",
       )}
     >
-      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <span
         className={cn(
-          "spec-value text-[12px] font-sans font-semibold tabular-nums",
+ "spec-value text-[12px] font-semibold tabular-nums",
           thirdParty ? "text-warning-foreground" : warn ? "text-warning" : highlight ? "text-primary" : "text-foreground",
         )}
       >
@@ -105,22 +105,22 @@ export function Step7Report() {
 
       {/* ─── 3rd Party Supplier Components ─── */}
       {thirdPartyItems.length > 0 && (
-        <div className="mb-5 border-2 border-warning bg-warning/10 px-5 py-4">
+        <div className="mb-5 border border-warning bg-warning/10 px-5 py-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
             <div className="min-w-0">
-              <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">
+              <p className="text-xs font-semibold text-graphite">
                 3rd Party Supplier Components
               </p>
               <ul className="mt-2 space-y-1">
                 {thirdPartyItems.map((item) => (
-                  <li key={item.key} className="text-sm font-sans text-graphite">
-                    <span className="font-bold uppercase">{item.label}:</span>{" "}
+                  <li key={item.key} className="text-sm text-graphite">
+                    <span className="font-semibold ">{item.label}:</span>{" "}
                     {item.supplier.trim() || <span className="italic text-muted-foreground">supplier name not provided</span>}
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs font-body leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                 Full technical documents and component samples are required for integration and compatibility testing. This
                 introduces extra cost and delivery time; contact sales for details.
               </p>
@@ -131,10 +131,10 @@ export function Step7Report() {
 
       {/* ─── Risks & Assumptions ─── */}
       <ReportSection title="Risks & Assumptions">
-        <p className="text-xs font-body leading-relaxed text-muted-foreground mb-2">
+        <p className="text-xs leading-relaxed text-muted-foreground mb-2">
           Configuration is compatible with the selected regulation based on rated power and speed limit inputs.
         </p>
-        <p className="text-xs font-body leading-relaxed text-muted-foreground">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           Complete bicycle certification requires final vehicle testing and validation; this report is a planning estimate only.
         </p>
       </ReportSection>
@@ -184,7 +184,7 @@ export function Step7Report() {
         {s.gvwKg != null && <Row label="Estimated GVW" value={`${s.gvwKg} kg`} />}
 
         <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
-          <p className="text-xs font-body text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {isMid
               ? "Mid-drive motor torque passes through the drivetrain. Gearing selection directly affects speed range, climbing torque and drivetrain load."
               : "Hub motor torque is delivered directly at the wheel. Pedal drivetrain gearing mainly affects rider cadence and pedalling comfort."}
@@ -205,7 +205,7 @@ export function Step7Report() {
         ) : climbing.result.status === "missing-data" ? (
           <div className="mt-3 flex items-start gap-2 bg-warning/10 border border-warning/30 px-4 py-3">
             <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-body text-warning-foreground">
+            <p className="text-sm text-warning-foreground">
               Missing {climbing.result.missingFields.join(", ")} — climbing ability cannot be estimated.
             </p>
           </div>
@@ -215,7 +215,7 @@ export function Step7Report() {
             <Row label="Total Wheel Torque" value={`${Math.round(climbing.result.totalWheelTorqueNm * 10) / 10} Nm`} />
             {climbing.result.status === "exceeded" ? (
               <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
-                <p className="text-xs font-body text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.
                 </p>
               </div>
@@ -226,7 +226,7 @@ export function Step7Report() {
               </>
             )}
             <div className="mt-3 flex items-start gap-2 bg-surface border-l-2 border-primary px-4 py-3">
-              <p className="text-xs font-body text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal
                 limits, tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and
                 rider technique.
@@ -243,19 +243,19 @@ export function Step7Report() {
             <thead>
               <tr className="bg-graphite text-white">
                 {["Connection", "Connector", "Pins", "Cable Type", "Length", "Extension"].map((h) => (
-                  <th key={h} className="px-3 py-2 font-sans font-bold uppercase tracking-wider text-left text-[10px]">{h}</th>
+                  <th key={h} className="px-3 py-2 font-semibold text-left text-xs">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {cableRows.map((c, i) => (
-                <tr key={c.connection} className={i % 2 === 0 ? "bg-white" : "bg-surface"}>
-                  <td className="px-3 py-2 font-sans font-semibold text-foreground">{c.connection}</td>
-                  <td className="px-3 py-2 font-body text-muted-foreground">{c.connector}</td>
-                  <td className="px-3 py-2 font-sans font-bold text-foreground">{c.pins}</td>
-                  <td className="px-3 py-2 font-body text-muted-foreground">{c.cableType}</td>
-                  <td className="px-3 py-2 font-sans font-bold text-primary">{c.lengthM.toFixed(1)} m</td>
-                  <td className="px-3 py-2 font-body text-muted-foreground">
+                <tr key={c.connection} className={i % 2 === 0 ? "bg-card" : "bg-surface"}>
+                  <td className="px-3 py-2 font-semibold text-foreground">{c.connection}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{c.connector}</td>
+                  <td className="px-3 py-2 font-semibold text-foreground">{c.pins}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{c.cableType}</td>
+                  <td className="px-3 py-2 font-semibold text-primary">{c.lengthM.toFixed(1)} m</td>
+                  <td className="px-3 py-2 text-muted-foreground">
                     {c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—"}
                   </td>
                 </tr>
@@ -263,7 +263,7 @@ export function Step7Report() {
             </tbody>
           </table>
         </div>
-        <p className="text-xs font-body leading-relaxed text-muted-foreground mt-3">
+        <p className="text-xs leading-relaxed text-muted-foreground mt-3">
           Cable lengths reflect the values set on the System Diagram step and are included in the downloadable PDF report.
         </p>
       </ReportSection>
@@ -292,10 +292,10 @@ export function Step7Report() {
           {motor?.weight_kg && <Row label="Motor" value={`${motor.weight_kg} kg`} />}
           {battery?.weight_kg && <Row label="Battery" value={`${battery.weight_kg} kg`} />}
           <div className="flex items-center justify-between pt-2 mt-2 border-t border-border">
-            <span className="text-[11px] font-sans font-black uppercase tracking-wider text-graphite">Total (Motor + Battery)</span>
-            <span className="text-lg font-sans font-black tabular-nums text-primary">{systemWeightKg.toFixed(1)} kg</span>
+            <span className="text-xs font-semibold text-graphite">Total (Motor + Battery)</span>
+            <span className="text-lg font-semibold tabular-nums text-primary">{systemWeightKg.toFixed(1)} kg</span>
           </div>
-          <p className="text-xs font-body leading-relaxed text-muted-foreground mt-2">
+          <p className="text-xs leading-relaxed text-muted-foreground mt-2">
             Weight estimate includes motor and battery only. Accessories, sensors, and ancillary components are not included in this total.
           </p>
         </ReportSection>
@@ -315,7 +315,7 @@ export function Step7Report() {
         {salesConsultationItems.length === 0 ? (
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-primary" />
-            <p className="text-sm font-body text-foreground">
+            <p className="text-sm text-foreground">
               No items in this configuration currently require a sample, additional cost, or sales-team consultation.
             </p>
           </div>
@@ -324,7 +324,7 @@ export function Step7Report() {
             {salesConsultationItems.map((msg, i) => (
               <div key={i} className="flex items-start gap-2 border border-warning/30 bg-warning/10 px-3 py-2">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                <p className="text-xs font-body text-warning-foreground/90">{msg}</p>
+                <p className="text-xs text-warning-foreground/90">{msg}</p>
               </div>
             ))}
           </div>
@@ -350,7 +350,7 @@ export function Step7Report() {
             ) : (
               <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0" />
             )}
-            <span className={cn("text-xs font-body", ok ? "text-foreground" : "text-warning")}>{label}</span>
+            <span className={cn("text-xs", ok ? "text-foreground" : "text-warning")}>{label}</span>
           </div>
         ))}
       </ReportSection>
@@ -360,7 +360,7 @@ export function Step7Report() {
         <button
           type="button"
           onClick={closeActive}
-          className="flex items-center gap-2 border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+          className="flex items-center gap-2 border border-border px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary hover:text-primary"
         >
           <FolderOpen className="h-3.5 w-3.5" aria-hidden="true" />
           Back to My Projects
@@ -368,7 +368,7 @@ export function Step7Report() {
         <button
           type="button"
           onClick={handleSave}
-          className="flex items-center gap-2 border-2 border-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="flex items-center gap-2 border border-primary px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
         >
           {saved ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Save className="h-3.5 w-3.5" aria-hidden="true" />}
           {saved ? "Saved" : "Save Configuration"}

@@ -35,7 +35,7 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
   return (
     <div
       ref={ref}
-      className={cn("relative flex w-full overflow-hidden border-2 border-primary/25 bg-card shadow-sm", editing && "cursor-move")}
+      className={cn("relative flex w-full overflow-hidden border border-primary/25 bg-card shadow-sm", editing && "cursor-move")}
       style={{ touchAction: editing ? "none" : undefined }}
       onPointerDown={editing ? onDragPointerDown : undefined}
     >
@@ -48,28 +48,28 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
             : { height: 6, width: "100%", backgroundColor: topology.color, position: "absolute", top: 0, left: 0 }
         }
       />
-      <div className={cn("min-w-0 flex-1 px-2.5 py-1.5 text-[11px]", accentOrientation === "horizontal" && "pt-3.5")}>
+      <div className={cn("min-w-0 flex-1 px-2.5 py-1.5 text-xs", accentOrientation === "horizontal" && "pt-3.5")}>
         {isDocking ? (
-          <p className="font-body font-semibold text-muted-foreground">Docked electrical interface · no cable</p>
+          <p className="font-semibold text-muted-foreground">Docked electrical interface · no cable</p>
         ) : (
           <>
             <div className={rowClass}>
-              <span className="font-sans font-black text-primary">
-                Type: <span className="font-body font-semibold text-foreground">{data.cableModel ?? "—"}</span>
+              <span className="font-semibold text-primary">
+                Type: <span className="font-semibold text-foreground">{data.cableModel ?? "—"}</span>
               </span>
             </div>
             <div className={rowClass}>
-              <span className="font-sans font-black text-primary">
-                Connector: <span className="font-body font-semibold text-foreground">{data.connectorLabel ?? "—"}</span>
+              <span className="font-semibold text-primary">
+                Connector: <span className="font-semibold text-foreground">{data.connectorLabel ?? "—"}</span>
               </span>
-              <span className="font-sans font-black text-primary">
+              <span className="font-semibold text-primary">
                 Length:{" "}
                 {data.editable && data.storeKey ? (
                   <span className="inline-block align-middle">
                     <CableLengthSelect connection={data.storeKey} lengthOptions={data.lengthOptions} />
                   </span>
                 ) : (
-                  <span className="font-body font-normal text-muted-foreground">
+                  <span className="font-normal text-muted-foreground">
                     {data.lengthMm != null ? formatLeadLength(data.lengthMm) : "—"}
                   </span>
                 )}
@@ -78,7 +78,7 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
           </>
         )}
         {isOrphan && (
-          <p className="mt-1 flex items-center gap-1 text-[10px] font-sans font-semibold uppercase tracking-wide text-warning">
+          <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-warning">
             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
             Connection endpoint not configured
           </p>

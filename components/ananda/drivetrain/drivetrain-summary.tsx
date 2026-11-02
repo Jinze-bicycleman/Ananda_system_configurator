@@ -7,8 +7,8 @@ import { Pencil } from "lucide-react"
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-sans font-semibold text-graphite truncate">{value}</p>
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-graphite truncate">{value}</p>
     </div>
   )
 }
@@ -19,20 +19,20 @@ export function DrivetrainSummary({ onEditStep }: { onEditStep: (stepNumber: num
   const motor = motors.find((m) => m.id === s.motorId) ?? null
 
   return (
-    <div className="border border-border bg-white overflow-hidden mb-6">
+    <div className="border border-border bg-card overflow-hidden mb-6">
       <div className="h-1 bg-primary" />
       <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 bg-surface border-b border-border">
-        <p className="text-[11px] font-sans font-black uppercase tracking-[0.15em] text-graphite">Inherited Configuration</p>
+        <p className="text-xs font-semibold text-graphite">Inherited Configuration</p>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onEditStep(2)}
-            className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
             <Pencil className="w-3 h-3" /> Edit Bike
           </button>
           <button
             onClick={() => onEditStep(4)}
-            className="flex items-center gap-1 text-[11px] font-sans font-bold uppercase tracking-wider text-primary hover:underline"
+            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
             <Pencil className="w-3 h-3" /> Edit Motor Package
           </button>

@@ -20,18 +20,18 @@ export function AnandaRideAppPanel() {
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={APP_LOGO_URL} alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl border border-border" />
-            <p className="font-sans text-sm font-black uppercase leading-tight tracking-tight text-graphite text-balance">
+            <p className="text-sm font-semibold leading-tight text-graphite text-balance">
               {APP_INTRO.headline}
             </p>
           </div>
 
           <div>
-            <p className="mb-2 font-sans text-[11px] font-bold uppercase tracking-wider text-primary">Key Features</p>
+            <p className="mb-2 text-xs font-semibold text-primary">Key Features</p>
             <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
               {APP_FEATURES.map((feature) => (
                 <li
                   key={feature}
-                  className="flex items-center gap-2 font-sans text-xs font-bold uppercase tracking-wide text-graphite"
+                  className="flex items-center gap-2 text-xs font-semibold text-graphite"
                 >
                   <span className="h-1.5 w-1.5 shrink-0 bg-primary" aria-hidden="true" />
                   {feature}
@@ -42,12 +42,12 @@ export function AnandaRideAppPanel() {
 
           {hasLink && (
             <div className="space-y-2 border-t border-border pt-4">
-              <p className="font-body text-xs leading-relaxed text-muted-foreground text-pretty">{APP_CTA.text}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground text-pretty">{APP_CTA.text}</p>
               <a
                 href={OFFICIAL_APP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 font-sans text-[11px] font-bold uppercase tracking-wider text-primary underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline"
               >
                 {APP_CTA.label}
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

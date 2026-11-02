@@ -15,7 +15,7 @@ export function BrandNameField() {
         onChange={(event) => setBrandName(event.target.value)}
         placeholder="Your brand name"
         maxLength={60}
-        className="w-44 rounded-md border border-border bg-background px-3 py-2 font-sans text-sm font-semibold text-graphite outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-60"
+        className="w-44 rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold text-graphite outline-none transition-colors placeholder:font-normal placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-60"
       />
     </label>
   )

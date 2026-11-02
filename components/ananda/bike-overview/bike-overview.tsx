@@ -17,11 +17,11 @@ export function BikeOverview() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="font-sans text-xs font-bold uppercase tracking-wider text-graphite-light">{template.name} · cable routing</p>
+        <p className="text-xs font-semibold text-graphite-light">{template.name} · cable routing</p>
         <p className="text-xs text-muted-foreground">Select a cable on the bike or below to edit its length.</p>
       </div>
 
-      <div className="overflow-hidden border border-border bg-white">
+      <div className="overflow-hidden border border-border bg-card">
         <BikeCanvas
           template={template}
           products={products}
@@ -48,11 +48,11 @@ export function BikeOverview() {
                 aria-pressed={isSelected}
                 onClick={() => setSelected(cable.key)}
                 className={cn(
-                  "flex min-h-11 h-full w-full flex-col gap-1 border-2 p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+ "flex min-h-11 h-full w-full flex-col gap-1 border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                   isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40",
                 )}
               >
-                <span className="mb-1 flex h-20 w-full items-center justify-center bg-white">
+                <span className="mb-1 flex h-20 w-full items-center justify-center bg-card">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={cable.meta.connectorImage}
@@ -62,15 +62,15 @@ export function BikeOverview() {
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="h-1.5 w-8 shrink-0" style={{ backgroundColor: cable.meta.stroke }} aria-hidden="true" />
-                  <span className="font-sans text-xs font-bold uppercase tracking-wide text-graphite">{cable.meta.title}</span>
+                  <span className="text-xs font-semibold text-graphite">{cable.meta.title}</span>
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {cable.meta.from} → {cable.meta.to}
                 </span>
                 {cable.visible ? (
                   <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-mono text-base font-bold text-graphite">{formatLengthCm(cable.lengthMm)}</span>
-                    <span className="text-[11px] font-sans font-bold uppercase tracking-wide text-muted-foreground">
+                    <span className="tabular-nums text-base font-semibold text-graphite">{formatLengthCm(cable.lengthMm)}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">
                       {cable.mode === "custom" ? "Custom" : "Standard"}
                     </span>
                   </span>

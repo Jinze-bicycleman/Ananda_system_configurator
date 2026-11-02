@@ -29,7 +29,7 @@ export function HomePage() {
             <p className="text-sm font-semibold text-primary">
               {brandName.trim() ? brandName.trim() : "E-Drive System Configurator"}
             </p>
-            <h1 className="mt-1 text-balance font-sans text-3xl font-semibold tracking-tight text-graphite sm:text-4xl">My Projects</h1>
+            <h1 className="mt-1 text-balance text-3xl font-semibold text-graphite sm:text-4xl">My Projects</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {projects.length === 0
                 ? "Your saved configurations will appear here."

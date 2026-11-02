@@ -100,26 +100,26 @@ export function AnandaConfigurator() {
   if (!hydrated || !state.hasStarted) return <HomePage />
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b border-graphite-light bg-graphite">
-        <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center bg-primary"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none"><path d="M13 3 4 14h7v7l9-11h-7z" fill="white" /></svg></div><div><span className="font-sans text-base font-black uppercase tracking-widest text-white">Ananda</span><span className="ml-2 hidden max-w-48 truncate align-bottom font-sans text-sm text-white/40 sm:inline-block">{activeProjectName ?? "E-Drive System Configurator"}</span></div></div>
+    <div className="flex min-h-screen flex-col bg-secondary/60">
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
+        <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-4"><img src="/images/ananda-logo.png" alt="Ananda eDriveALL" className="h-8 w-auto shrink-0" /><span className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" /><span className="hidden max-w-64 truncate text-sm font-medium text-graphite sm:block">{activeProjectName ?? "E-Drive System Configurator"}</span></div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={closeActive}
-              className="flex items-center gap-1.5 border border-white/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-primary hover:text-white"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-graphite transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <FolderOpen className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">My Projects</span>
             </button>
-            <span className="hidden font-sans text-xs uppercase tracking-wider text-white/50 sm:inline">{complete.filter(Boolean).length} / {labels.length} complete</span>
-            <div className="hidden h-1 w-20 overflow-hidden rounded-full bg-white/10 sm:block"><div className="h-full bg-primary transition-all" style={{ width: `${(complete.filter(Boolean).length / labels.length) * 100}%` }} /></div>
+            <span className="hidden text-sm text-muted-foreground sm:inline">{complete.filter(Boolean).length} of {labels.length} complete</span>
+            <div className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-secondary sm:block"><div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${(complete.filter(Boolean).length / labels.length) * 100}%` }} /></div>
             <Sheet>
               <SheetTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 border border-white/20 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white/70 transition-colors hover:border-primary hover:text-white 2xl:hidden"
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-graphite transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary 2xl:hidden"
                 >
                   <PanelRightOpen className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Summary</span>
@@ -127,7 +127,7 @@ export function AnandaConfigurator() {
               </SheetTrigger>
               <SheetContent side="right" className="w-full max-w-sm overflow-y-auto p-0 sm:max-w-md">
                 <SheetHeader className="border-b border-border px-4 py-3">
-                  <SheetTitle className="text-sm uppercase tracking-wider">Configuration Summary</SheetTitle>
+                  <SheetTitle className="text-base font-semibold">Configuration summary</SheetTitle>
                 </SheetHeader>
                 <div className="p-4"><ConfigSummaryPanel /></div>
               </SheetContent>
@@ -136,17 +136,17 @@ export function AnandaConfigurator() {
         </div>
       </header>
       <div className="flex min-w-0 flex-1">
-        <div className="hidden min-w-0 shrink-0 border-r border-white/10 bg-graphite lg:block lg:w-56 xl:w-64"><div className="sticky top-14"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div></div>
-        <div className="min-w-0 max-w-full flex-1"><div className="sticky top-14 z-40 border-b border-white/10 bg-graphite lg:hidden"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div>
-          <div className="mx-auto max-w-7xl min-w-0 px-4 py-6 sm:px-6 lg:px-8"><div className="grid min-w-0 items-start gap-8 2xl:grid-cols-[minmax(0,1fr)_260px]"><main className="min-w-0 max-w-full">
-            <div className="mb-5"><p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">ANANDA / CONFIGURATION WORKFLOW</p><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Complete one stage at a time. Later stages unlock when prerequisites are ready.</p></div>
-            <section className="min-w-0 max-w-full border border-primary/50 bg-card"><div className="min-w-0 p-4 sm:p-6">
+        <div className="hidden min-w-0 shrink-0 border-r border-border bg-background lg:block lg:w-60 xl:w-64"><div className="sticky top-14"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div></div>
+        <div className="min-w-0 max-w-full flex-1"><div className="sticky top-14 z-40 border-b border-border bg-background lg:hidden"><ProgressIndicator current={open + 1} onStep={openStepNumber} /></div>
+          <div className="mx-auto max-w-7xl min-w-0 px-4 py-6 sm:px-6 lg:px-8"><div className="grid min-w-0 items-start gap-8 2xl:grid-cols-[minmax(0,1fr)_280px]"><main className="min-w-0 max-w-full">
+            <div className="mb-5"><p className="text-sm font-semibold text-primary">Configuration workflow</p><p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">Complete one stage at a time. Later stages unlock when prerequisites are ready.</p></div>
+            <section className="min-w-0 max-w-full rounded-lg border border-border bg-card shadow-sm"><div className="min-w-0 p-4 sm:p-6 lg:p-8">
               {incompleteItems.length > 0 && (
-                <div className="mb-6 border-2 border-destructive bg-destructive/10 p-4">
+                <div role="alert" className="mb-6 rounded-md border border-destructive/40 bg-destructive/5 p-4">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-sans font-bold uppercase tracking-wider text-destructive">
+                      <p className="text-sm font-semibold text-destructive">
                         Complete the following before moving to the next stage
                       </p>
                       <ul className="mt-2 space-y-1.5">
@@ -155,7 +155,7 @@ export function AnandaConfigurator() {
                             <button
                               type="button"
                               onClick={() => scrollToTarget(item.targetId)}
-                              className="text-left text-sm font-body text-foreground underline decoration-destructive/50 underline-offset-2 hover:text-destructive"
+                              className="text-left text-sm text-foreground underline decoration-destructive/50 underline-offset-2 hover:text-destructive"
                             >
                               {item.message}
                             </button>
@@ -168,20 +168,21 @@ export function AnandaConfigurator() {
               )}
               {content[open]}
               <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
-                <button onClick={goBack} disabled={open === 0} className="flex items-center gap-2 border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"><ArrowLeft className="h-3.5 w-3.5" /> Previous</button>
-                <span className="font-mono text-xs text-muted-foreground">{open + 1} / {labels.length}</span>
+                <button type="button" onClick={goBack} disabled={open === 0} className="flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-graphite transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Previous</button>
+                <span className="text-sm tabular-nums text-muted-foreground">{open + 1} of {labels.length}</span>
                 {open === labels.length - 1 ? (
-                  <button onClick={handleDownloadReport} disabled={downloadingReport} className="flex items-center gap-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60">{downloadingReport ? "Preparing PDF…" : "Download Report"} <Download className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={handleDownloadReport} disabled={downloadingReport} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60">{downloadingReport ? "Preparing PDF…" : "Download report"} <Download className="h-4 w-4" aria-hidden="true" /></button>
                 ) : (
                   <button
+                    type="button"
                     onClick={goNext}
                     className={
                       complete[open]
-                        ? "flex items-center gap-2 bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary/90"
-                        : "flex items-center gap-2 border-2 border-destructive bg-transparent px-4 py-2 text-xs font-bold uppercase tracking-wider text-destructive transition-colors hover:bg-destructive/10"
+                        ? "flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        : "flex items-center gap-2 rounded-md border border-destructive/50 bg-card px-4 py-2.5 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive"
                     }
                   >
-                    Next Stage <ArrowRight className="h-3.5 w-3.5" />
+                    Next stage <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </button>
                 )}
               </div>

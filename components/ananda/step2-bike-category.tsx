@@ -52,7 +52,7 @@ function DriveUnitSection() {
       <SectionLabel>Drive Unit Selection</SectionLabel>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Motor Type</p>
+          <p className="mb-2 text-sm font-medium text-graphite">Motor type</p>
           <div className="flex flex-wrap gap-3">
             {DRIVE_UNITS.map((d) => {
               const selected = s.driveType === d.id
@@ -61,26 +61,27 @@ function DriveUnitSection() {
                   key={d.id}
                   type="button"
                   disabled={d.disabled}
+                  aria-pressed={selected}
                   onClick={() => s.setDriveType(d.id)}
                   className={cn(
-                    "flex min-w-0 flex-1 basis-40 items-center justify-between gap-2 border-2 px-3 py-2.5 text-left text-sm font-sans font-semibold transition-colors",
+                    "flex min-w-0 flex-1 basis-40 items-center justify-between gap-2 rounded-md border px-3 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                     d.disabled
                       ? "cursor-not-allowed border-border text-muted-foreground opacity-50"
                       : selected
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border text-graphite hover:border-primary/40",
+                        ? "border-primary bg-primary/5 font-semibold text-primary ring-1 ring-primary"
+                        : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
                   )}
                 >
                   {d.label}
-                  {selected && <CheckCircle2 className="h-4 w-4 shrink-0" />}
-                  {d.disabled && <span className="text-[10px] uppercase tracking-wider">Soon</span>}
+                  {selected && <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                  {d.disabled && <span className="text-xs text-muted-foreground">Soon</span>}
                 </button>
               )
             })}
           </div>
         </div>
         <div className="min-w-0">
-          <p className="mb-2 text-xs font-sans font-bold uppercase tracking-wider text-graphite">Voltage Platform</p>
+          <p className="mb-2 text-sm font-medium text-graphite">Voltage platform</p>
           <div className="flex flex-wrap gap-3">
             {VOLTAGE_PLATFORMS.map((v) => {
               const selected = s.voltagePlatform === v
@@ -88,13 +89,16 @@ function DriveUnitSection() {
                 <button
                   key={v}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => s.setVoltage(v)}
                   className={cn(
-                    "flex min-w-0 flex-1 basis-24 items-center justify-center gap-1.5 border-2 px-3 py-2.5 text-sm font-sans font-bold transition-colors",
-                    selected ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
+                    "flex min-w-0 flex-1 basis-24 items-center justify-center gap-1.5 rounded-md border px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                    selected
+                      ? "border-primary bg-primary/5 font-semibold text-primary ring-1 ring-primary"
+                      : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
                   )}
                 >
-                  <Zap className="h-3.5 w-3.5" />
+                  <Zap className="h-3.5 w-3.5" aria-hidden="true" />
                   {v}V
                 </button>
               )
@@ -118,7 +122,7 @@ export function Step2BikeCategory() {
       />
 
       {/* Inherited constraints — read-only context from Step 1 */}
-      <div className="mb-8 border border-border bg-surface p-4">
+      <div className="mb-8 rounded-lg border border-border bg-secondary/50 p-4">
         <SectionLabel>Inherited Constraints</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <InheritedField label="Market" value={s.sellRegion ?? "—"} />
@@ -137,10 +141,11 @@ export function Step2BikeCategory() {
               <button
                 key={category.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => s.setBikeCategory(category.id)}
                 className={cn(
-                  "group relative overflow-hidden border text-left transition-colors",
-                  selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/60",
+                  "group relative overflow-hidden rounded-lg border text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-primary/40",
                 )}
               >
                 <div className="relative h-56 overflow-hidden bg-muted sm:h-64">
@@ -150,10 +155,10 @@ export function Step2BikeCategory() {
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite/90 to-transparent p-4 pt-16">
-                    <span className="text-lg font-bold uppercase tracking-wide text-white">{category.label}</span>
+                    <span className="text-lg font-semibold text-white">{category.label}</span>
                   </div>
                   {selected && (
-                    <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center bg-primary text-primary-foreground">
+                    <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <CheckCircle2 className="h-5 w-5" />
                     </span>
                   )}
@@ -183,8 +188,8 @@ export function Step2BikeCategory() {
 function InheritedField({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-sans uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-sans font-bold tabular-nums text-graphite wrap-anywhere">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold tabular-nums text-graphite wrap-anywhere">{value}</p>
     </div>
   )
 }
@@ -236,16 +241,16 @@ function WheelAndTyreSection() {
   return (
     <div className="mb-8">
       {recommendation && (
-        <div className="mb-4 border-l-2 border-primary bg-primary/5 px-4 py-3 text-xs leading-5 text-foreground">{recommendation}</div>
+        <div className="mb-4 rounded-md bg-primary/5 px-4 py-3 text-sm leading-relaxed text-foreground">{recommendation}</div>
       )}
-      <section id="field-wheelSize" className="border border-border bg-card p-4 sm:p-5">
+      <section id="field-wheelSize" className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-sm font-bold uppercase tracking-[0.12em] text-foreground">Wheel &amp; tyre data</p>
+          <p className="text-sm font-semibold text-foreground">Wheel &amp; tyre data</p>
           <span className="text-xs text-muted-foreground">A few percent of difference is allowed</span>
         </div>
         <p className="mb-4 -mt-2 text-xs text-muted-foreground">Measured circumference overrides the default lookup value.</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <label className="text-sm font-medium text-graphite">
             Wheel size
             <select
               value={s.wheelSize ?? ""}
@@ -254,7 +259,7 @@ function WheelAndTyreSection() {
                 s.setField("tyreWidth", null)
                 s.setField("tyreIsoSize", null)
               }}
-              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <option value="">Choose wheel size</option>
               {wheelSizeOptions.map((item) => (
@@ -264,7 +269,7 @@ function WheelAndTyreSection() {
           </label>
         </div>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <label className="flex-1 text-sm font-medium text-graphite">
             Tyre circumference (mm)
             <input
               type="number"
@@ -273,24 +278,24 @@ function WheelAndTyreSection() {
               value={circumference ?? ""}
               onChange={(e) => s.setField("tyreCircumferenceMm", e.target.value ? Number(e.target.value) : null)}
               placeholder="Manual value"
-              className="mt-2 w-full border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             />
           </label>
           <button
             type="button"
             onClick={openLookup}
-            className="inline-flex h-10 items-center justify-center gap-2 border border-primary px-4 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/5"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-primary px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Search className="h-4 w-4" /> Tyre lookup
+            <Search className="h-4 w-4" aria-hidden="true" /> Tyre lookup
           </button>
         </div>
         {lookupOpen && (
-          <div className="mt-4 border border-primary/30 bg-primary/5 p-4">
+          <div className="mt-4 rounded-md border border-primary/30 bg-primary/5 p-4">
             <div className="grid gap-3 sm:grid-cols-3">
               <select
                 value={lookupWheel}
                 onChange={(e) => handleWheelChange(e.target.value)}
-                className="border border-border bg-background px-3 py-2 text-sm text-foreground"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
                 <option value="">Choose wheel size</option>
                 {wheelSizeOptions.map((item) => (
@@ -301,7 +306,7 @@ function WheelAndTyreSection() {
                 value={lookupWidth}
                 onChange={(e) => setLookupWidth(e.target.value)}
                 disabled={!lookupWheel}
-                className="border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50"
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50"
               >
                 <option value="">Choose width</option>
                 {tyreWidthOptions.map((item) => (
@@ -312,15 +317,15 @@ function WheelAndTyreSection() {
                 type="button"
                 disabled={!match}
                 onClick={applyMatch}
-                className="bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 Apply {isMatchLoading ? "…" : match ? `${match.circumference_mm} mm` : "—"}
               </button>
             </div>
             {match && (
               <p className="mt-3 text-xs text-muted-foreground">
-                ISO size <span className="font-bold text-foreground">{match.iso_size}</span> · Circumference{" "}
-                <span className="font-bold text-foreground">{match.circumference_mm} mm</span>
+                ISO size <span className="font-semibold text-foreground">{match.iso_size}</span> · Circumference{" "}
+                <span className="font-semibold text-foreground">{match.circumference_mm} mm</span>
               </p>
             )}
           </div>

@@ -38,17 +38,17 @@ export function assignCable(cables: ConnectionCableRow[], index: number): Connec
 }
 
 const inputBase =
-  "w-32 appearance-none border border-border bg-white px-2 py-1.5 pr-7 text-xs font-sans focus:outline-none focus:border-primary"
+ "w-32 appearance-none border border-border bg-card px-2 py-1.5 pr-7 text-xs focus:outline-none focus:border-primary"
 
 /** Read-only summary of the catalog cable assigned to a row (name, connector model, pins, IPX rating). */
 export function CableCatalogInfo({ cable }: { cable: ConnectionCableRow | null }) {
   if (!cable) {
-    return <span className="text-[11px] font-body text-muted-foreground">—</span>
+    return <span className="text-xs text-muted-foreground">—</span>
   }
   return (
     <div>
-      <p className="font-sans font-bold text-foreground">{cable.name}</p>
-      <p className="text-[10.5px] font-body text-muted-foreground">
+      <p className="font-semibold text-foreground">{cable.name}</p>
+      <p className="text-[10.5px] text-muted-foreground">
         {cable.connector_model} · {cable.pin_count}-pin · {cable.ipx_rating}
       </p>
     </div>
@@ -80,7 +80,7 @@ export function CableLengthSelect({
           const mm = Number(e.target.value)
           if (mm > 0) s.setCableLength(connection, mm / 1000)
         }}
-        className={`${inputBase} ${storedMm ? "font-bold text-foreground" : "text-muted-foreground"}`}
+        className={`${inputBase} ${storedMm ? "font-semibold text-foreground" : "text-muted-foreground"}`}
       >
         <option value="" disabled hidden>
           Choose a length
@@ -120,7 +120,7 @@ export function ExtensionCableControl({
       <button
         type="button"
         onClick={() => setAdding(true)}
-        className="flex items-center gap-1 border border-dashed border-border px-2 py-1.5 text-[11px] font-sans font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+        className="flex items-center gap-1 border border-dashed border-border px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary hover:text-primary"
       >
         <Plus className="h-3 w-3" aria-hidden="true" /> Add an extension cable
       </button>
@@ -140,7 +140,7 @@ export function ExtensionCableControl({
             const mm = Number(e.target.value)
             if (mm > 0) s.setExtensionCableLength(connection, mm / 1000)
           }}
-          className={`${inputBase} w-28 ${storedMm ? "font-bold text-foreground" : "text-muted-foreground"}`}
+          className={`${inputBase} w-28 ${storedMm ? "font-semibold text-foreground" : "text-muted-foreground"}`}
         >
           <option value="" disabled hidden>
             Choose a length

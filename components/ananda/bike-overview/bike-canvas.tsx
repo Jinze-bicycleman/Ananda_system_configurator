@@ -117,7 +117,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         const label = template.products[role].label
         if (!product || !label) return null
         return (
-          <text key={role} x={label.x} y={label.y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black font-sans">
+          <text key={role} x={label.x} y={label.y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black">
             {productLabelLines(role, product.model).map((line, i) => (
               <tspan key={line} x={label.x} dy={i === 0 ? 0 : LINE_HEIGHT}>
                 {line}
@@ -132,8 +132,8 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         const isSelected = cable.key === selected
         const lines = [
           null,
-          `connector:${cable.placement.connectorLabel}`,
-          `length: ${formatLengthCm(cable.lengthMm)}`,
+ `connector:${cable.placement.connectorLabel}`,
+ `length: ${formatLengthCm(cable.lengthMm)}`,
         ]
         return (
           <g
@@ -164,7 +164,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
               className={isSelected ? "fill-primary/10 stroke-primary" : "fill-transparent stroke-transparent"}
               strokeWidth={1}
             />
-            <text x={x} y={y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black font-sans">
+            <text x={x} y={y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black">
               {lines.map((line, i) =>
                 line === null ? (
                   <tspan key="title" x={x} dy={0}>

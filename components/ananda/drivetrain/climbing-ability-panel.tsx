@@ -79,19 +79,19 @@ export function ClimbingAbilityPanel({
       : "Theoretical peak, low-speed climbing estimate"
 
   return (
-    <div className="flex flex-col gap-5 border border-border bg-white p-5">
+    <div className="flex flex-col gap-5 border border-border bg-card p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <SectionLabel>Climbing ability</SectionLabel>
-        <p className="text-xs font-body text-muted-foreground sm:-mt-4">{gearContextLabel}</p>
+        <p className="text-xs text-muted-foreground sm:-mt-4">{gearContextLabel}</p>
       </div>
 
       {/* Rider weight slider */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label htmlFor="rider-weight-slider" className="text-sm font-sans font-semibold text-graphite">
+          <label htmlFor="rider-weight-slider" className="text-sm font-semibold text-graphite">
             Rider weight
           </label>
-          <span className="text-sm font-sans font-bold tabular-nums text-primary">{riderWeightKg} kg</span>
+          <span className="text-sm font-semibold tabular-nums text-primary">{riderWeightKg} kg</span>
         </div>
         <Slider
           id="rider-weight-slider"
@@ -103,7 +103,7 @@ export function ClimbingAbilityPanel({
           aria-label="Rider weight in kilograms"
           aria-valuetext={`${riderWeightKg} kilograms`}
         />
-        <div className="flex items-center justify-between text-xs font-body text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Bike weight: {DEFAULT_BIKE_WEIGHT_KG} kg</span>
           <span className="tabular-nums">Total system weight: {systemWeightKg} kg</span>
         </div>
@@ -112,7 +112,7 @@ export function ClimbingAbilityPanel({
       {/* Assistance mode */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm font-sans font-semibold text-graphite">Assistance mode</span>
+          <span className="text-sm font-semibold text-graphite">Assistance mode</span>
           <Tooltip>
             <TooltipTrigger aria-label="What does assistance mode mean?">
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
@@ -134,7 +134,7 @@ export function ClimbingAbilityPanel({
                 onClick={() => onAssistanceModeChange(m.mode_key)}
                 aria-pressed={activeMode?.mode_key === m.mode_key}
                 className={cn(
-                  "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
+ "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
                   m.mode_key === "eco" && "bg-[rgba(69,221,102,0.64)]",
                   m.mode_key === "trail" && "bg-[rgba(0,59,244,0.95)]",
                   m.mode_key === "sport" && "bg-[rgba(244,210,3,0.97)]",
@@ -146,7 +146,7 @@ export function ClimbingAbilityPanel({
                 )}
               >
                 <span
-                  className="text-sm font-body leading-tight"
+                  className="text-sm leading-tight"
                   style={m.mode_key === "trail" ? { color: "#ebebeb" } : undefined}
                 >
                   {m.mode_key === "trail" ? "Tour" : m.display_label}
@@ -165,7 +165,7 @@ export function ClimbingAbilityPanel({
 
       {/* Pedal effort */}
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-sans font-semibold text-graphite">Rider pedalling effort</span>
+        <span className="text-sm font-semibold text-graphite">Rider pedalling effort</span>
         <div className="choice-group" role="group" aria-label="Rider pedalling effort">
           {PEDAL_EFFORT_PRESETS.map((p) => (
             <button
@@ -174,13 +174,13 @@ export function ClimbingAbilityPanel({
               onClick={() => onPedalEffortChange(p.key)}
               aria-pressed={pedalEffortKey === p.key}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
+ "flex min-w-0 flex-col items-center justify-center gap-0.5 border px-2 py-2 text-center transition-colors",
                 pedalEffortKey === p.key
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-graphite hover:border-primary/40",
               )}
             >
-              <span className="text-sm font-body leading-tight">{p.label}</span>
+              <span className="text-sm leading-tight">{p.label}</span>
               <span className="text-xs tabular-nums text-muted-foreground">{p.torqueNm} Nm</span>
             </button>
           ))}
@@ -216,14 +216,14 @@ export function ClimbingAbilityPanel({
           {result.assistance.isCappedByMotorMax && (
             <div className="flex items-start gap-2.5 bg-warning/10 border border-warning/30 px-4 py-3">
               <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-sm font-body text-warning-foreground">Limited by motor maximum torque.</p>
+              <p className="text-sm text-warning-foreground">Limited by motor maximum torque.</p>
             </div>
           )}
 
           {result.status === "exceeded" ? (
             <div className="flex items-start gap-2.5 bg-destructive/10 border border-destructive/30 px-4 py-3">
               <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-sm font-body text-destructive">
+              <p className="text-sm text-destructive">
                 The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.
               </p>
             </div>
@@ -243,16 +243,16 @@ export function ClimbingAbilityPanel({
                         className="flex min-w-0 flex-col items-center gap-1 text-center lg:w-[35%] lg:items-start lg:text-left"
                         aria-live="polite"
                       >
-                        <p className="text-4xl font-sans font-black tabular-nums leading-none text-primary sm:text-5xl">
+                        <p className="text-4xl font-semibold tabular-nums leading-none text-primary sm:text-5xl">
                           {gradePercent.toFixed(1)}%
                         </p>
-                        <p className="text-sm font-body font-semibold tabular-nums text-graphite">
+                        <p className="text-sm font-semibold tabular-nums text-graphite">
                           {angleDegrees.toFixed(1)}&deg; equivalent angle
                         </p>
                         {result.scenario && (
-                          <p className="text-sm font-body font-medium text-muted-foreground">{result.scenario.label}</p>
+                          <p className="text-sm font-medium text-muted-foreground">{result.scenario.label}</p>
                         )}
-                        <p className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           Maximum theoretical grade
                         </p>
                       </div>
@@ -265,7 +265,7 @@ export function ClimbingAbilityPanel({
             </>
           )}
 
-          <p className="text-xs font-body leading-relaxed text-muted-foreground">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal limits,
             tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and rider technique.
           </p>
@@ -288,10 +288,10 @@ function CalcSummaryStat({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <span className="text-[11px] font-sans uppercase tracking-wider text-muted-foreground text-balance">{label}</span>
+      <span className="text-xs text-muted-foreground text-balance">{label}</span>
       <span
         className={cn(
-          "text-lg font-sans font-bold tabular-nums sm:text-xl",
+ "text-lg font-semibold tabular-nums sm:text-xl",
           highlight ? "text-primary" : "text-graphite",
         )}
       >
@@ -305,7 +305,7 @@ function EmptyClimbingState({ missing }: { missing: string[] }) {
   return (
     <div className="flex items-start gap-2.5 bg-graphite/5 border border-graphite/20 px-4 py-3">
       <Info className="w-4 h-4 text-graphite flex-shrink-0 mt-0.5" />
-      <p className="text-sm font-body text-graphite">
+      <p className="text-sm text-graphite">
         <span className="font-semibold">N/A</span> — missing {missing.join(", ")}.
       </p>
     </div>

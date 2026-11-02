@@ -45,7 +45,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
   const imageBox = (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden border border-border bg-white",
+ "flex shrink-0 items-center justify-center overflow-hidden border border-border bg-card",
         orientation === "image-left" ? "h-16 w-16" : "h-14 w-full",
       )}
     >
@@ -72,7 +72,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
         }
       }}
       className={cn(
-        "absolute inset-0 flex h-full w-full flex-col overflow-hidden border bg-card shadow-sm transition-colors",
+ "absolute inset-0 flex h-full w-full flex-col overflow-hidden border bg-card shadow-sm transition-colors",
         selected ? "border-primary ring-2 ring-primary/30" : "border-border",
         editing ? "cursor-move" : "cursor-pointer",
         // Accessories are secondary to the cable/interface topology this
@@ -87,22 +87,22 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
         {imageBox}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <span className="truncate text-[10px] font-sans font-bold uppercase tracking-wider text-muted-foreground">
+            <span className="truncate text-xs font-semibold text-muted-foreground">
               {node.category}
             </span>
             {node.status === "missing" && <AlertTriangle className="h-3 w-3 shrink-0 text-warning" aria-hidden="true" />}
           </div>
-          <p className="wrap-anywhere text-sm font-sans font-bold leading-tight text-foreground">{node.model}</p>
+          <p className="wrap-anywhere text-sm font-semibold leading-tight text-foreground">{node.model}</p>
 
           {isAccessories ? (
             <ul className="mt-1 max-h-32 flex-1 overflow-y-auto divide-y divide-border border-t border-border">
               {(accessories ?? []).length === 0 ? (
-                <li className="py-1 text-[10.5px] font-body text-muted-foreground">None selected</li>
+                <li className="py-1 text-[10.5px] text-muted-foreground">None selected</li>
               ) : (
                 (accessories ?? []).map((item) => (
                   <li key={item.id} className="flex items-center justify-between gap-1 py-1 text-[10.5px]">
-                    <span className="truncate font-body text-foreground">{item.name}</span>
-                    <span className="shrink-0 font-mono text-muted-foreground">×{item.quantity}</span>
+                    <span className="truncate text-foreground">{item.name}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">×{item.quantity}</span>
                   </li>
                 ))
               )}
@@ -111,8 +111,8 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
             node.specs.length > 0 && (
               <div className="mt-1 space-y-0.5">
                 {node.specs.slice(0, 3).map((spec) => (
-                  <p key={spec.label} className="truncate text-[10.5px] font-body text-muted-foreground">
-                    <span className="font-sans font-semibold text-foreground">{spec.label}:</span> {spec.value}
+                  <p key={spec.label} className="truncate text-[10.5px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">{spec.label}:</span> {spec.value}
                   </p>
                 ))}
               </div>
