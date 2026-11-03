@@ -505,10 +505,13 @@ function PedalSensorRowSection({
           <OptionCard
             key={sensor.id}
             title={sensor.model}
+            images={productImages(sensor.image_url)}
+            datasheetUrl={sensor.datasheet_url}
             specs={[
               { label: "Mounting", value: sensor.mounting_position },
               { label: "Connector", value: sensor.connector_type },
               { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+              { label: "Waterproof", value: sensor.waterproof },
               { label: "Weight", value: sensor.weight_kg ? `${sensor.weight_kg} kg` : null },
             ]}
             selected={s[itemKey] === sensor.id}
@@ -784,6 +787,7 @@ export function Step3PackageConfiguration() {
               <p className="text-xs text-muted-foreground">
                 {speedSensorTypeLabel(selectedSpeedSensor.mounting_position)} · {selectedSpeedSensor.connector_type ?? "—"}
                 {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m ${t("lead")}` : ""}
+                    {selectedSpeedSensor.waterproof ? ` · ${selectedSpeedSensor.waterproof}` : ""}
               </p>
             </div>
           )
@@ -794,11 +798,14 @@ export function Step3PackageConfiguration() {
             <OptionCard
               key={sensor.id}
               title={sensor.model}
+              images={productImages(sensor.image_url)}
+              datasheetUrl={sensor.datasheet_url}
               specs={[
                 { label: "Type", value: speedSensorTypeLabel(sensor.mounting_position) },
                 { label: "Mounting", value: sensor.mounting_position },
                 { label: "Connector", value: sensor.connector_type },
                 { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+                { label: "Waterproof", value: sensor.waterproof },
               ]}
               selected={s.speedSensorId === sensor.id}
               onSelect={() => s.selectPackageItem("speedSensorId", sensor.id)}
@@ -969,6 +976,7 @@ export function Step3PackageConfiguration() {
                       <OptionCard
                         key={c.id}
                         title={c.model}
+                        images={productImages(c.image_url)}
                         specs={[
                           { label: "Teeth", value: c.teeth != null ? `${c.teeth}T` : null },
                           { label: "Description", value: c.short_description },

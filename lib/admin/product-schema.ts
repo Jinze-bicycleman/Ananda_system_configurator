@@ -60,6 +60,13 @@ const motorPlatformField: ProductField = {
   ],
 }
 
+const waterproofField: ProductField = {
+  name: "waterproof",
+  label: "Waterproof rating",
+  type: "text",
+  hint: "For example IP65 or IP67.",
+}
+
 export const PRODUCT_TABLES: ProductTable[] = [
   {
     table: "motors",
@@ -205,7 +212,8 @@ export const PRODUCT_TABLES: ProductTable[] = [
       { name: "mounting_position", label: "Mounting position", type: "text" },
       { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
       { name: "connector_type", label: "Connector type", type: "text" },
-      ...listing,
+      waterproofField,
+      ...common,
     ],
   },
   {
@@ -222,6 +230,7 @@ export const PRODUCT_TABLES: ProductTable[] = [
       { name: "mounting_position", label: "Mounting position", type: "text" },
       { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
       { name: "connector_type", label: "Connector type", type: "text" },
+      waterproofField,
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       ...common,
     ],
@@ -240,6 +249,7 @@ export const PRODUCT_TABLES: ProductTable[] = [
       { name: "mounting_position", label: "Mounting position", type: "text" },
       { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
       { name: "connector_type", label: "Connector type", type: "text" },
+      waterproofField,
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       ...common,
     ],
@@ -285,6 +295,7 @@ export const PRODUCT_TABLES: ProductTable[] = [
       },
       { name: "teeth", label: "Teeth", type: "integer", hint: "Chainrings only." },
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      { name: "image_url", label: "Picture", type: "image" },
       { name: "short_description", label: "Description", type: "textarea" },
       ...listing,
     ],
