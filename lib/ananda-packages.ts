@@ -404,10 +404,13 @@ export function connectionCableLengthOptionsFor(options: ConnectionCableLengthOp
 // `connector_type` describe that lead directly, unlike the display/
 // accessory connections which are assembled from the separate
 // connection-cable catalog.
+export type SensorMotorPlatform = "mid_drive" | "hub" | "both"
+
 export type SpeedSensorRow = {
   id: string
   model: string
   name: string | null
+  motor_platform: SensorMotorPlatform
   mounting_position: string | null
   cable_length_mm: number | null
   connector_type: string | null
@@ -415,7 +418,7 @@ export type SpeedSensorRow = {
   sort_order: number
 }
 
-const SPEED_SENSOR_COLUMNS = "id, model, name, mounting_position, cable_length_mm, connector_type, is_active, sort_order"
+const SPEED_SENSOR_COLUMNS = "id, model, name, motor_platform, mounting_position, cable_length_mm, connector_type, is_active, sort_order"
 
 async function fetchSpeedSensors(): Promise<SpeedSensorRow[]> {
   const supabase = createClient()
@@ -431,6 +434,54 @@ async function fetchSpeedSensors(): Promise<SpeedSensorRow[]> {
 export function useSpeedSensors() {
   const { data, isLoading, error } = useSWR<SpeedSensorRow[]>("ananda-speed-sensors", fetchSpeedSensors)
   return { speedSensors: data ?? [], isLoading, error }
+}
+
+/** Torque and cadence sensors share one shape; only hub-motor systems offer them (mid-drive motors integrate both). */
+export type PedalSensorRow = {
+  id: string
+  model: string
+  name: string | null
+  motor_platform: SensorMotorPlatform
+  mounting_position: string | null
+  cable_length_mm: number | null
+  connector_type: string | null
+  short_description: string | null
+  weight_kg: number | null
+  is_active: boolean
+  sort_order: number
+}
+
+const PEDAL_SENSOR_COLUMNS =
+  "id, model, name, motor_platform, mounting_position, cable_length_mm, connector_type, short_description, weight_kg, is_active, sort_order"
+
+async function fetchPedalSensors(table: "cadence_sensors" | "torque_sensors"): Promise<PedalSensorRow[]> {
+  const { data, error } = await createClient()
+    .from(table)
+    .select(PEDAL_SENSOR_COLUMNS)
+    .eq("is_active", true)
+    .order("sort_order")
+  if (error) throw error
+  return (data ?? []) as unknown as PedalSensorRow[]
+}
+
+export function useCadenceSensors() {
+  const { data, isLoading, error } = useSWR<PedalSensorRow[]>("ananda-cadence-sensors", () => fetchPedalSensors("cadence_sensors"))
+  return { cadenceSensors: data ?? [], isLoading, error }
+}
+
+export function useTorqueSensors() {
+  const { data, isLoading, error } = useSWR<PedalSensorRow[]>("ananda-torque-sensors", () => fetchPedalSensors("torque_sensors"))
+  return { torqueSensors: data ?? [], isLoading, error }
+}
+
+/** Keeps the sensors labelled for the chosen motor platform (or for both). */
+export function sensorsForPlatform<T extends { motor_platform: SensorMotorPlatform }>(
+  sensors: T[],
+  driveType: "mid" | "hub" | null,
+): T[] {
+  if (!driveType) return sensors
+  const platform: SensorMotorPlatform = driveType === "hub" ? "hub" : "mid_drive"
+  return sensors.filter((s) => s.motor_platform === "both" || s.motor_platform === platform)
 }
 
 /** Derives a human-readable sensor type ("Wheel Speed Sensor" / "BB Speed Sensor") from its mounting position. */

@@ -25,7 +25,6 @@ export function ConfigSummaryPanel() {
   const chargingPort = CHARGING_PORTS.find((p) => p.id === s.chargingPortId) ?? null
   const accessories = aAccessories.filter((a) => s.accessoryIds.includes(a.id))
 
-  const torqueSensorSkipped = s.skippedItems.includes("torqueSensorId")
   const speedSensorSkipped = s.skippedItems.includes("speedSensorId")
   const batterySkipped = s.skippedItems.includes("batteryId")
 
@@ -38,7 +37,6 @@ export function ConfigSummaryPanel() {
   const issues: string[] = []
   if (!s.motorId) issues.push("No package selected")
   if (s.driveType === "hub" && !s.controllerId) issues.push("Controller required for hub motor")
-  if (s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped) issues.push("Torque sensor required for hub motor")
   if (!s.speedSensorId && !speedSensorSkipped) issues.push("Speed sensor required")
   if (!s.batteryId && !batterySkipped) issues.push("Battery required")
 

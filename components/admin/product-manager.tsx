@@ -93,8 +93,10 @@ function summary(config: ProductTable, record: ProductRecord) {
   if (config.table === "batteries" && record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
   if (config.table === "chargers" && record.current_a) parts.push(`${record.current_a} A`)
   if (config.table === "charging_ports" && record.connector_type) parts.push(String(record.connector_type))
-  if (config.table === "sensors" && record.sensor_type) parts.push(String(record.sensor_type))
   if (config.table === "accessories" && record.category) parts.push(String(record.category))
+  if (record.motor_platform && ["speed_sensors", "cadence_sensors", "torque_sensors"].includes(config.table)) {
+    parts.push(record.motor_platform === "hub" ? "Hub motor" : record.motor_platform === "mid_drive" ? "Mid drive" : "Mid drive + Hub")
+  }
   if (config.table === "speed_sensors" && record.mounting_position) parts.push(String(record.mounting_position))
   if (config.table === "bike_components") {
     if (record.category) parts.push(String(record.category))

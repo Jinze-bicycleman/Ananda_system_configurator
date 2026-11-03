@@ -105,6 +105,7 @@ export interface AnandaActions {
 export type PackageItemKey =
   | "controllerId"
   | "torqueSensorId"
+  | "cadenceSensorId"
   | "speedSensorId"
   | "displayId"
   | "batteryId"
@@ -221,7 +222,8 @@ export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)
 
 export function packageItemKeys(driveType: AnandaConfig["driveType"]): (keyof AnandaConfig)[] {
   const base: (keyof AnandaConfig)[] = ["motorId", "displayId", "speedSensorId", "batteryId", "chargerId", "chargingPortId"]
-  return driveType === "hub" ? ["motorId", "controllerId", "torqueSensorId", ...base.slice(1)] : base
+  // Torque and cadence sensors are optional on hub systems and integrated into mid-drive motors, so neither is required.
+  return driveType === "hub" ? ["motorId", "controllerId", ...base.slice(1)] : base
 }
 
 export const hasThirdPartySupplier = (state: AnandaConfig, key: string) => key in state.thirdPartySuppliers

@@ -12,6 +12,7 @@ const CORE_COMPONENT_LABELS: Partial<Record<keyof AnandaConfig, string>> = {
   motorId: "Motor",
   controllerId: "Controller",
   torqueSensorId: "Torque Sensor",
+  cadenceSensorId: "Cadence Sensor",
   speedSensorId: "Speed Sensor",
   displayId: "Display (HMI)",
   batteryId: "Battery",

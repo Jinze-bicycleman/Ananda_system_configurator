@@ -76,15 +76,6 @@ export interface ARemote {
   description: string
 }
 
-export interface ASensor {
-  id: string
-  name: string
-  sensorType: 'torque' | 'cadence' | 'speed'
-  weightKg: number | null
-  imageUrl: string
-  description: string
-}
-
 export interface AAccessory {
   id: string
   name: string
@@ -252,14 +243,6 @@ export const aRemotes: ARemote[] = [
   { id: 'R1', name: 'R1 Remote', weightKg: 0.04, imageUrl: '', description: '2-button handlebar remote. Assist up/down.' },
   { id: 'R2', name: 'R2 Remote', weightKg: 0.05, imageUrl: '', description: '4-button remote with display control and walk-assist.' },
   { id: 'R3', name: 'R3 Remote', weightKg: 0.06, imageUrl: '', description: 'Advanced multi-function remote with integrated light control.' },
-]
-
-// ─── SENSORS ──────────────────────────────────────────────────────────────
-
-export const aSensors: ASensor[] = [
-  { id: 'TS1', name: 'Torque Sensor', sensorType: 'torque', weightKg: 0.18, imageUrl: '', description: 'BB torque sensing. Required for hub motor systems.' },
-  { id: 'CS1', name: 'Cadence Sensor', sensorType: 'cadence', weightKg: 0.06, imageUrl: '', description: 'Magnet-based cadence sensor. Detects pedal rotation.' },
-  { id: 'SS1', name: 'Speed Sensor', sensorType: 'speed', weightKg: 0.04, imageUrl: '', description: 'Wheel-mounted sensor. Required for speed-limit compliance.' },
 ]
 
 // ─── ACCESSORIES ──────────────────────────────────────────────────────────────

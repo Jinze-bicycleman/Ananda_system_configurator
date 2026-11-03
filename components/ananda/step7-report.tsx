@@ -191,6 +191,9 @@ export function Step7Report() {
         {!isMid && (
           <PackageRow s={s} itemKey="torqueSensorId" fallback={torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ?? "—"} />
         )}
+        {!isMid && (
+          <PackageRow s={s} itemKey="cadenceSensorId" fallback={s.skippedItems.includes("cadenceSensorId") ? "Not Needed" : s.cadenceSensorId ?? "—"} />
+        )}
         <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—"} />
       </ReportSection>
 
@@ -362,10 +365,6 @@ export function Step7Report() {
         {[
           { ok: !!s.motorId, label: "Motor package selected" },
           { ok: !(s.driveType === "hub" && !s.controllerId && !hasThirdPartySupplier(s, "controllerId")), label: "Controller configured" },
-          {
-            ok: !(s.driveType === "hub" && !s.torqueSensorId && !torqueSensorSkipped && !hasThirdPartySupplier(s, "torqueSensorId")),
-            label: "Pedal sensing configured",
-          },
           { ok: !!s.speedSensorId || speedSensorSkipped || hasThirdPartySupplier(s, "speedSensorId"), label: "Speed sensor configured" },
           { ok: !!s.batteryId || batterySkipped || hasThirdPartySupplier(s, "batteryId"), label: "Battery configured" },
           { ok: Boolean(s.frontTeeth && s.rearTeeth && s.largestRearTeeth), label: "Drivetrain configured" },

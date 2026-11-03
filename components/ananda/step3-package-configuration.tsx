@@ -8,6 +8,9 @@ import {
   useBatteries,
   usePackageMotors,
   useSpeedSensors,
+  useCadenceSensors,
+  useTorqueSensors,
+  sensorsForPlatform,
   useBikeComponents,
   chargersForVoltage,
   productImages,
@@ -21,6 +24,7 @@ import {
   type ChargerOption,
   type ChargingPortOption,
   type SpeedSensorRow,
+  type PedalSensorRow,
   type BikeComponentRow,
 } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
@@ -445,7 +449,76 @@ function ConfigRow({
 // Fixed set of accordion sections. All expanded by default on first visit;
 // manual expand/collapse state persists for the current session (component
 // lifetime) independent of which product is selected in each section.
-const SECTION_KEYS = ["motorId", "batteryId", "displayId", "speedSensorId", "chargerId", "chargingPortId", "controllerId", "torqueSensorId"] as const
+const SECTION_KEYS = ["motorId", "batteryId", "displayId", "speedSensorId", "chargerId", "chargingPortId", "controllerId", "torqueSensorId", "cadenceSensorId"] as const
+
+/** Optional hub-system sensor (torque or cadence): pick an Ananda sensor, supply your own, or mark it not needed. */
+function PedalSensorRowSection({
+  itemKey,
+  label,
+  sensors,
+  loading,
+  expanded,
+  onToggleExpanded,
+  skipped,
+  onToggleSkip,
+}: {
+  itemKey: "torqueSensorId" | "cadenceSensorId"
+  label: string
+  sensors: PedalSensorRow[]
+  loading: boolean
+  expanded: boolean
+  onToggleExpanded: () => void
+  skipped: boolean
+  onToggleSkip: () => void
+}) {
+  const s = useAnandaStore()
+  const t = useT()
+  const selected = sensors.find((sensor) => sensor.id === s[itemKey]) ?? null
+
+  return (
+    <ConfigRow
+      itemKey={itemKey}
+      label={label}
+      required={false}
+      skippable
+      skipped={skipped}
+      onToggleSkip={onToggleSkip}
+      thirdPartyKey={itemKey}
+      hasOptions={sensors.length > 0}
+      optionsLoading={loading}
+      expanded={expanded}
+      onToggleExpanded={onToggleExpanded}
+      selectedSummary={
+        selected && (
+          <div>
+            <p className="text-sm font-semibold text-primary">{selected.model}</p>
+            <p className="text-xs text-muted-foreground">
+              {selected.mounting_position ?? "—"} · {selected.connector_type ?? "—"}
+              {selected.cable_length_mm ? ` · ${(selected.cable_length_mm / 1000).toFixed(1)}m ${t("lead")}` : ""}
+            </p>
+          </div>
+        )
+      }
+    >
+      <div className="product-option-grid">
+        {sensors.map((sensor) => (
+          <OptionCard
+            key={sensor.id}
+            title={sensor.model}
+            specs={[
+              { label: "Mounting", value: sensor.mounting_position },
+              { label: "Connector", value: sensor.connector_type },
+              { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+              { label: "Weight", value: sensor.weight_kg ? `${sensor.weight_kg} kg` : null },
+            ]}
+            selected={s[itemKey] === sensor.id}
+            onSelect={() => s.selectPackageItem(itemKey, sensor.id)}
+          />
+        ))}
+      </div>
+    </ConfigRow>
+  )
+}
 
 export function Step3PackageConfiguration() {
   const s = useAnandaStore()
@@ -459,7 +532,12 @@ export function Step3PackageConfiguration() {
   const { controllers, isLoading: controllersLoading } = useControllers()
   const { displays, isLoading: displaysLoading } = useDisplays()
   const { batteries, isLoading: batteriesLoading } = useBatteries()
-  const { speedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
+  const { speedSensors: allSpeedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
+  const { cadenceSensors: allCadenceSensors, isLoading: cadenceSensorsLoading } = useCadenceSensors()
+  const { torqueSensors: allTorqueSensors, isLoading: torqueSensorsLoading } = useTorqueSensors()
+  const speedSensors = sensorsForPlatform(allSpeedSensors, s.driveType)
+  const cadenceSensors = sensorsForPlatform(allCadenceSensors, s.driveType)
+  const torqueSensors = sensorsForPlatform(allTorqueSensors, s.driveType)
 
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
   const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
@@ -838,21 +916,29 @@ export function Step3PackageConfiguration() {
       )}
 
       {isHub && (
-        <ConfigRow
+        <PedalSensorRowSection
           itemKey="torqueSensorId"
           label={t("Torque Sensor")}
-          required
-          skippable
-          skipped={s.skippedItems.includes("torqueSensorId")}
-          onToggleSkip={() => toggleSkip("torqueSensorId", "torqueSensorId")}
-          thirdPartyKey="torqueSensorId"
-          hasOptions={false}
+          sensors={torqueSensors}
+          loading={torqueSensorsLoading}
           expanded={expanded.torqueSensorId}
           onToggleExpanded={() => toggleExpanded("torqueSensorId")}
-          selectedSummary={s.torqueSensorId ? <p className="text-sm font-semibold text-primary">{s.torqueSensorId}</p> : null}
-        >
-          <EmptyOptionsNotice />
-        </ConfigRow>
+          skipped={s.skippedItems.includes("torqueSensorId")}
+          onToggleSkip={() => toggleSkip("torqueSensorId", "torqueSensorId")}
+        />
+      )}
+
+      {isHub && (
+        <PedalSensorRowSection
+          itemKey="cadenceSensorId"
+          label={t("Cadence Sensor")}
+          sensors={cadenceSensors}
+          loading={cadenceSensorsLoading}
+          expanded={expanded.cadenceSensorId}
+          onToggleExpanded={() => toggleExpanded("cadenceSensorId")}
+          skipped={s.skippedItems.includes("cadenceSensorId")}
+          onToggleSkip={() => toggleSkip("cadenceSensorId", "cadenceSensorId")}
+        />
       )}
 
       <section id="config-bikeComponents-panel" className="mb-6 border border-transparent">
