@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { regulationsForMarket, sellMarkets } from "@/lib/ananda-regulations"
 import { StepHeader } from "@/components/ananda/ui-primitives"
+import { useT } from "@/lib/i18n/provider"
 
 type SectionKey = "sellRegion" | "regulation"
 
@@ -59,6 +60,7 @@ const inputClass =
 
 export function Step1ProjectContext() {
   const s = useAnandaStore()
+  const t = useT()
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({ sellRegion: true, regulation: true })
   const regulations = regulationsForMarket(s.sellRegion)
   const selectedRegulationOption = regulations.find((option) => option.label === s.regulation)
@@ -72,8 +74,8 @@ export function Step1ProjectContext() {
     <div className="space-y-4">
       <StepHeader
         step={1}
-        title="Sell region & regulation"
-        subtitle="Define the market and compliance target for the system configuration."
+        title={t("Sell region & regulation")}
+        subtitle={t("Define the market and compliance target for the system configuration.")}
         className="mb-4"
       />
 
@@ -83,8 +85,8 @@ export function Step1ProjectContext() {
       >
         <SectionHeader
           index={1}
-          title="Sell region / market"
-          summary={s.sellRegion ?? "Select the market where the system will be sold."}
+          title={t("Sell region / market")}
+          summary={s.sellRegion ? t(s.sellRegion) : t("Select the market where the system will be sold.")}
           done={Boolean(s.sellRegion)}
           open={openSections.sellRegion}
           onToggle={() => toggle("sellRegion")}
@@ -105,7 +107,7 @@ export function Step1ProjectContext() {
                       : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
                   )}
                 >
-                  {market}
+                  {t(market)}
                 </button>
               ))}
             </div>
@@ -119,11 +121,11 @@ export function Step1ProjectContext() {
       >
         <SectionHeader
           index={2}
-          title="Regulation"
+          title={t("Regulation")}
           summary={
             s.regulation
-              ? `${s.regulation} · ${s.speedLimitKmh ?? "Custom"} km/h`
-              : "Choose a regulation for the selected market."
+              ? `${t(s.regulation)} · ${s.speedLimitKmh ?? t("Custom")} km/h`
+              : t("Choose a regulation for the selected market.")
           }
           done={Boolean(s.regulation)}
           open={openSections.regulation}
@@ -150,11 +152,11 @@ export function Step1ProjectContext() {
                       : "border-border hover:border-primary/40 hover:bg-secondary/60",
                   )}
                 >
-                  <span className="block text-base font-semibold text-graphite">{option.label}</span>
-                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{option.note}</span>
+                  <span className="block text-base font-semibold text-graphite">{t(option.label)}</span>
+                  <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{t(option.note)}</span>
                   <span className="mt-3 block text-sm font-medium tabular-nums text-primary">
-                    {option.speedLimitKmh ? `${option.speedLimitKmh} km/h` : "Manual speed"} ·{" "}
-                    {option.ratedPowerW ? `${option.ratedPowerW} W` : "Manual power"}
+                    {option.speedLimitKmh ? `${option.speedLimitKmh} km/h` : t("Manual speed")} ·{" "}
+                    {option.ratedPowerW ? `${option.ratedPowerW} W` : t("Manual power")}
                   </span>
                 </button>
               ))}
@@ -162,7 +164,7 @@ export function Step1ProjectContext() {
             {showCustomFields && (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="text-sm font-medium text-graphite">
-                  Speed limit (km/h)
+                  {t("Speed limit (km/h)")}
                   <input
                     type="number"
                     value={s.speedLimitKmh ?? ""}
@@ -171,7 +173,7 @@ export function Step1ProjectContext() {
                   />
                 </label>
                 <label className="text-sm font-medium text-graphite">
-                  Rated power (W)
+                  {t("Rated power (W)")}
                   <input
                     type="number"
                     value={s.ratedPowerW ?? ""}

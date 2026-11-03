@@ -3,8 +3,10 @@
 import { useState } from "react"
 import { Check, Pencil } from "lucide-react"
 import { useProjectsStore } from "@/lib/ananda-projects"
+import { useT } from "@/lib/i18n/provider"
 
 export function EditableProjectName({ id, name }: { id: string; name: string }) {
+  const t = useT()
   const renameProject = useProjectsStore((s) => s.renameProject)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(name)
@@ -21,7 +23,7 @@ export function EditableProjectName({ id, name }: { id: string; name: string }) 
           autoFocus
           value={draft}
           maxLength={80}
-          aria-label="Project name"
+          aria-label={t("Project name")}
           onChange={(event) => setDraft(event.target.value)}
           onFocus={(event) => event.currentTarget.select()}
           onBlur={commit}
@@ -35,7 +37,7 @@ export function EditableProjectName({ id, name }: { id: string; name: string }) 
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={commit}
-          aria-label="Save project name"
+          aria-label={t("Save project name")}
           className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground"
         >
           <Check className="h-4 w-4" aria-hidden="true" />
@@ -51,7 +53,7 @@ export function EditableProjectName({ id, name }: { id: string; name: string }) 
         setDraft(name)
         setEditing(true)
       }}
-      aria-label={`Rename project ${name}`}
+      aria-label={t("Rename project {name}", { name })}
       className="group -mx-1 flex max-w-full items-center gap-2 rounded-md px-1 text-left focus-visible:outline-2 focus-visible:outline-primary"
     >
       <span className="truncate text-lg font-semibold text-graphite">{name}</span>

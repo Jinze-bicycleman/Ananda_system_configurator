@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { ReactNode } from "react"
 import { AlertTriangle } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
 
 interface StepHeaderProps {
   step: number
@@ -12,11 +13,12 @@ interface StepHeaderProps {
 }
 
 export function StepHeader({ step, title, subtitle, className }: StepHeaderProps) {
+  const t = useT()
   return (
     <div className={cn("mb-8", className)}>
-      <p className="mb-1 text-sm font-semibold text-primary">Step {step}</p>
-      <h2 className="text-balance text-2xl font-semibold tracking-tight text-graphite sm:text-3xl">{title}</h2>
-      {subtitle && <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p>}
+      <p className="mb-1 text-sm font-semibold text-primary">{t("Step {step}", { step })}</p>
+      <h2 className="text-balance text-2xl font-semibold tracking-tight text-graphite sm:text-3xl">{t(title)}</h2>
+      {subtitle && <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{t(subtitle)}</p>}
     </div>
   )
 }
@@ -27,10 +29,11 @@ interface SectionLabelProps {
 }
 
 export function SectionLabel({ children, className }: SectionLabelProps) {
+  const t = useT()
   return (
     <div className={cn("mb-4 flex items-center gap-2", className)}>
       <span className="h-4 w-1 rounded-full bg-primary" aria-hidden="true" />
-      <p className="text-sm font-semibold text-graphite">{children}</p>
+      <p className="text-sm font-semibold text-graphite">{typeof children === "string" ? t(children) : children}</p>
     </div>
   )
 }
@@ -47,6 +50,7 @@ interface TechSpecRowProps {
 }
 
 export function TechSpecRow({ label, value, unit, highlight, stacked }: TechSpecRowProps) {
+  const t = useT()
   const isMissing = value === null || value === undefined || value === ""
   return (
     <div className={cn(
@@ -55,11 +59,11 @@ export function TechSpecRow({ label, value, unit, highlight, stacked }: TechSpec
       highlight && !isMissing && "bg-primary/5",
       isMissing && "bg-warning/5",
     )}>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{t(label)}</span>
       {isMissing ? (
         <span className="flex items-center gap-1 text-xs font-semibold text-warning">
           <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-          Spec missing
+          {t("Spec missing")}
         </span>
       ) : (
         <span className={cn(
@@ -67,7 +71,7 @@ export function TechSpecRow({ label, value, unit, highlight, stacked }: TechSpec
           stacked ? "wrap-anywhere text-left" : "whitespace-nowrap text-right",
           highlight ? "text-primary" : "text-foreground",
         )}>
-          {value}{unit ? ` ${unit}` : ""}
+          {typeof value === "string" ? t(value) : value}{unit ? ` ${t(unit)}` : ""}
         </span>
       )}
     </div>
@@ -87,6 +91,7 @@ interface ChoiceGroupProps<T extends string> {
 // instead of compressing below a readable width, and never overlap a
 // neighboring button's text.
 export function ChoiceGroup<T extends string>({ options, value, onChange, className, selectedClassName }: ChoiceGroupProps<T>) {
+  const t = useT()
   return (
     <div className={cn("choice-group", className)}>
       {options.map((opt) => (
@@ -105,7 +110,7 @@ export function ChoiceGroup<T extends string>({ options, value, onChange, classN
                 : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
           )}
         >
-          {opt.label}
+          {t(opt.label)}
         </button>
       ))}
     </div>
@@ -119,13 +124,14 @@ interface BigSpecProps {
 }
 
 export function BigSpec({ value, unit, label }: BigSpecProps) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-end gap-1 leading-none">
         <span className="text-3xl font-semibold tabular-nums text-graphite">{value ?? "—"}</span>
         <span className="mb-0.5 text-base font-semibold text-primary">{unit}</span>
       </div>
-      <span className="mt-1 text-xs text-muted-foreground">{label}</span>
+      <span className="mt-1 text-xs text-muted-foreground">{t(label)}</span>
     </div>
   )
 }

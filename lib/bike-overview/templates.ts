@@ -246,7 +246,7 @@ export function validateCustomLengthMm(mm: number): string | null {
   const { min, max } = CUSTOM_LENGTH_LIMITS_MM
   if (!Number.isFinite(mm)) return "Enter a length in millimetres."
   if (!Number.isInteger(mm)) return "Use a whole number of millimetres."
-  if (mm < min) return `Minimum custom length is ${min} mm.`
-  if (mm > max) return `Maximum custom length is ${max} mm.`
+  if (mm < min) return "Minimum custom length is 100 mm."
+  if (mm > max) return "Maximum custom length is 3000 mm."
   return null
 }

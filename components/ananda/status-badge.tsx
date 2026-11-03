@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 
 interface StatusBadgeProps {
   variant: "recommended" | "required" | "optional" | "integrated" | "not-required" | "compatible" | "warning" | "custom"
@@ -9,6 +10,7 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ variant, label, className }: StatusBadgeProps) {
+  const t = useT()
   const map: Record<StatusBadgeProps["variant"], { text: string; cls: string }> = {
     recommended:  { text: "Recommended",   cls: "bg-primary text-white" },
     required:     { text: "Required",      cls: "bg-destructive text-white" },
@@ -28,7 +30,7 @@ export function StatusBadge({ variant, label, className }: StatusBadgeProps) {
       cls,
       className
     )}>
-      {label ?? text}
+      {t(label ?? text)}
     </span>
   )
 }

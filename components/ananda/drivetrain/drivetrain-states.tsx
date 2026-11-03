@@ -2,24 +2,27 @@
 
 import { AlertTriangle, Info, Loader2, PackageSearch } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 
 export function DrivetrainLoadingState() {
+  const t = useT()
   return (
     <div className="flex flex-col items-center justify-center gap-3 border border-border bg-card py-16">
       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Loading drivetrain catalogue from the database…</p>
+      <p className="text-sm text-muted-foreground">{t("Loading drivetrain catalogue from the database…")}</p>
     </div>
   )
 }
 
 export function DrivetrainErrorState({ error }: { error: { message?: string } | undefined }) {
+  const t = useT()
   return (
     <div className="flex items-start gap-3 border border-destructive/40 bg-destructive/5 px-5 py-4">
       <AlertTriangle className="h-5 w-5 flex-shrink-0 text-destructive mt-0.5" />
       <div>
-        <p className="text-sm font-semibold text-destructive">Unable to load drivetrain data</p>
+        <p className="text-sm font-semibold text-destructive">{t("Unable to load drivetrain data")}</p>
         <p className="mt-1 text-sm text-destructive/80">
-          {error?.message ?? "The database query failed. Check the browser console for the full Supabase error."}
+          {error?.message ?? t("The database query failed. Check the browser console for the full Supabase error.")}
         </p>
       </div>
     </div>

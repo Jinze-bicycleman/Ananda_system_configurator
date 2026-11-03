@@ -22,6 +22,7 @@ import { useFixedSystemDiagramData } from "@/lib/use-fixed-system-diagram-data"
 import { DiagramCard } from "./diagram-card"
 import { DiagramCableLabel } from "./diagram-cable-label"
 import { DiagramConnections } from "./diagram-connections"
+import { useT } from "@/lib/i18n/provider"
 
 const FRAME_KEYS = Object.keys(DEFAULT_FRAMES) as FrameKey[]
 const LABEL_KEYS = Object.keys(DEFAULT_LABELS) as ConnectionKey[]
@@ -55,11 +56,15 @@ type DragState = {
   startRect: FrameRect | LabelRect
 }
 
-function describeForScreenReader(nodes: ReturnType<typeof useFixedSystemDiagramData>["nodes"], statusMessage: string): string {
+function describeForScreenReader(
+  nodes: ReturnType<typeof useFixedSystemDiagramData>["nodes"],
+  statusMessage: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const nodeList = Object.values(nodes)
-    .map((n) => `${n.category}: ${n.model}`)
+    .map((n) => `${t(n.category)}: ${t(n.model)}`)
     .join("; ")
-  return `System diagram. Components: ${nodeList}. ${statusMessage}.`
+  return t("System diagram. Components: {components}. {status}.", { components: nodeList, status: statusMessage })
 }
 
 /**
@@ -69,6 +74,7 @@ function describeForScreenReader(nodes: ReturnType<typeof useFixedSystemDiagramD
  * save/reset. Replaces the radial diagram on the "System Diagram" tab.
  */
 export function FixedSystemDiagram() {
+  const t = useT()
   const data = useFixedSystemDiagramData()
   const reducedMotion = usePrefersReducedMotion()
 
@@ -201,7 +207,7 @@ export function FixedSystemDiagram() {
     return result
   }, [frames])
 
-  const description = describeForScreenReader(data.nodes, data.statusMessage)
+  const description = describeForScreenReader(data.nodes, t(data.statusMessage), t)
   const statusOk = Object.values(data.nodes).every((n) => n.status === "ok")
 
   return (
@@ -209,7 +215,7 @@ export function FixedSystemDiagram() {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold text-graphite-light">
-            System Diagram — Mid-Drive
+            {t("System Diagram — Mid-Drive")}
           </p>
         </div>
         <span
@@ -219,7 +225,7 @@ export function FixedSystemDiagram() {
           )}
         >
           {statusOk ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
-          {data.statusMessage}
+          {t(data.statusMessage)}
         </span>
       </div>
 
@@ -237,7 +243,7 @@ export function FixedSystemDiagram() {
           )}
         >
           {editing ? <Unlock className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
-          {editing ? "Editing layout" : "Edit layout"}
+          {editing ? t("Editing layout") : t("Edit layout")}
         </button>
         {editing && (
           <>
@@ -247,7 +253,7 @@ export function FixedSystemDiagram() {
               className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-semibold text-graphite transition-colors hover:border-primary/40"
             >
               <Save className="h-3.5 w-3.5" aria-hidden="true" />
-              {justSaved ? "Saved" : "Save layout"}
+              {justSaved ? t("Saved") : t("Save layout")}
             </button>
             <button
               type="button"
@@ -255,14 +261,14 @@ export function FixedSystemDiagram() {
               className="flex items-center gap-1.5 border border-border px-3 py-1.5 text-xs font-semibold text-graphite transition-colors hover:border-destructive/40 hover:text-destructive"
             >
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              Reset layout
+              {t("Reset layout")}
             </button>
           </>
         )}
         <div className="ml-auto flex items-center gap-1">
           <button
             type="button"
-            aria-label="Zoom out"
+            aria-label={t("Zoom out")}
             onClick={() => setZoom((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100))}
             className="flex h-7 w-7 items-center justify-center border border-border text-muted-foreground hover:border-primary hover:text-primary"
           >
@@ -271,7 +277,7 @@ export function FixedSystemDiagram() {
           <span className="w-10 text-center text-xs tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
           <button
             type="button"
-            aria-label="Zoom in"
+            aria-label={t("Zoom in")}
             onClick={() => setZoom((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100))}
             className="flex h-7 w-7 items-center justify-center border border-border text-muted-foreground hover:border-primary hover:text-primary"
           >
@@ -346,7 +352,7 @@ export function FixedSystemDiagram() {
         />
       )}
 
-      <p className="mt-2 text-xs text-muted-foreground sm:hidden">Pinch or scroll to pan the diagram.</p>
+      <p className="mt-2 text-xs text-muted-foreground sm:hidden">{t("Pinch or scroll to pan the diagram.")}</p>
     </div>
   )
 }
@@ -364,6 +370,7 @@ function SelectionPanel({
   onChangeFrame: (key: FrameKey, patch: Partial<FrameRect>) => void
   onChangeLabel: (key: ConnectionKey, patch: Partial<LabelRect>) => void
 }) {
+  const t = useT()
   const numberField = (label: string, value: number, onChange: (v: number) => void) => (
     <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
       {label}
@@ -380,20 +387,20 @@ function SelectionPanel({
     const rect = frames[selection.key]
     return (
       <div className="mt-3 flex flex-wrap items-end gap-3 border border-border bg-card p-3">
-        <p className="w-full text-xs font-semibold text-primary">Editing: {selection.key}</p>
-        {numberField("X", rect.x, (v) => onChangeFrame(selection.key, { x: v }))}
-        {numberField("Y", rect.y, (v) => onChangeFrame(selection.key, { y: v }))}
-        {numberField("Width", rect.w, (v) => onChangeFrame(selection.key, { w: Math.max(MIN_CARD_W, v) }))}
-        {numberField("Height", rect.h, (v) => onChangeFrame(selection.key, { h: Math.max(MIN_CARD_H, v) }))}
+        <p className="w-full text-xs font-semibold text-primary">{t("Editing")}: {selection.key}</p>
+        {numberField(t("X"), rect.x, (v) => onChangeFrame(selection.key, { x: v }))}
+        {numberField(t("Y"), rect.y, (v) => onChangeFrame(selection.key, { y: v }))}
+        {numberField(t("Width"), rect.w, (v) => onChangeFrame(selection.key, { w: Math.max(MIN_CARD_W, v) }))}
+        {numberField(t("Height"), rect.h, (v) => onChangeFrame(selection.key, { h: Math.max(MIN_CARD_H, v) }))}
         <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-          Orientation
+          {t("Orientation")}
           <select
             value={rect.orientation}
             onChange={(e) => onChangeFrame(selection.key, { orientation: e.target.value as FrameRect["orientation"] })}
             className="w-32 border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
           >
-            <option value="image-left">Image left</option>
-            <option value="image-top">Image top</option>
+            <option value="image-left">{t("Image left")}</option>
+            <option value="image-top">{t("Image top")}</option>
           </select>
         </label>
       </div>
@@ -403,20 +410,20 @@ function SelectionPanel({
   const rect = labels[selection.key]
   return (
     <div className="mt-3 flex flex-wrap items-end gap-3 border border-border bg-card p-3">
-      <p className="w-full text-xs font-semibold text-primary">Editing label: {selection.key}</p>
-      {numberField("X", rect.x, (v) => onChangeLabel(selection.key, { x: v }))}
-      {numberField("Y", rect.y, (v) => onChangeLabel(selection.key, { y: v }))}
-      {numberField("Width", rect.w, (v) => onChangeLabel(selection.key, { w: v }))}
-      {numberField("Height", rect.h, (v) => onChangeLabel(selection.key, { h: v }))}
+      <p className="w-full text-xs font-semibold text-primary">{t("Editing label")}: {selection.key}</p>
+      {numberField(t("X"), rect.x, (v) => onChangeLabel(selection.key, { x: v }))}
+      {numberField(t("Y"), rect.y, (v) => onChangeLabel(selection.key, { y: v }))}
+      {numberField(t("Width"), rect.w, (v) => onChangeLabel(selection.key, { w: v }))}
+      {numberField(t("Height"), rect.h, (v) => onChangeLabel(selection.key, { h: v }))}
       <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-        Label mode
+        {t("Label mode")}
         <select
           value={rect.mode}
           onChange={(e) => onChangeLabel(selection.key, { mode: e.target.value as LabelRect["mode"] })}
           className="w-32 border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:border-primary"
         >
-          <option value="compact">Compact</option>
-          <option value="expanded">Expanded</option>
+          <option value="compact">{t("Compact")}</option>
+          <option value="expanded">{t("Expanded")}</option>
         </select>
       </label>
     </div>

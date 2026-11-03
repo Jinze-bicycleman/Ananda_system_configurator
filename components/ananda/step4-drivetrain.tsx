@@ -12,9 +12,11 @@ import { InlineError } from "./drivetrain/drivetrain-states"
 import { validateToothCounts, resolveWheelRadiusMetres, type MotorType, type PedalEffortKey } from "@/lib/ananda-climbing"
 import { DEFAULT_SMALLEST_REAR_TEETH, DEFAULT_LARGEST_REAR_TEETH } from "@/lib/ananda-store"
 import { Pencil } from "lucide-react"
+import { useT } from "@/lib/i18n/provider"
 
 export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: number) => void }) {
   const s = useAnandaStore()
+  const t = useT()
   const { motors } = useMotors()
   const motor = motors.find((m) => m.id === s.motorId) ?? null
 
@@ -135,15 +137,15 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
     <div>
       <StepHeader
         step={4}
-        title="Drivetrain & Climbing"
-        subtitle="Enter the gearing on your bike and see the resulting speed range, cadence and climbing ability with the selected motor."
+        title={t("Drivetrain & Climbing")}
+        subtitle={t("Enter the gearing on your bike and see the resulting speed range, cadence and climbing ability with the selected motor.")}
       />
 
       <DrivetrainSummary onEditStep={(step) => onEditStep?.(step)} />
 
       <div className="mb-6 max-w-xs">
         <label className="block text-xs font-semibold text-graphite mb-2">
-          Estimated System Weight (rider + bike + cargo)
+          {t("Estimated System Weight (rider + bike + cargo)")}
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -152,7 +154,7 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
             onChange={(e) => setGvwInput(e.target.value)}
             onBlur={handleGvwBlur}
             disabled={gvwSkipped}
-            placeholder={gvwSkipped ? "Skipped" : "e.g. 120"}
+            placeholder={gvwSkipped ? t("Skipped") : t("e.g. 120")}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm tabular-nums focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:bg-secondary disabled:text-muted-foreground"
           />
           <span className="text-sm font-medium text-muted-foreground">kg</span>
@@ -164,24 +166,24 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
               gvwSkipped ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary hover:text-primary",
             )}
           >
-            {gvwSkipped ? "Restore" : "Skip"}
+            {gvwSkipped ? t("Restore") : t("Skip")}
           </button>
         </div>
         <p className="mt-1.5 text-sm text-muted-foreground">
           {gvwSkipped
-            ? "Skipped — estimated system weight will not be validated."
-            : "Used alongside rider weight to estimate total system weight for the climbing calculation."}
+            ? t("Skipped — estimated system weight will not be validated.")
+            : t("Used alongside rider weight to estimate total system weight for the climbing calculation.")}
         </p>
       </div>
 
       <div id="field-drivetrainTeeth" className="mb-8 rounded-lg border border-border bg-card p-5">
-        <p className="mb-4 text-base font-semibold text-graphite">Drivetrain gearing</p>
+        <p className="mb-4 text-base font-semibold text-graphite">{t("Drivetrain gearing")}</p>
 
         <div className="mb-5 flex flex-wrap gap-2">
           {(
             [
-              { id: "derailleur" as const, label: "Derailleur System" },
-              { id: "gear_hub" as const, label: "Gear Hub System" },
+              { id: "derailleur" as const, label: t("Derailleur System") },
+              { id: "gear_hub" as const, label: t("Gear Hub System") },
             ]
           ).map((opt) => {
             const selected = (s.drivetrainSystemKind ?? "derailleur") === opt.id
@@ -207,40 +209,39 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <ToothCountField
                 id="front-chainring-teeth"
-                label="Chainring teeth"
+                label={t("Chainring teeth")}
                 value={frontInput}
                 onChange={commitFront}
                 invalid={chainringMismatched}
-                hint={chainringTeeth != null ? `Must match the ${chainringTeeth}T chainring from Bike Components` : undefined}
+                hint={chainringTeeth != null ? t("Must match the {teeth}T chainring from Bike Components", { teeth: chainringTeeth }) : undefined}
               />
-              <RatioField id="hub-up-ratio" label="Hub gear up ratio" value={hubUpInput} onChange={commitHubUp} />
-              <RatioField id="hub-down-ratio" label="Hub gear down ratio" value={hubDownInput} onChange={commitHubDown} />
+              <RatioField id="hub-up-ratio" label={t("Hub gear up ratio")} value={hubUpInput} onChange={commitHubUp} />
+              <RatioField id="hub-down-ratio" label={t("Hub gear down ratio")} value={hubDownInput} onChange={commitHubDown} />
             </div>
             <p className="mt-3 text-sm text-muted-foreground">
-              Enter the up (highest) and down (lowest) internal gear ratios from your gear hub&apos;s datasheet — e.g. a
-              Shimano Alfine 8 is 1.615 (up) / 0.527 (down).
+              {t("Enter the up (highest) and down (lowest) internal gear ratios from your gear hub's datasheet — e.g. a Shimano Alfine 8 is 1.615 (up) / 0.527 (down).")}
             </p>
           </>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <ToothCountField
               id="front-chainring-teeth"
-              label="Front chainring teeth"
+              label={t("Front chainring teeth")}
               value={frontInput}
               onChange={commitFront}
               invalid={chainringMismatched}
-              hint={chainringTeeth != null ? `Must match the ${chainringTeeth}T chainring from Bike Components` : undefined}
+              hint={chainringTeeth != null ? t("Must match the {teeth}T chainring from Bike Components", { teeth: chainringTeeth }) : undefined}
             />
             <ToothCountField
               id="smallest-rear-teeth"
-              label="Smallest rear sprocket teeth"
+              label={t("Smallest rear sprocket teeth")}
               value={smallestInput}
               onChange={commitSmallest}
               defaultValue={DEFAULT_SMALLEST_REAR_TEETH}
             />
             <ToothCountField
               id="largest-rear-teeth"
-              label="Largest rear sprocket teeth"
+              label={t("Largest rear sprocket teeth")}
               value={largestInput}
               onChange={commitLargest}
               defaultValue={DEFAULT_LARGEST_REAR_TEETH}
@@ -250,14 +251,14 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
         {chainringMismatched && (
           <div className="mt-4">
             <InlineError>
-              Front chainring ({frontTeethEntered}T) does not match the {chainringTeeth}T chainring selected under Bike Components. Enter {chainringTeeth} or change the chainring selection.
+              {t("Front chainring ({entered}T) does not match the {teeth}T chainring selected under Bike Components. Enter {teeth} or change the chainring selection.", { entered: frontTeethEntered ?? "", teeth: chainringTeeth ?? "" })}
             </InlineError>
           </div>
         )}
         {!validation.isValid && (frontInput || smallestInput || largestInput) && (
           <div className="mt-4 space-y-2">
             {validation.messages.map((m) => (
-              <InlineError key={m}>{m}</InlineError>
+              <InlineError key={m}>{t(m)}</InlineError>
             ))}
           </div>
         )}
@@ -303,6 +304,7 @@ function RatioField({
   value: string
   onChange: (raw: string) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-xs font-semibold text-graphite">
@@ -316,7 +318,7 @@ function RatioField({
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={id === "hub-down-ratio" ? "e.g. 0.8" : "e.g. 1.615"}
+        placeholder={id === "hub-down-ratio" ? t("e.g. 0.8") : t("e.g. 1.615")}
         className="w-full border border-border px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary outline-none"
       />
     </div>
@@ -341,6 +343,7 @@ function ToothCountField({
   invalid?: boolean
   hint?: string
 }) {
+  const t = useT()
   const hasDefault = defaultValue != null
   const isUntouchedDefault = hasDefault && value === String(defaultValue)
   return (
@@ -354,7 +357,7 @@ function ToothCountField({
               isUntouchedDefault ? "bg-primary/10 text-primary" : "bg-surface text-muted-foreground",
             )}
           >
-            {isUntouchedDefault ? "Default - editable" : "Edited"}
+            {isUntouchedDefault ? t("Default - editable") : t("Edited")}
           </span>
         )}
       </label>
@@ -367,7 +370,7 @@ function ToothCountField({
           inputMode="numeric"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={id === "largest-rear-teeth" ? "e.g. 43" : id === "smallest-rear-teeth" ? "e.g. 11" : "e.g. 34"}
+          placeholder={id === "largest-rear-teeth" ? t("e.g. 43") : id === "smallest-rear-teeth" ? t("e.g. 11") : t("e.g. 34")}
           aria-invalid={invalid || undefined}
           className={cn(
  "w-full border px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-primary",

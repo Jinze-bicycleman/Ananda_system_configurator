@@ -4,20 +4,21 @@ import { useState } from "react"
 import { smoothPath } from "@/lib/bike-overview/geometry"
 import { formatLengthCm, type BikeTemplate, type CableKey, type ProductRole } from "@/lib/bike-overview/templates"
 import type { ResolvedCable, ResolvedProduct } from "@/lib/bike-overview/use-bike-overview"
+import { useT } from "@/lib/i18n/provider"
 
 const LINE_HEIGHT = 15
 const FONT_SIZE = 12
 
-function productLabelLines(role: ProductRole, model: string): string[] {
+function productLabelLines(role: ProductRole, model: string, t: (key: string) => string): string[] {
   switch (role) {
     case "display":
-      return [`HMI:${model}`]
+      return [`${t("HMI")}:${model}`]
     case "battery":
-      return ["Battery:", model]
+      return [`${t("Battery")}:`, model]
     case "motor":
-      return [`Motor:${model}`]
+      return [`${t("Motor")}:${model}`]
     case "speedSensor":
-      return ["Wheel Speed", `Sensor:${model}`]
+      return [t("Wheel Speed"), `${t("Sensor")}:${model}`]
   }
 }
 
@@ -30,6 +31,7 @@ interface BikeCanvasProps {
 }
 
 export function BikeCanvas({ template, products, cables, selected, onSelect }: BikeCanvasProps) {
+  const t = useT()
   const [hovered, setHovered] = useState<CableKey | null>(null)
   const { viewBox } = template
   const active = hovered ?? selected
@@ -39,7 +41,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
     <svg
       viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
       role="group"
-      aria-label={`${template.name} cable routing overview`}
+      aria-label={t("{name} cable routing overview", { name: t(template.name) })}
       className="block h-auto w-full select-none"
     >
       <rect x={viewBox.x} y={viewBox.y} width={viewBox.w} height={viewBox.h} className="fill-white" />
@@ -70,7 +72,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
             preserveAspectRatio="xMidYMid meet"
             opacity={product.isReference ? 0.55 : 1}
           >
-            <title>{`${role}: ${product.model}`}</title>
+            <title>{`${t(role)}: ${product.model}`}</title>
           </image>
         )
       })}
@@ -118,7 +120,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         if (!product || !label) return null
         return (
           <text key={role} x={label.x} y={label.y + FONT_SIZE} fontSize={FONT_SIZE} className="fill-black">
-            {productLabelLines(role, product.model).map((line, i) => (
+            {productLabelLines(role, product.model, t).map((line, i) => (
               <tspan key={line} x={label.x} dy={i === 0 ? 0 : LINE_HEIGHT}>
                 {line}
               </tspan>
@@ -132,8 +134,8 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
         const isSelected = cable.key === selected
         const lines = [
           null,
- `connector:${cable.placement.connectorLabel}`,
- `length: ${formatLengthCm(cable.lengthMm)}`,
+ `${t("connector")}:${t(cable.placement.connectorLabel)}`,
+ `${t("length")}: ${formatLengthCm(cable.lengthMm)}`,
         ]
         return (
           <g
@@ -141,7 +143,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
             role="button"
             tabIndex={0}
             aria-pressed={isSelected}
-            aria-label={`${cable.meta.title}, ${cable.meta.colorName}, ${formatLengthCm(cable.lengthMm)}. Select to edit.`}
+            aria-label={t("{title}, {color}, {length}. Select to edit.", { title: t(cable.meta.title), color: t(cable.meta.colorName), length: formatLengthCm(cable.lengthMm) })}
             className="cursor-pointer outline-none [&:focus-visible>rect]:stroke-primary [&:focus-visible>rect]:stroke-[2]"
             onClick={() => onSelect(cable.key)}
             onMouseEnter={() => setHovered(cable.key)}
@@ -168,8 +170,8 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
               {lines.map((line, i) =>
                 line === null ? (
                   <tspan key="title" x={x} dy={0}>
-                    {cable.meta.title}:{" "}
-                    <tspan fill={cable.meta.stroke}>{cable.meta.colorName}</tspan>
+                    {t(cable.meta.title)}:{" "}
+                    <tspan fill={cable.meta.stroke}>{t(cable.meta.colorName)}</tspan>
                   </tspan>
                 ) : (
                   <tspan key={line} x={x} dy={LINE_HEIGHT}>
@@ -196,7 +198,7 @@ export function BikeCanvas({ template, products, cables, selected, onSelect }: B
           onMouseEnter={() => setHovered(cable.key)}
           onMouseLeave={() => setHovered(null)}
         >
-          <title>{`${cable.meta.title} (${cable.meta.colorName})`}</title>
+          <title>{`${t(cable.meta.title)} (${t(cable.meta.colorName)})`}</title>
         </path>
       ))}
     </svg>

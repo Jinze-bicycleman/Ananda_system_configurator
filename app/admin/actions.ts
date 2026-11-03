@@ -1,11 +1,12 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/admin/supabase-admin"
 import { checkCredentials, createSession, destroySession, requireAdmin } from "@/lib/admin/session"
 import { getProductTable, type ProductField } from "@/lib/admin/product-schema"
+import { TRANSLATIONS_CACHE_TAG, isLocale } from "@/lib/i18n/config"
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string }
 export type LoginState = { error?: string } | undefined
@@ -143,5 +144,45 @@ export async function saveContentAction(entries: { key: string; value: string }[
     if (error) return { ok: false, error: error.message }
   }
   revalidatePath("/admin")
+  return { ok: true }
+}
+
+const MAX_TRANSLATION_LENGTH = 4000
+
+/** An empty value removes the override so the bundled default applies again. */
+export async function saveTranslationsAction(
+  locale: string,
+  entries: { source: string; value: string }[],
+): Promise<ActionResult> {
+  await requireAdmin()
+  if (!isLocale(locale)) return { ok: false, error: "Unknown language." }
+  if (!Array.isArray(entries) || entries.length === 0) return { ok: true }
+
+  const upserts: { locale: string; source: string; value: string; updated_at: string }[] = []
+  const removals: string[] = []
+  const stamp = new Date().toISOString()
+
+  for (const entry of entries) {
+    if (typeof entry.source !== "string" || typeof entry.value !== "string" || entry.source.trim() === "") {
+      return { ok: false, error: "Invalid translation entry." }
+    }
+    const value = entry.value.trim()
+    if (value.length > MAX_TRANSLATION_LENGTH) return { ok: false, error: "A translation is too long." }
+    if (value === "") removals.push(entry.source)
+    else upserts.push({ locale, source: entry.source, value, updated_at: stamp })
+  }
+
+  const supabase = createAdminClient()
+  if (upserts.length > 0) {
+    const { error } = await supabase.from("site_translations").upsert(upserts, { onConflict: "locale,source" })
+    if (error) return { ok: false, error: error.message }
+  }
+  if (removals.length > 0) {
+    const { error } = await supabase.from("site_translations").delete().eq("locale", locale).in("source", removals)
+    if (error) return { ok: false, error: error.message }
+  }
+
+  updateTag(TRANSLATIONS_CACHE_TAG)
+  revalidatePath("/", "layout")
   return { ok: true }
 }

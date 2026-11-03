@@ -19,6 +19,7 @@ import {
   type PedalEffortKey,
 } from "@/lib/ananda-climbing"
 import { useMotorAssistModes } from "@/lib/ananda-packages"
+import { useT } from "@/lib/i18n/provider"
 
 export function ClimbingAbilityPanel({
   motorId,
@@ -49,6 +50,7 @@ export function ClimbingAbilityPanel({
   pedalEffortKey: PedalEffortKey
   onPedalEffortChange: (key: PedalEffortKey) => void
 }) {
+  const t = useT()
   const { modes, isLoading: modesLoading } = useMotorAssistModes(motorId)
   const [showRawMissing, setShowRawMissing] = useState(false)
 
@@ -75,13 +77,13 @@ export function ClimbingAbilityPanel({
 
   const gearContextLabel =
     largestRearTeeth != null && frontChainringTeeth != null
-      ? `Lowest climbing gear · ${largestRearTeeth}T / ${frontChainringTeeth}T`
-      : "Theoretical peak, low-speed climbing estimate"
+      ? t("Lowest climbing gear · {rear}T / {front}T", { rear: largestRearTeeth, front: frontChainringTeeth })
+      : t("Theoretical peak, low-speed climbing estimate")
 
   return (
     <div className="flex flex-col gap-5 border border-border bg-card p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <SectionLabel>Climbing ability</SectionLabel>
+        <SectionLabel>{t("Climbing ability")}</SectionLabel>
         <p className="text-xs text-muted-foreground sm:-mt-4">{gearContextLabel}</p>
       </div>
 
@@ -89,7 +91,7 @@ export function ClimbingAbilityPanel({
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label htmlFor="rider-weight-slider" className="text-sm font-semibold text-graphite">
-            Rider weight
+            {t("Rider weight")}
           </label>
           <span className="text-sm font-semibold tabular-nums text-primary">{riderWeightKg} kg</span>
         </div>
@@ -100,33 +102,32 @@ export function ClimbingAbilityPanel({
           step={1}
           value={[riderWeightKg]}
           onValueChange={([v]) => onRiderWeightChange(v)}
-          aria-label="Rider weight in kilograms"
-          aria-valuetext={`${riderWeightKg} kilograms`}
+          aria-label={t("Rider weight in kilograms")}
+          aria-valuetext={t("{kg} kilograms", { kg: riderWeightKg })}
         />
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Bike weight: {DEFAULT_BIKE_WEIGHT_KG} kg</span>
-          <span className="tabular-nums">Total system weight: {systemWeightKg} kg</span>
+          <span>{t("Bike weight")}: {DEFAULT_BIKE_WEIGHT_KG} kg</span>
+          <span className="tabular-nums">{t("Total system weight")}: {systemWeightKg} kg</span>
         </div>
       </div>
 
       {/* Assistance mode */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm font-semibold text-graphite">Assistance mode</span>
+          <span className="text-sm font-semibold text-graphite">{t("Assistance mode")}</span>
           <Tooltip>
-            <TooltipTrigger aria-label="What does assistance mode mean?">
+            <TooltipTrigger aria-label={t("What does assistance mode mean?")}>
               <Info className="h-3.5 w-3.5 text-muted-foreground" />
             </TooltipTrigger>
             <TooltipContent className="max-w-xs text-xs">
-              100% assistance means the motor requests torque equal to the rider&apos;s input, subject to the motor&apos;s
-              maximum torque.
+              {t("100% assistance means the motor requests torque equal to the rider's input, subject to the motor's maximum torque.")}
             </TooltipContent>
           </Tooltip>
         </div>
         {modesLoading ? (
           <div className="h-9 w-full animate-pulse bg-muted" />
         ) : (
-          <div className="choice-group" role="group" aria-label="Assistance mode">
+          <div className="choice-group" role="group" aria-label={t("Assistance mode")}>
             {modes.map((m) => (
               <button
                 key={m.mode_key}
@@ -149,7 +150,7 @@ export function ClimbingAbilityPanel({
                   className="text-sm leading-tight"
                   style={m.mode_key === "trail" ? { color: "#ebebeb" } : undefined}
                 >
-                  {m.mode_key === "trail" ? "Tour" : m.display_label}
+                  {m.mode_key === "trail" ? t("Tour") : t(m.display_label)}
                 </span>
                 <span
                   className="text-xs tabular-nums text-muted-foreground"
@@ -165,8 +166,8 @@ export function ClimbingAbilityPanel({
 
       {/* Pedal effort */}
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-graphite">Rider pedalling effort</span>
-        <div className="choice-group" role="group" aria-label="Rider pedalling effort">
+        <span className="text-sm font-semibold text-graphite">{t("Rider pedalling effort")}</span>
+        <div className="choice-group" role="group" aria-label={t("Rider pedalling effort")}>
           {PEDAL_EFFORT_PRESETS.map((p) => (
             <button
               key={p.key}
@@ -180,7 +181,7 @@ export function ClimbingAbilityPanel({
                   : "border-border text-graphite hover:border-primary/40",
               )}
             >
-              <span className="text-sm leading-tight">{p.label}</span>
+              <span className="text-sm leading-tight">{t(p.label)}</span>
               <span className="text-xs tabular-nums text-muted-foreground">{p.torqueNm} Nm</span>
             </button>
           ))}
@@ -189,34 +190,34 @@ export function ClimbingAbilityPanel({
 
       {/* Live output */}
       {!motorType ? (
-        <EmptyClimbingState missing={["motor selection"]} />
+        <EmptyClimbingState missing={[t("motor selection")]} />
       ) : result === null ? (
-        <EmptyClimbingState missing={["assistance mode"]} />
+        <EmptyClimbingState missing={[t("assistance mode")]} />
       ) : result.status === "missing-data" ? (
         <EmptyClimbingState missing={result.missingFields} />
       ) : (
         <div className="flex flex-col gap-5">
           {/* Calculation summary: 4 equal columns on desktop, 2x2 on mobile. */}
           <div className="grid grid-cols-2 gap-4 border-y border-border py-4 sm:grid-cols-4">
-            <CalcSummaryStat label="Rider contribution" value={pedalPreset.torqueNm} unit="Nm" />
+            <CalcSummaryStat label={t("Rider contribution")} value={pedalPreset.torqueNm} unit="Nm" />
             <CalcSummaryStat
-              label="Motor-assist torque"
+              label={t("Motor-assist torque")}
               value={Math.round(result.assistance.motorTorqueDeliveredNm * 10) / 10}
               unit="Nm"
             />
             <CalcSummaryStat
-              label="Total wheel torque"
+              label={t("Total wheel torque")}
               value={Math.round(result.totalWheelTorqueNm * 10) / 10}
               unit="Nm"
               highlight
             />
-            <CalcSummaryStat label="System weight" value={systemWeightKg} unit="kg" />
+            <CalcSummaryStat label={t("System weight")} value={systemWeightKg} unit="kg" />
           </div>
 
           {result.assistance.isCappedByMotorMax && (
             <div className="flex items-start gap-2.5 bg-warning/10 border border-warning/30 px-4 py-3">
               <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-warning-foreground">Limited by motor maximum torque.</p>
+              <p className="text-sm text-warning-foreground">{t("Limited by motor maximum torque.")}</p>
             </div>
           )}
 
@@ -224,7 +225,7 @@ export function ClimbingAbilityPanel({
             <div className="flex items-start gap-2.5 bg-destructive/10 border border-destructive/30 px-4 py-3">
               <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
               <p className="text-sm text-destructive">
-                The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.
+                {t("The theoretical force model limit is exceeded; real performance will be traction- and geometry-limited.")}
               </p>
             </div>
           ) : (
@@ -247,13 +248,13 @@ export function ClimbingAbilityPanel({
                           {gradePercent.toFixed(1)}%
                         </p>
                         <p className="text-sm font-semibold tabular-nums text-graphite">
-                          {angleDegrees.toFixed(1)}&deg; equivalent angle
+                          {angleDegrees.toFixed(1)}&deg; {t("equivalent angle")}
                         </p>
                         {result.scenario && (
-                          <p className="text-sm font-medium text-muted-foreground">{result.scenario.label}</p>
+                          <p className="text-sm font-medium text-muted-foreground">{t(result.scenario.label)}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          Maximum theoretical grade
+                          {t("Maximum theoretical grade")}
                         </p>
                       </div>
                     </div>
@@ -266,8 +267,7 @@ export function ClimbingAbilityPanel({
           )}
 
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal limits,
-            tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and rider technique.
+            {t("Sustained real-world climbing also depends on motor power and efficiency at operating speed, thermal limits, tyre traction, bicycle geometry and balance, road surface, rolling resistance, and wind and rider technique.")}
           </p>
         </div>
       )}
@@ -302,11 +302,12 @@ function CalcSummaryStat({
 }
 
 function EmptyClimbingState({ missing }: { missing: string[] }) {
+  const t = useT()
   return (
     <div className="flex items-start gap-2.5 bg-graphite/5 border border-graphite/20 px-4 py-3">
       <Info className="w-4 h-4 text-graphite flex-shrink-0 mt-0.5" />
       <p className="text-sm text-graphite">
-        <span className="font-semibold">N/A</span> — missing {missing.join(", ")}.
+        <span className="font-semibold">N/A</span> — {t("missing")} {missing.map((m) => t(m)).join(", ")}.
       </p>
     </div>
   )

@@ -1,6 +1,7 @@
 "use client"
 
 import { classifyClimbSeverity } from "@/lib/ananda-climbing"
+import { useT } from "@/lib/i18n/provider"
 
 const SCALE_MAX = 30
 const SEGMENTS = [
@@ -18,13 +19,14 @@ const BOUNDARIES = [0, 8, 15, 25, 30]
  * edge while the numeric result elsewhere still shows the real value.
  */
 export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }) {
+  const t = useT()
   const clamped = Math.min(Math.max(gradePercent, 0), SCALE_MAX)
   const markerPosition = (clamped / SCALE_MAX) * 100
   const activeLevel = classifyClimbSeverity(gradePercent)
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-semibold text-muted-foreground">Climb severity</p>
+      <p className="text-xs font-semibold text-muted-foreground">{t("Climb severity")}</p>
 
       <div className="relative pt-6">
         <div
@@ -33,7 +35,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
           aria-hidden="true"
         >
           <span className="whitespace-nowrap text-xs font-semibold text-primary">
-            You are here
+            {t("You are here")}
           </span>
           <span className="h-2.5 w-px bg-primary" />
         </div>
@@ -58,7 +60,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
               className="min-w-0 flex-shrink-0 truncate text-center text-xs font-semibold text-graphite"
               style={{ width: `${((seg.to - seg.from) / SCALE_MAX) * 100}%` }}
             >
-              {seg.label}
+              {t(seg.label)}
             </span>
           ))}
         </div>
@@ -80,7 +82,7 @@ export function ClimbingSeverityScale({ gradePercent }: { gradePercent: number }
       </div>
 
       <p className="sr-only">
-        {`The current climb rates as ${activeLevel} on the severity scale, at ${gradePercent.toFixed(1)} percent grade against a 0 to 30 percent and above scale.`}
+        {t("The current climb rates as {level} on the severity scale, at {grade} percent grade against a 0 to 30 percent and above scale.", { level: t(activeLevel), grade: gradePercent.toFixed(1) })}
       </p>
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 
 interface ProductImageLightboxProps {
   title: string
@@ -16,6 +17,7 @@ interface ProductImageLightboxProps {
 // gain more pictures later: with two or more images, previous/next buttons,
 // arrow keys and a thumbnail strip appear automatically.
 export function ProductImageLightbox({ title, images, open, onOpenChange }: ProductImageLightboxProps) {
+  const t = useT()
   const [index, setIndex] = useState(0)
   const count = images.length
 
@@ -44,13 +46,13 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
               {index + 1} / {count}
             </span>
           )}
-          <DialogDescription className="sr-only">Enlarged product image{count > 1 ? "s. Use the arrows to browse." : "."}</DialogDescription>
+          <DialogDescription className="sr-only">{count > 1 ? t("Enlarged product images. Use the arrows to browse.") : t("Enlarged product image.")}</DialogDescription>
         </div>
 
         <div className="relative flex h-[60vh] max-h-[560px] items-center justify-center bg-card p-6">
           <img
             src={images[index] || "/placeholder.svg"}
-            alt={`${title}${count > 1 ? ` — image ${index + 1} of ${count}` : ""}`}
+            alt={`${title}${count > 1 ? ` — ${t("image {n} of {total}", { n: index + 1, total: count })}` : ""}`}
             className="max-h-full max-w-full object-contain"
             crossOrigin="anonymous"
           />
@@ -59,7 +61,7 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
               <button
                 type="button"
                 onClick={() => go(-1)}
-                aria-label="Previous image"
+                aria-label={t("Previous image")}
                 className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center border border-border bg-background text-graphite transition-colors hover:border-primary hover:text-primary"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -67,7 +69,7 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
               <button
                 type="button"
                 onClick={() => go(1)}
-                aria-label="Next image"
+                aria-label={t("Next image")}
                 className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center border border-border bg-background text-graphite transition-colors hover:border-primary hover:text-primary"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -83,7 +85,7 @@ export function ProductImageLightbox({ title, images, open, onOpenChange }: Prod
                 key={src}
                 type="button"
                 onClick={() => setIndex(i)}
-                aria-label={`Show image ${i + 1}`}
+                aria-label={t("Show image {n}", { n: i + 1 })}
                 aria-current={i === index}
                 className={cn(
  "flex h-14 w-14 shrink-0 items-center justify-center border bg-card p-1 transition-colors",
