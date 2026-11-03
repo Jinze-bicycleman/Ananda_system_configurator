@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { I18nProvider } from '@/lib/i18n/provider'
+import { ResizeObserverGuard } from '@/components/resize-observer-guard'
 import { HTML_LANG } from '@/lib/i18n/config'
 import { getServerLocale, getTranslationOverrides } from '@/lib/i18n/server'
 
@@ -38,6 +39,7 @@ export default async function RootLayout({
   return (
     <html lang={HTML_LANG[locale]} className={`bg-background ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans antialiased min-h-screen">
+        <ResizeObserverGuard />
         <I18nProvider initialLocale={locale} overrides={overrides}>
           {children}
         </I18nProvider>
