@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { CableLengthSelect } from "@/components/ananda/cable-spec-controls"
 import { formatLeadLength, type ConnectionKey, type ConnectionTopologyEntry, type LabelMode } from "@/lib/system-diagram-layout"
 import type { DiagramConnectionData } from "@/lib/use-fixed-system-diagram-data"
+import { useT } from "@/lib/i18n/provider"
 
 interface DiagramCableLabelProps {
   connectionKey: ConnectionKey
@@ -28,6 +29,7 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
   { connectionKey, topology, data, mode, accentOrientation, editing, onDragPointerDown },
   ref,
 ) {
+  const t = useT()
   const isDocking = topology.kind === "docking"
   const isOrphan = topology.kind === "orphan"
   const rowClass = mode === "expanded" ? "flex flex-col gap-0.5" : "flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
@@ -50,20 +52,20 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
       />
       <div className={cn("min-w-0 flex-1 px-2.5 py-1.5 text-xs", accentOrientation === "horizontal" && "pt-3.5")}>
         {isDocking ? (
-          <p className="font-semibold text-muted-foreground">Docked electrical interface · no cable</p>
+          <p className="font-semibold text-muted-foreground">{t("Docked electrical interface · no cable")}</p>
         ) : (
           <>
             <div className={rowClass}>
               <span className="font-semibold text-primary">
-                Type: <span className="font-semibold text-foreground">{data.cableModel ?? "—"}</span>
+                {t("Type")}: <span className="font-semibold text-foreground">{data.cableModel ?? "—"}</span>
               </span>
             </div>
             <div className={rowClass}>
               <span className="font-semibold text-primary">
-                Connector: <span className="font-semibold text-foreground">{data.connectorLabel ?? "—"}</span>
+                {t("Connector")}: <span className="font-semibold text-foreground">{data.connectorLabel ?? "—"}</span>
               </span>
               <span className="font-semibold text-primary">
-                Length:{" "}
+                {t("Length")}:{" "}
                 {data.editable && data.storeKey ? (
                   <span className="inline-block align-middle">
                     <CableLengthSelect connection={data.storeKey} lengthOptions={data.lengthOptions} />
@@ -80,7 +82,7 @@ export const DiagramCableLabel = forwardRef<HTMLDivElement, DiagramCableLabelPro
         {isOrphan && (
           <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-warning">
             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-            Connection endpoint not configured
+            {t("Connection endpoint not configured")}
           </p>
         )}
       </div>

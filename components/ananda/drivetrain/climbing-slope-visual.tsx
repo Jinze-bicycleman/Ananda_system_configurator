@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useT } from "@/lib/i18n/provider"
 
 /**
  * Responsive inline-SVG climbing-grade visualization: a rising road with a
@@ -30,20 +31,33 @@ export function ClimbingSlopeVisual({
   /** Vertical rise, in metres, over the 100 m horizontal run. */
   riseMetres: number
 }) {
+  const t = useT()
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 340, height: 200 })
 
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    let frame = 0
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width
       if (!width || width <= 0) return
-      const height = Math.max(170, Math.min(260, width * 0.55))
-      setSize({ width, height })
+      cancelAnimationFrame(frame)
+      // Defer the state update to the next frame so the observer callback never
+      // changes layout in the same frame it was notified (avoids the loop error).
+      frame = requestAnimationFrame(() => {
+        const roundedWidth = Math.round(width)
+        const height = Math.max(170, Math.min(260, roundedWidth * 0.55))
+        setSize((prev) =>
+          prev.width === roundedWidth && prev.height === height ? prev : { width: roundedWidth, height },
+        )
+      })
     })
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [])
 
   const { width, height } = size
@@ -94,9 +108,9 @@ export function ClimbingSlopeVisual({
         aria-labelledby="climb-slope-title climb-slope-desc"
         className="block"
       >
-        <title id="climb-slope-title">Climbing steepness illustration</title>
+        <title id="climb-slope-title">{t("Climbing steepness illustration")}</title>
         <desc id="climb-slope-desc">
-          {`A ${gradePercent.toFixed(1)} percent grade, equivalent to a ${angleDegrees.toFixed(1)} degree slope angle, rising ${riseMetres.toFixed(1)} metres over a 100 metre horizontal run.`}
+          {t("A {grade} percent grade, equivalent to a {angle} degree slope angle, rising {rise} metres over a 100 metre horizontal run.", { grade: gradePercent.toFixed(1), angle: angleDegrees.toFixed(1), rise: riseMetres.toFixed(1) })}
         </desc>
 
         {/* Baseline */}
@@ -151,7 +165,7 @@ export function ClimbingSlopeVisual({
           dominantBaseline="middle"
           aria-hidden="true"
         >
-          {`${riseMetres.toFixed(1)} m rise`}
+          {t("{rise} m rise", { rise: riseMetres.toFixed(1) })}
         </text>
 
         {/* Horizontal run label */}
@@ -164,7 +178,7 @@ export function ClimbingSlopeVisual({
           textAnchor="middle"
           aria-hidden="true"
         >
-          {RUN_LABEL}
+          {t(RUN_LABEL)}
         </text>
 
         {/* Wheel: outer tire is static; the inner group rotates clockwise to
@@ -201,7 +215,7 @@ export function ClimbingSlopeVisual({
         </g>
       </svg>
       <p className="sr-only">
-        {`The road rises at ${gradePercent.toFixed(1)} percent grade, equivalent to a ${angleDegrees.toFixed(1)} degree slope angle, gaining ${riseMetres.toFixed(1)} metres over a 100 metre horizontal run. A single wheel is shown spinning in place on the slope to indicate uphill travel.`}
+        {t("The road rises at {grade} percent grade, equivalent to a {angle} degree slope angle, gaining {rise} metres over a 100 metre horizontal run. A single wheel is shown spinning in place on the slope to indicate uphill travel.", { grade: gradePercent.toFixed(1), angle: angleDegrees.toFixed(1), rise: riseMetres.toFixed(1) })}
       </p>
     </div>
   )

@@ -6,6 +6,7 @@ import { AlertTriangle, Battery, Cog, Gauge, MonitorSmartphone, Package, Plug, P
 import { cn } from "@/lib/utils"
 import type { FrameKey } from "@/lib/system-diagram-layout"
 import type { AccessoryItem, DiagramNode } from "@/lib/use-fixed-system-diagram-data"
+import { useT } from "@/lib/i18n/provider"
 
 const FALLBACK_ICONS: Record<FrameKey, React.ComponentType<{ className?: string }>> = {
   hmi: MonitorSmartphone,
@@ -40,6 +41,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
   { frameKey, node, accessories, orientation, editing, selected, onSelect, onDragPointerDown, onResizePointerDown },
   ref,
 ) {
+  const t = useT()
   const FallbackIcon = FALLBACK_ICONS[frameKey]
   const isAccessories = frameKey === "accessories"
   const imageBox = (
@@ -63,7 +65,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
       role="button"
       tabIndex={0}
       aria-pressed={selected}
-      aria-label={`${node.category}: ${node.model}`}
+      aria-label={`${t(node.category)}: ${t(node.model)}`}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -88,20 +90,20 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <span className="truncate text-xs font-semibold text-muted-foreground">
-              {node.category}
+              {t(node.category)}
             </span>
             {node.status === "missing" && <AlertTriangle className="h-3 w-3 shrink-0 text-warning" aria-hidden="true" />}
           </div>
-          <p className="wrap-anywhere text-sm font-semibold leading-tight text-foreground">{node.model}</p>
+          <p className="wrap-anywhere text-sm font-semibold leading-tight text-foreground">{t(node.model)}</p>
 
           {isAccessories ? (
             <ul className="mt-1 max-h-32 flex-1 overflow-y-auto divide-y divide-border border-t border-border">
               {(accessories ?? []).length === 0 ? (
-                <li className="py-1 text-[10.5px] text-muted-foreground">None selected</li>
+                <li className="py-1 text-[10.5px] text-muted-foreground">{t("None selected")}</li>
               ) : (
                 (accessories ?? []).map((item) => (
                   <li key={item.id} className="flex items-center justify-between gap-1 py-1 text-[10.5px]">
-                    <span className="truncate text-foreground">{item.name}</span>
+                    <span className="truncate text-foreground">{t(item.name)}</span>
                     <span className="shrink-0 tabular-nums text-muted-foreground">×{item.quantity}</span>
                   </li>
                 ))
@@ -112,7 +114,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
               <div className="mt-1 space-y-0.5">
                 {node.specs.slice(0, 3).map((spec) => (
                   <p key={spec.label} className="truncate text-[10.5px] text-muted-foreground">
-                    <span className="font-semibold text-foreground">{spec.label}:</span> {spec.value}
+                    <span className="font-semibold text-foreground">{t(spec.label)}:</span> {t(spec.value)}
                   </p>
                 ))}
               </div>
@@ -124,7 +126,7 @@ export const DiagramCard = forwardRef<HTMLDivElement, DiagramCardProps>(function
       {editing && (
         <button
           type="button"
-          aria-label={`Resize ${node.category} card`}
+          aria-label={t("Resize {name} card", { name: t(node.category) })}
           onPointerDown={(e) => {
             e.stopPropagation()
             onResizePointerDown?.(e)

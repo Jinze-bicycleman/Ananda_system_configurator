@@ -2,7 +2,9 @@ import type { AnandaConfig } from "./ananda-store"
 import { packageItemKeys, isItemSatisfied, hasThirdPartySupplier, chainringMismatch } from "./ananda-store"
 
 export interface IncompleteItem {
+  /** English source text; may contain {placeholders} filled from `params`. */
   message: string
+  params?: Record<string, string | number>
   targetId: string | null
 }
 
@@ -10,6 +12,7 @@ const CORE_COMPONENT_LABELS: Partial<Record<keyof AnandaConfig, string>> = {
   motorId: "Motor",
   controllerId: "Controller",
   torqueSensorId: "Torque Sensor",
+  cadenceSensorId: "Cadence Sensor",
   speedSensorId: "Speed Sensor",
   displayId: "Display (HMI)",
   batteryId: "Battery",
@@ -43,9 +46,9 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
         if (isItemSatisfied(s, key)) continue
         const label = CORE_COMPONENT_LABELS[key] ?? String(key)
         if (hasThirdPartySupplier(s, key as string)) {
-          items.push({ message: `Enter the 3rd party supplier name for ${label}.`, targetId: `config-${String(key)}` })
+          items.push({ message: "Enter the 3rd party supplier name for {label}.", params: { label }, targetId: `config-${String(key)}` })
         } else {
-          items.push({ message: `${label} still needs a selection or must be marked not needed.`, targetId: `config-${String(key)}` })
+          items.push({ message: "{label} still needs a selection or must be marked not needed.", params: { label }, targetId: `config-${String(key)}` })
         }
       }
       break
@@ -63,7 +66,8 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
         const mismatch = chainringMismatch(s)
         if (mismatch) {
           items.push({
-            message: `Front chainring (${mismatch.entered}T) must match the ${mismatch.expected}T chainring chosen under Bike Components.`,
+            message: "Front chainring ({entered}T) must match the {expected}T chainring chosen under Bike Components.",
+            params: { entered: mismatch.entered, expected: mismatch.expected },
             targetId: "front-chainring-teeth",
           })
         }

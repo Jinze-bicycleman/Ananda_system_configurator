@@ -46,6 +46,13 @@ const ROLE_LABEL: Record<ProductRole, string> = {
   speedSensor: "Wheel speed sensor",
 }
 
+const ROLE_HIDDEN_REASON: Record<ProductRole, string> = {
+  motor: "Motor is marked as not needed",
+  battery: "Battery is marked as not needed",
+  display: "Display is marked as not needed",
+  speedSensor: "Wheel speed sensor is marked as not needed",
+}
+
 export function useBikeOverview() {
   const s = useAnandaStore()
   const { motors } = useMotors()
@@ -129,7 +136,7 @@ export function useBikeOverview() {
         mode,
         pins: profile?.pinCount ?? spec?.pins ?? null,
         visible,
-        hiddenReason: visible && meta.requires ? null : meta.requires ? `${ROLE_LABEL[meta.requires]} is marked as not needed` : null,
+        hiddenReason: visible && meta.requires ? null : meta.requires ? ROLE_HIDDEN_REASON[meta.requires] : null,
       }
     })
 

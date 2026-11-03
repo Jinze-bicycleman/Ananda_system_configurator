@@ -17,8 +17,9 @@ export type ProductTable = {
     | "batteries"
     | "chargers"
     | "charging_ports"
-    | "sensors"
     | "speed_sensors"
+    | "cadence_sensors"
+    | "torque_sensors"
     | "accessories"
     | "bike_components"
   label: string
@@ -45,6 +46,26 @@ const listing: ProductField[] = [
   { name: "sort_order", label: "Display order", type: "integer", hint: "Lower numbers appear first." },
   { name: "is_active", label: "Visible in configurator", type: "boolean" },
 ]
+
+/** Label telling the configurator which motor platform a sensor is offered with. */
+const motorPlatformField: ProductField = {
+  name: "motor_platform",
+  label: "Used in",
+  type: "select",
+  required: true,
+  options: [
+    { value: "mid_drive", label: "Mid-drive motor system" },
+    { value: "hub", label: "Hub motor system" },
+    { value: "both", label: "Both mid-drive and hub" },
+  ],
+}
+
+const waterproofField: ProductField = {
+  name: "waterproof",
+  label: "Waterproof rating",
+  type: "text",
+  hint: "For example IP65 or IP67.",
+}
 
 export const PRODUCT_TABLES: ProductTable[] = [
   {
@@ -178,37 +199,59 @@ export const PRODUCT_TABLES: ProductTable[] = [
     ],
   },
   {
-    table: "sensors",
-    label: "Sensors",
-    singular: "sensor",
-    fields: [
-      { name: "model", label: "Name", type: "text", required: true },
-      {
-        name: "sensor_type",
-        label: "Sensor type",
-        type: "select",
-        required: true,
-        options: [
-          { value: "torque", label: "Torque" },
-          { value: "cadence", label: "Cadence" },
-          { value: "speed", label: "Speed" },
-        ],
-      },
-      { name: "weight_kg", label: "Weight (kg)", type: "number" },
-      ...simple,
-    ],
-  },
-  {
     table: "speed_sensors",
     label: "Speed sensors",
     singular: "speed sensor",
     fields: [
       { name: "model", label: "Model", type: "text", required: true },
       { name: "name", label: "Display name", type: "text" },
+      {
+        ...motorPlatformField,
+        hint: "Which motor platform this sensor is offered with. Choose Both to show it with mid-drive and hub systems.",
+      },
       { name: "mounting_position", label: "Mounting position", type: "text" },
       { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
       { name: "connector_type", label: "Connector type", type: "text" },
-      ...listing,
+      waterproofField,
+      ...common,
+    ],
+  },
+  {
+    table: "cadence_sensors",
+    label: "Cadence sensors",
+    singular: "cadence sensor",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      { name: "name", label: "Display name", type: "text" },
+      {
+        ...motorPlatformField,
+        hint: "Mid-drive motors have a built-in cadence sensor, so these are only offered in hub-motor systems.",
+      },
+      { name: "mounting_position", label: "Mounting position", type: "text" },
+      { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
+      { name: "connector_type", label: "Connector type", type: "text" },
+      waterproofField,
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...common,
+    ],
+  },
+  {
+    table: "torque_sensors",
+    label: "Torque sensors",
+    singular: "torque sensor",
+    fields: [
+      { name: "model", label: "Model", type: "text", required: true },
+      { name: "name", label: "Display name", type: "text" },
+      {
+        ...motorPlatformField,
+        hint: "Mid-drive motors have a built-in torque sensor, so these are only offered in hub-motor systems.",
+      },
+      { name: "mounting_position", label: "Mounting position", type: "text" },
+      { name: "cable_length_mm", label: "Cable length (mm)", type: "integer" },
+      { name: "connector_type", label: "Connector type", type: "text" },
+      waterproofField,
+      { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      ...common,
     ],
   },
   {
@@ -252,6 +295,7 @@ export const PRODUCT_TABLES: ProductTable[] = [
       },
       { name: "teeth", label: "Teeth", type: "integer", hint: "Chainrings only." },
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
+      { name: "image_url", label: "Picture", type: "image" },
       { name: "short_description", label: "Description", type: "textarea" },
       ...listing,
     ],

@@ -15,6 +15,7 @@ import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS,
 export const PACKAGE_ITEM_LABELS: Record<PackageItemKey, string> = {
   controllerId: "Controller",
   torqueSensorId: "Torque Sensor",
+  cadenceSensorId: "Cadence Sensor",
   speedSensorId: "Speed Sensor",
   displayId: "Display (HMI)",
   batteryId: "Battery",
@@ -93,7 +94,7 @@ export function useReportData(config?: AnandaConfig) {
 
   // ─── Third-party sourced parts (every package part except the motor) ───
   const thirdPartyItems = (Object.keys(PACKAGE_ITEM_LABELS) as PackageItemKey[])
-    .filter((key) => hasThirdPartySupplier(s, key) && !(isMid && (key === "controllerId" || key === "torqueSensorId")))
+    .filter((key) => hasThirdPartySupplier(s, key) && !(isMid && (key === "controllerId" || key === "torqueSensorId" || key === "cadenceSensorId")))
     .map((key) => ({ key, label: PACKAGE_ITEM_LABELS[key], supplier: s.thirdPartySuppliers[key] ?? "" }))
 
   const packageItemScope = (key: PackageItemKey, model: string | null): ScopeItem | null => {
@@ -114,6 +115,7 @@ export function useReportData(config?: AnandaConfig) {
   pushScope(packageItemScope("chargingPortId", chargingPort?.model ?? null))
   if (!speedSensorSkipped) pushScope(packageItemScope("speedSensorId", s.speedSensorId))
   if (!isMid && !torqueSensorSkipped) pushScope(packageItemScope("torqueSensorId", s.torqueSensorId))
+  if (!isMid && !s.skippedItems.includes("cadenceSensorId")) pushScope(packageItemScope("cadenceSensorId", s.cadenceSensorId))
   for (const [category, id] of Object.entries(s.bikeComponentSelections)) {
     if (id) scopeOfSupplyItems.push({ label: category.charAt(0).toUpperCase() + category.slice(1), value: id })
   }
@@ -371,6 +373,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   else pkgRow("controllerId", controller ? controller.model : "—")
   pkgRow("displayId", display ? display.model : "—")
   if (!isMid) pkgRow("torqueSensorId", torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ?? "—")
+  if (!isMid) pkgRow("cadenceSensorId", s.skippedItems.includes("cadenceSensorId") ? "Not Needed" : s.cadenceSensorId ?? "—")
   pkgRow("speedSensorId", speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—")
 
   // ─── Drivetrain ───

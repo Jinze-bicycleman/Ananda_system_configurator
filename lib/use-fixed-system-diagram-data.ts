@@ -252,7 +252,14 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
   if (speedSensorNode.status === "missing") missing.push("speed sensor")
   if (chargingPortNode.status === "missing") missing.push("charging port")
 
-  const statusMessage = missing.length > 0 ? `Select a ${missing[0]} to complete the system` : "Connection check passed"
+  const MISSING_MESSAGES: Record<string, string> = {
+    motor: "Select a motor to complete the system",
+    display: "Select a display to complete the system",
+    battery: "Select a battery to complete the system",
+    "speed sensor": "Select a speed sensor to complete the system",
+    "charging port": "Select a charging port to complete the system",
+  }
+  const statusMessage = missing.length > 0 ? MISSING_MESSAGES[missing[0]] : "Connection check passed"
 
   return {
     nodes: {

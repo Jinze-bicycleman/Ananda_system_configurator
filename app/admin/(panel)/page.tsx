@@ -2,21 +2,23 @@ import { createAdminClient } from "@/lib/admin/supabase-admin"
 import { PRODUCT_TABLES, type ProductRecord } from "@/lib/admin/product-schema"
 import { AdminTabs } from "@/components/admin/admin-tabs"
 import type { ContentRow } from "@/components/admin/content-editor"
+import type { TranslationRow } from "@/components/admin/translation-editor"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminPage() {
   const supabase = createAdminClient()
 
-  const [content, ...products] = await Promise.all([
+  const [content, translations, ...products] = await Promise.all([
     supabase.from("site_content").select("key, label, section, kind, value, sort_order").order("sort_order"),
+    supabase.from("site_translations").select("locale, source, value"),
     ...PRODUCT_TABLES.map((t) => supabase.from(t.table).select("*").order("sort_order").order("model")),
   ])
 
   const productData = Object.fromEntries(
     PRODUCT_TABLES.map((t, i) => [t.table, (products[i].data ?? []) as unknown as ProductRecord[]]),
   )
-  const loadError = [content, ...products].find((r) => r.error)?.error?.message
+  const loadError = [content, translations, ...products].find((r) => r.error)?.error?.message
 
   return (
     <div className="space-y-6">
@@ -31,7 +33,11 @@ export default async function AdminPage() {
           Some data could not be loaded: {loadError}
         </p>
       )}
-      <AdminTabs content={(content.data ?? []) as ContentRow[]} products={productData} />
+      <AdminTabs
+        content={(content.data ?? []) as ContentRow[]}
+        products={productData}
+        translations={(translations.data ?? []) as TranslationRow[]}
+      />
     </div>
   )
 }

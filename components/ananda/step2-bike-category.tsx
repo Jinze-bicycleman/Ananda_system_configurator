@@ -7,6 +7,7 @@ import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/li
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 import { useSiteContent } from "@/lib/site-content"
+import { useT } from "@/lib/i18n/provider"
 
 const BIKE_CATEGORIES = [
   {
@@ -51,13 +52,14 @@ const VOLTAGE_PLATFORMS = [36, 48] as const
 // placed before Wheel & Tyre Data.
 function DriveUnitSection() {
   const s = useAnandaStore()
+  const t = useT()
 
   return (
     <div id="field-driveUnit" className="mb-8">
-      <SectionLabel>Drive Unit Selection</SectionLabel>
+      <SectionLabel>{t("Drive Unit Selection")}</SectionLabel>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-graphite">Motor type</p>
+          <p className="mb-2 text-sm font-medium text-graphite">{t("Motor type")}</p>
           <div className="flex flex-wrap gap-3">
             {DRIVE_UNITS.map((d) => {
               const selected = s.driveType === d.id
@@ -77,16 +79,16 @@ function DriveUnitSection() {
                         : "border-border bg-card text-graphite hover:border-primary/40 hover:bg-secondary/60",
                   )}
                 >
-                  {d.label}
+                  {t(d.label)}
                   {selected && <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
-                  {d.disabled && <span className="text-xs text-muted-foreground">Soon</span>}
+                  {d.disabled && <span className="text-xs text-muted-foreground">{t("Soon")}</span>}
                 </button>
               )
             })}
           </div>
         </div>
         <div className="min-w-0">
-          <p className="mb-2 text-sm font-medium text-graphite">Voltage platform</p>
+          <p className="mb-2 text-sm font-medium text-graphite">{t("Voltage platform")}</p>
           <div className="flex flex-wrap gap-3">
             {VOLTAGE_PLATFORMS.map((v) => {
               const selected = s.voltagePlatform === v
@@ -117,11 +119,12 @@ function DriveUnitSection() {
 
 export function Step2BikeCategory() {
   const s = useAnandaStore()
+  const t = useT()
   const content = useSiteContent()
   const categories = BIKE_CATEGORIES.map((c) => ({
     ...c,
-    label: content.get(`category.${c.contentKey}.label`) || c.label,
-    description: content.get(`category.${c.contentKey}.description`) || c.description,
+    label: t(content.get(`category.${c.contentKey}.label`) || c.label),
+    description: t(content.get(`category.${c.contentKey}.description`) || c.description),
     image: content.get(`category.${c.contentKey}.image`) || c.image,
   }))
 
@@ -129,23 +132,23 @@ export function Step2BikeCategory() {
     <div>
       <StepHeader
         step={2}
-        title="Bike Category"
-        subtitle="Choose the bicycle application that best matches the rider, then set the drive unit and wheel data for this e-bike system."
+        title={t("Bike Category")}
+        subtitle={t("Choose the bicycle application that best matches the rider, then set the drive unit and wheel data for this e-bike system.")}
       />
 
       {/* Inherited constraints — read-only context from Step 1 */}
       <div className="mb-8 rounded-lg border border-border bg-secondary/50 p-4">
-        <SectionLabel>Inherited Constraints</SectionLabel>
+        <SectionLabel>{t("Inherited Constraints")}</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <InheritedField label="Market" value={s.sellRegion ?? "—"} />
-          <InheritedField label="Regulation" value={s.regulation ?? "—"} />
-          <InheritedField label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
-          <InheritedField label="Rated Power" value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
+          <InheritedField label={t("Market")} value={s.sellRegion ? t(s.sellRegion) : "—"} />
+          <InheritedField label={t("Regulation")} value={s.regulation ? t(s.regulation) : "—"} />
+          <InheritedField label={t("Speed Limit")} value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
+          <InheritedField label={t("Rated Power")} value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
         </div>
       </div>
 
       <div id="field-bikeCategory" className="mb-8">
-        <SectionLabel>Bike Category</SectionLabel>
+        <SectionLabel>{t("Bike Category")}</SectionLabel>
         <div className="grid gap-4 md:grid-cols-2">
           {categories.map((category) => {
             const selected = s.bikeCategory === category.id
@@ -163,7 +166,7 @@ export function Step2BikeCategory() {
                 <div className="relative h-56 overflow-hidden bg-muted sm:h-64">
                   <img
                     src={category.image}
-                    alt={`${category.label} bicycle application`}
+                    alt={t("{name} bicycle application", { name: category.label })}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite/90 to-transparent p-4 pt-16">
@@ -212,6 +215,7 @@ function InheritedField({ label, value }: { label: string; value: string }) {
 // cadence estimates, so it stays above Functions & Connectivity.
 function WheelAndTyreSection() {
   const s = useAnandaStore()
+  const t = useT()
   const [lookupOpen, setLookupOpen] = useState(false)
   const [lookupWheel, setLookupWheel] = useState(s.wheelSize ?? "")
   const [lookupWidth, setLookupWidth] = useState(s.tyreWidth ?? "")
@@ -219,9 +223,9 @@ function WheelAndTyreSection() {
   const recommendation = useMemo(
     () =>
       s.bikeCategory === "Cargo bike" || s.bikeCategory === "MTB"
-        ? "A 48V platform is typically preferred for higher load, hill, or trail demands."
+        ? t("A 48V platform is typically preferred for higher load, hill, or trail demands.")
         : null,
-    [s.bikeCategory],
+    [s.bikeCategory, t],
   )
 
   const { options: wheelSizeOptions } = useWheelSizeOptions()
@@ -257,13 +261,13 @@ function WheelAndTyreSection() {
       )}
       <section id="field-wheelSize" className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-sm font-semibold text-foreground">Wheel &amp; tyre data</p>
-          <span className="text-xs text-muted-foreground">A few percent of difference is allowed</span>
+          <p className="text-sm font-semibold text-foreground">{t("Wheel & tyre data")}</p>
+          <span className="text-xs text-muted-foreground">{t("A few percent of difference is allowed")}</span>
         </div>
-        <p className="mb-4 -mt-2 text-xs text-muted-foreground">Measured circumference overrides the default lookup value.</p>
+        <p className="mb-4 -mt-2 text-xs text-muted-foreground">{t("Measured circumference overrides the default lookup value.")}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium text-graphite">
-            Wheel size
+            {t("Wheel size")}
             <select
               value={s.wheelSize ?? ""}
               onChange={(e) => {
@@ -273,7 +277,7 @@ function WheelAndTyreSection() {
               }}
               className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <option value="">Choose wheel size</option>
+              <option value="">{t("Choose wheel size")}</option>
               {wheelSizeOptions.map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -282,14 +286,14 @@ function WheelAndTyreSection() {
         </div>
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium text-graphite">
-            Tyre circumference (mm)
+            {t("Tyre circumference (mm)")}
             <input
               type="number"
               min="1000"
               max="3000"
               value={circumference ?? ""}
               onChange={(e) => s.setField("tyreCircumferenceMm", e.target.value ? Number(e.target.value) : null)}
-              placeholder="Manual value"
+              placeholder={t("Manual value")}
               className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             />
           </label>
@@ -298,7 +302,7 @@ function WheelAndTyreSection() {
             onClick={openLookup}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-primary px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Search className="h-4 w-4" aria-hidden="true" /> Tyre lookup
+            <Search className="h-4 w-4" aria-hidden="true" /> {t("Tyre lookup")}
           </button>
         </div>
         {lookupOpen && (
@@ -309,7 +313,7 @@ function WheelAndTyreSection() {
                 onChange={(e) => handleWheelChange(e.target.value)}
                 className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
               >
-                <option value="">Choose wheel size</option>
+                <option value="">{t("Choose wheel size")}</option>
                 {wheelSizeOptions.map((item) => (
                   <option key={item}>{item}</option>
                 ))}
@@ -320,7 +324,7 @@ function WheelAndTyreSection() {
                 disabled={!lookupWheel}
                 className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground disabled:opacity-50"
               >
-                <option value="">Choose width</option>
+                <option value="">{t("Choose width")}</option>
                 {tyreWidthOptions.map((item) => (
                   <option key={item}>{item}</option>
                 ))}
@@ -331,12 +335,12 @@ function WheelAndTyreSection() {
                 onClick={applyMatch}
                 className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
-                Apply {isMatchLoading ? "…" : match ? `${match.circumference_mm} mm` : "—"}
+                {t("Apply")} {isMatchLoading ? "…" : match ? `${match.circumference_mm} mm` : "—"}
               </button>
             </div>
             {match && (
               <p className="mt-3 text-xs text-muted-foreground">
-                ISO size <span className="font-semibold text-foreground">{match.iso_size}</span> · Circumference{" "}
+                {t("ISO size")} <span className="font-semibold text-foreground">{match.iso_size}</span> · {t("Circumference")}{" "}
                 <span className="font-semibold text-foreground">{match.circumference_mm} mm</span>
               </p>
             )}

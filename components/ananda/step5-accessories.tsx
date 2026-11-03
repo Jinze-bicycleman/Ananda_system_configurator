@@ -6,6 +6,7 @@ import { aAccessories } from "@/lib/ananda-data"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { AnandaRideAppPanel } from "./ananda-ride-app-panel"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 import { Wifi, Lightbulb, Gauge, MoreHorizontal, CheckCircle2, Plus, X, HelpCircle } from "lucide-react"
 import {
   AlertDialog,
@@ -27,6 +28,7 @@ const CATEGORIES = [
 // ─── IoT / Connectivity ──────────────────────────────────────────────────────
 function ConnectivitySection() {
   const s = useAnandaStore()
+  const t = useT()
   const [pendingThirdParty, setPendingThirdParty] = useState(false)
 
   const choose = (app: BluetoothAppChoice | "no_app") => {
@@ -51,19 +53,19 @@ function ConnectivitySection() {
   const OPTIONS: { id: "ananda_app" | "no_app" | "third_party"; label: string; info: ReactNode }[] = [
     {
       id: "ananda_app",
-      label: "Ananda Ride App",
+      label: t("Ananda Ride App"),
       info: (
         <div className="space-y-1.5">
-          <p className="font-semibold text-foreground">Key Features</p>
-          <p>Live tracking &amp; ride history, motor diagnostics, boost adjustment, and theft-security features.</p>
+          <p className="font-semibold text-foreground">{t("Key Features")}</p>
+          <p>{t("Live tracking & ride history, motor diagnostics, boost adjustment, and theft-security features.")}</p>
         </div>
       ),
     },
-    { id: "no_app", label: "No App", info: <p>No companion-app connectivity — the system operates standalone.</p> },
+    { id: "no_app", label: t("No App"), info: <p>{t("No companion-app connectivity — the system operates standalone.")}</p> },
     {
       id: "third_party",
-      label: "3rd-Party App",
-      info: <p>Uses the Ananda communication protocol for data transferring and reading with your own third-party application.</p>,
+      label: t("3rd-Party App"),
+      info: <p>{t("Uses the Ananda communication protocol for data transferring and reading with your own third-party application.")}</p>,
     },
   ]
 
@@ -72,7 +74,7 @@ function ConnectivitySection() {
       <SectionLabel>
         <span className="flex items-center gap-2">
           <Wifi className="w-3.5 h-3.5" />
-          IoT / Connectivity
+          {t("IoT / Connectivity")}
         </span>
       </SectionLabel>
       <div className="flex flex-wrap gap-2 border border-border p-3">
@@ -91,7 +93,7 @@ function ConnectivitySection() {
               <HoverCardTrigger asChild>
                 <button
                   type="button"
-                  aria-label={`About ${opt.label}`}
+                  aria-label={t("About {name}", { name: opt.label })}
                   className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-current"
                 >
                   <HelpCircle className="h-3 w-3" />
@@ -109,19 +111,19 @@ function ConnectivitySection() {
         <AlertDialogContent className="border border-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-semibold text-graphite">
-              3rd-Party App Connectivity
+              {t("3rd-Party App Connectivity")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Configuring 3rd-party app connectivity may cause extra cost, please consult our sales for more information.
+              {t("Configuring 3rd-party app connectivity may cause extra cost, please consult our sales for more information.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-xs font-semibold ">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="text-xs font-semibold ">{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmThirdParty}
               className="bg-primary text-xs font-semibold text-white hover:bg-primary/90"
             >
-              Confirm &amp; Continue
+              {t("Confirm & Continue")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -133,14 +135,15 @@ function ConnectivitySection() {
 // ─── Lighting spec fields ────────────────────────────────────────────────────
 function LightSpecFields({ accessoryId }: { accessoryId: string }) {
   const s = useAnandaStore()
+  const t = useT()
   const spec = s.lightSpecs[accessoryId] ?? { voltageV: null, currentA: null, powerW: null }
   return (
     <div className="mt-2 grid grid-cols-3 gap-2 border-t border-dashed border-border pt-2" onClick={(e) => e.stopPropagation()}>
       {(
         [
-          { key: "voltageV" as const, label: "Voltage (V)" },
-          { key: "currentA" as const, label: "Current (A)" },
-          { key: "powerW" as const, label: "Power (W)" },
+          { key: "voltageV" as const, label: t("Voltage (V)") },
+          { key: "currentA" as const, label: t("Current (A)") },
+          { key: "powerW" as const, label: t("Power (W)") },
         ]
       ).map((f) => (
         <label key={f.key} className="text-xs font-semibold text-muted-foreground">
@@ -162,17 +165,18 @@ function LightSpecFields({ accessoryId }: { accessoryId: string }) {
 // ─── Throttle warning + algorithm choice ─────────────────────────────────────
 function ThrottleConfig() {
   const s = useAnandaStore()
+  const t = useT()
   return (
     <div className="mt-4 border border-warning/40 bg-warning/10 p-4" onClick={(e) => e.stopPropagation()}>
       <p className="text-xs text-warning-foreground mb-3">
-        Please provide a sample of the throttle for system integration testing. We also need to know the desired throttle algorithm.
+        {t("Please provide a sample of the throttle for system integration testing. We also need to know the desired throttle algorithm.")}
       </p>
-      <p className="mb-2 text-xs font-semibold text-graphite">Throttle Algorithm</p>
+      <p className="mb-2 text-xs font-semibold text-graphite">{t("Throttle Algorithm")}</p>
       <div className="flex flex-wrap gap-2">
         {(
           [
-            { id: "zero_start" as const, label: "0 km/h Start" },
-            { id: "speed_gate" as const, label: "Available Above Speed Limit" },
+            { id: "zero_start" as const, label: t("0 km/h Start") },
+            { id: "speed_gate" as const, label: t("Available Above Speed Limit") },
           ]
         ).map((opt) => (
           <button
@@ -191,7 +195,7 @@ function ThrottleConfig() {
       {s.throttleStartMode === "speed_gate" && (
         <div className="mt-3 flex items-center gap-2">
           <label className="text-xs font-semibold text-muted-foreground">
-            Minimum speed (km/h)
+            {t("Minimum speed (km/h)")}
           </label>
           <input
             type="number"
@@ -208,6 +212,7 @@ function ThrottleConfig() {
 // ─── Other accessories — free-text entries only ──────────────────────────────
 function OtherAccessoriesSection() {
   const s = useAnandaStore()
+  const t = useT()
   const [draft, setDraft] = useState("")
 
   const add = () => {
@@ -222,7 +227,7 @@ function OtherAccessoriesSection() {
       <SectionLabel>
         <span className="flex items-center gap-2">
           <MoreHorizontal className="w-3.5 h-3.5" />
-          Other Accessories
+          {t("Other Accessories")}
         </span>
       </SectionLabel>
       <div className="space-y-2">
@@ -235,7 +240,7 @@ function OtherAccessoriesSection() {
             />
             <button
               type="button"
-              aria-label={`Remove ${acc.name}`}
+              aria-label={t("Remove {name}", { name: acc.name })}
               onClick={() => s.removeCustomAccessory(acc.id)}
               className="text-muted-foreground transition-colors hover:text-destructive"
             >
@@ -253,7 +258,7 @@ function OtherAccessoriesSection() {
                 add()
               }
             }}
-            placeholder="Describe the accessory (e.g. custom horn, basket, TPMS)"
+            placeholder={t("Describe the accessory (e.g. custom horn, basket, TPMS)")}
             className="flex-1 border border-dashed border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
           />
           <button
@@ -261,7 +266,7 @@ function OtherAccessoriesSection() {
             onClick={add}
             className="flex items-center gap-1.5 border border-primary bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
           >
-            <Plus className="h-3.5 w-3.5" /> Add
+            <Plus className="h-3.5 w-3.5" /> {t("Add")}
           </button>
         </div>
       </div>
@@ -271,13 +276,14 @@ function OtherAccessoriesSection() {
 
 export function Step5Accessories() {
   const s = useAnandaStore()
+  const t = useT()
 
   return (
     <div>
       <StepHeader
         step={5}
-        title="Accessories"
-        subtitle="Select optional accessories for the system. All items show technical specifications and weight only. Toggle to add or remove."
+        title={t("Accessories")}
+        subtitle={t("Select optional accessories for the system. All items show technical specifications and weight only. Toggle to add or remove.")}
       />
 
       <div className="space-y-8">
@@ -291,7 +297,7 @@ export function Step5Accessories() {
               <SectionLabel>
                 <span className="flex items-center gap-2">
                   <Icon className="w-3.5 h-3.5" />
-                  {cat.label}
+                  {t(cat.label)}
                 </span>
               </SectionLabel>
 
@@ -340,11 +346,11 @@ export function Step5Accessories() {
                               selected ? "text-primary" : "text-graphite",
                             )}
                           >
-                            {acc.name}
+                            {t(acc.name)}
                           </p>
-                          <p className="text-xs text-muted-foreground leading-snug mb-2">{acc.description}</p>
+                          <p className="text-xs text-muted-foreground leading-snug mb-2">{t(acc.description)}</p>
                           <div className="mt-auto flex items-center justify-between gap-2">
-                            <span className="text-xs text-muted-foreground">Weight</span>
+                            <span className="text-xs text-muted-foreground">{t("Weight")}</span>
                             <span className="whitespace-nowrap text-xs font-semibold text-foreground">
                               {acc.weightKg ? `${acc.weightKg} kg` : "—"}
                             </span>
@@ -368,7 +374,7 @@ export function Step5Accessories() {
       {(s.accessoryIds.length > 0 || s.customAccessories.length > 0) && (
         <div className="mt-6 border border-primary/30 bg-primary/5 px-5 py-4">
           <p className="text-xs font-semibold text-primary mb-2">
-            {s.accessoryIds.length + s.customAccessories.length} accessor{s.accessoryIds.length + s.customAccessories.length > 1 ? "ies" : "y"} selected
+            {s.accessoryIds.length + s.customAccessories.length > 1 ? t("{count} accessories selected", { count: s.accessoryIds.length + s.customAccessories.length }) : t("{count} accessory selected", { count: 1 })}
           </p>
           <div className="flex flex-wrap gap-2">
             {s.accessoryIds.map((id) => {
@@ -379,7 +385,7 @@ export function Step5Accessories() {
                   key={id}
                   className="inline-flex items-center gap-1.5 bg-card border border-primary/30 px-2.5 py-1 text-xs font-semibold text-primary"
                 >
-                  {acc.name}
+                  {t(acc.name)}
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
@@ -397,7 +403,7 @@ export function Step5Accessories() {
                 key={acc.id}
                 className="inline-flex items-center gap-1.5 bg-card border border-primary/30 px-2.5 py-1 text-xs font-semibold text-primary"
               >
-                {acc.name || "Untitled accessory"}
+                {acc.name || t("Untitled accessory")}
                 <button onClick={() => s.removeCustomAccessory(acc.id)} className="text-primary/50 hover:text-primary">
                   ×
                 </button>

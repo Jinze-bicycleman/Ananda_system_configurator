@@ -12,6 +12,7 @@ import {
   type ConnectionCableLengthOptionRow,
   type ExtensionCableLengthOptionRow,
 } from "@/lib/ananda-packages"
+import { useT } from "@/lib/i18n/provider"
 
 /**
  * Loads the Supabase-backed cable catalog (Cable A/B/C/D, their length
@@ -42,6 +43,7 @@ const inputBase =
 
 /** Read-only summary of the catalog cable assigned to a row (name, connector model, pins, IPX rating). */
 export function CableCatalogInfo({ cable }: { cable: ConnectionCableRow | null }) {
+  const t = useT()
   if (!cable) {
     return <span className="text-xs text-muted-foreground">—</span>
   }
@@ -49,7 +51,7 @@ export function CableCatalogInfo({ cable }: { cable: ConnectionCableRow | null }
     <div>
       <p className="font-semibold text-foreground">{cable.name}</p>
       <p className="text-[10.5px] text-muted-foreground">
-        {cable.connector_model} · {cable.pin_count}-pin · {cable.ipx_rating}
+        {cable.connector_model} · {cable.pin_count}-{t("pin")} · {cable.ipx_rating}
       </p>
     </div>
   )
@@ -64,6 +66,7 @@ export function CableLengthSelect({
   lengthOptions: ConnectionCableLengthOptionRow[]
 }) {
   const s = useAnandaStore()
+  const t = useT()
   const storedM = s.cableLengths[connection]
   const storedMm = storedM !== undefined ? Math.round(storedM * 1000) : null
   const inputId = `cable-length-select-${connection.replace(/[^a-z0-9]+/gi, "-")}`
@@ -71,7 +74,7 @@ export function CableLengthSelect({
   return (
     <div className="relative inline-block">
       <label htmlFor={inputId} className="sr-only">
-        Length for {connection}
+        {t("Length for {connection}", { connection: t(connection) })}
       </label>
       <select
         id={inputId}
@@ -83,7 +86,7 @@ export function CableLengthSelect({
         className={`${inputBase} ${storedMm ? "font-semibold text-foreground" : "text-muted-foreground"}`}
       >
         <option value="" disabled hidden>
-          Choose a length
+          {t("Choose a length")}
         </option>
         {lengthOptions.map((opt) => (
           <option key={opt.id} value={opt.length_mm} className="text-foreground">
@@ -110,6 +113,7 @@ export function ExtensionCableControl({
   extensionOptions: ExtensionCableLengthOptionRow[]
 }) {
   const s = useAnandaStore()
+  const t = useT()
   const storedM = s.extensionCableLengths[connection]
   const storedMm = storedM !== undefined ? Math.round(storedM * 1000) : null
   const [adding, setAdding] = useState(storedMm !== null)
@@ -122,7 +126,7 @@ export function ExtensionCableControl({
         onClick={() => setAdding(true)}
         className="flex items-center gap-1 border border-dashed border-border px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary hover:text-primary"
       >
-        <Plus className="h-3 w-3" aria-hidden="true" /> Add an extension cable
+        <Plus className="h-3 w-3" aria-hidden="true" /> {t("Add an extension cable")}
       </button>
     )
   }
@@ -131,7 +135,7 @@ export function ExtensionCableControl({
     <div className="flex items-center gap-1.5">
       <div className="relative inline-block">
         <label htmlFor={inputId} className="sr-only">
-          Extension cable length for {connection}
+          {t("Extension cable length for {connection}", { connection: t(connection) })}
         </label>
         <select
           id={inputId}
@@ -143,7 +147,7 @@ export function ExtensionCableControl({
           className={`${inputBase} w-28 ${storedMm ? "font-semibold text-foreground" : "text-muted-foreground"}`}
         >
           <option value="" disabled hidden>
-            Choose a length
+            {t("Choose a length")}
           </option>
           {extensionOptions.map((opt) => (
             <option key={opt.id} value={opt.length_mm} className="text-foreground">
@@ -155,7 +159,7 @@ export function ExtensionCableControl({
       </div>
       <button
         type="button"
-        aria-label={`Remove extension cable for ${connection}`}
+        aria-label={t("Remove extension cable for {connection}", { connection: t(connection) })}
         onClick={() => {
           s.setExtensionCableLength(connection, null)
           setAdding(false)

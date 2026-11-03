@@ -10,6 +10,7 @@ import { BikeOverview } from "./bike-overview/bike-overview"
 import { FixedSystemDiagram } from "./system-diagram/fixed-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ import {
 // solution — the latter carries an explicit cost/lead-time warning.
 function ConnectorSourcingPrompt() {
   const s = useAnandaStore()
+  const t = useT()
   const needsChoice = (s.driveType === "hub" && "controllerId" in s.thirdPartySuppliers) || s.customAccessories.length > 0
   const [pendingCustom, setPendingCustom] = useState(false)
 
@@ -39,10 +41,9 @@ function ConnectorSourcingPrompt() {
       <div className="mb-3 flex items-start gap-2">
         <Plug className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
         <div>
-          <p className="text-sm font-semibold text-graphite">Non-Ananda Components Detected</p>
+          <p className="text-sm font-semibold text-graphite">{t("Non-Ananda Components Detected")}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            This build includes a customer-supplied controller and/or custom accessories. Choose how connectors for these
-            components should be sourced.
+            {t("This build includes a customer-supplied controller and/or custom accessories. Choose how connectors for these components should be sourced.")}
           </p>
         </div>
       </div>
@@ -55,7 +56,7 @@ function ConnectorSourcingPrompt() {
             s.connectorSourcing === "standard" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
           )}
         >
-          Use Standard Connector Spec
+          {t("Use Standard Connector Spec")}
         </button>
         <button
           type="button"
@@ -65,7 +66,7 @@ function ConnectorSourcingPrompt() {
             s.connectorSourcing === "custom" ? "border-primary bg-primary/5 text-primary" : "border-border text-graphite hover:border-primary/40",
           )}
         >
-          Request Custom Solution
+          {t("Request Custom Solution")}
         </button>
       </div>
 
@@ -73,15 +74,14 @@ function ConnectorSourcingPrompt() {
         <AlertDialogContent className="border border-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-semibold text-graphite">
-              Custom Connector Solution
+              {t("Custom Connector Solution")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Customization incurs additional cost and extends the turnaround time by at least 15 days. Please consult our sales
-              team before proceeding.
+              {t("Customization incurs additional cost and extends the turnaround time by at least 15 days. Please consult our sales team before proceeding.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-xs font-semibold ">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="text-xs font-semibold ">{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 s.setField("connectorSourcing", "custom")
@@ -89,7 +89,7 @@ function ConnectorSourcingPrompt() {
               }}
               className="bg-primary text-xs font-semibold text-white hover:bg-primary/90"
             >
-              Confirm &amp; Continue
+              {t("Confirm & Continue")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -98,7 +98,7 @@ function ConnectorSourcingPrompt() {
       {s.connectorSourcing === "custom" && (
         <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-warning">
           <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-          Custom solution requested — additional cost and +15 day lead time apply. Sales team consultation required.
+          {t("Custom solution requested — additional cost and +15 day lead time apply. Sales team consultation required.")}
         </p>
       )}
     </div>
@@ -108,6 +108,7 @@ function ConnectorSourcingPrompt() {
 // ─── Confirm banner that reveals the system diagram ──────────────────────────
 
 function ViewDiagramGate({ children }: { children: React.ReactNode }) {
+  const t = useT()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [revealed, setRevealed] = useState(false)
 
@@ -126,12 +127,12 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
         )}
         <div className="max-w-md">
           <h3 className="text-base font-semibold text-graphite text-balance">
-            {revealed ? "Cable configuration confirmed" : "System Diagram"}
+            {revealed ? t("Cable configuration confirmed") : t("System Diagram")}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground text-pretty">
             {revealed
-              ? "The system diagram is shown below. You can return to editing the cables at any time."
-              : "Finish defining the cables above, then confirm to see the system diagram."}
+              ? t("The system diagram is shown below. You can return to editing the cables at any time.")
+              : t("Finish defining the cables above, then confirm to see the system diagram.")}
           </p>
         </div>
         {revealed ? (
@@ -140,7 +141,7 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
             onClick={() => setRevealed(false)}
             className="min-h-11 border border-border px-6 py-2 text-xs font-semibold text-graphite transition-colors hover:border-primary/40"
           >
-            Back to editing
+            {t("Back to editing")}
           </button>
         ) : (
           <button
@@ -148,7 +149,7 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
             onClick={() => setConfirmOpen(true)}
             className="min-h-11 bg-primary px-6 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90"
           >
-            View System Diagram
+            {t("View System Diagram")}
           </button>
         )}
       </div>
@@ -157,21 +158,21 @@ function ViewDiagramGate({ children }: { children: React.ReactNode }) {
         <AlertDialogContent className="border border-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-semibold text-graphite">
-              View System Diagram
+              {t("View System Diagram")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Please confirm your cable configuration is finished before viewing the system diagram.
+              {t("Please confirm your cable configuration is finished before viewing the system diagram.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="min-w-0 flex-col-reverse gap-2 sm:flex-col-reverse sm:justify-stretch">
             <AlertDialogCancel className="m-0 h-auto w-full whitespace-normal px-4 py-2.5 text-center text-xs font-semibold ">
-              Back to editing
+              {t("Back to editing")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => setRevealed(true)}
               className="h-auto w-full whitespace-normal bg-primary px-4 py-2.5 text-center text-xs font-semibold leading-snug text-white hover:bg-primary/90"
             >
-              I have completed the cable configuration
+              {t("I have completed the cable configuration")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -191,6 +192,7 @@ function Block({
   label: string; sublabel?: string
   active?: boolean; accent?: boolean; lime?: boolean; large?: boolean
 }) {
+  const t = useT()
   const bg = lime ? "#B4D600" : accent ? "#008F36" : active ? "#f0fdf4" : "#f9fafb"
   const border = lime ? "#8fa300" : accent ? "#006828" : active ? "#008F36" : "#d1d5db"
   const textMain = lime || accent ? "white" : active ? "#008F36" : "#374151"
@@ -220,14 +222,14 @@ function Block({
         textAnchor="middle" fill={textMain} fontSize={labelFontSize} fontWeight="700"
         fontFamily="var(--font-sans), Inter, sans-serif" style={{ textTransform: "" }}
         textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
-        {label}
+        {t(label)}
       </text>
       {sublabel && (
         <text x={x + w / 2} y={y + h / 2 + sublabelOffset}
           textAnchor="middle" fill={textSub} fontSize={sublabelFontSize}
           fontFamily="var(--font-sans), Inter, sans-serif"
           textLength={enlargedLabel ? textWidth : undefined} lengthAdjust={enlargedLabel ? "spacingAndGlyphs" : undefined}>
-          {sublabel}
+          {t(sublabel)}
         </text>
       )}
     </g>
@@ -239,6 +241,7 @@ function Arrow({
 }: {
   x1: number; y1: number; x2: number; y2: number; label?: string; color?: string
 }) {
+  const t = useT()
   const mx = (x1 + x2) / 2
   const my = (y1 + y2) / 2
   return (
@@ -246,7 +249,7 @@ function Arrow({
       <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrowhead)" />
       {label && (
         <text x={mx} y={my - 4} textAnchor="middle" fill={color} fontSize={7}
-          fontFamily="var(--font-sans), Inter, sans-serif">{label}</text>
+          fontFamily="var(--font-sans), Inter, sans-serif">{t(label)}</text>
       )}
     </g>
   )
@@ -268,6 +271,7 @@ type DiagramLabels = {
 }
 
 function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; labels: DiagramLabels }) {
+  const t = useT()
   const isMid = driveType === "mid"
 
   return (
@@ -307,7 +311,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           <Block x={220} y={126} w={200} h={86} label={labels.motor} sublabel={labels.motorSub} accent large />
           {/* Integrated sub-labels */}
           <text x={320} y={217} textAnchor="middle" fill="#008F36" fontSize={7} fontFamily="var(--font-sans), Inter, sans-serif">
-            ↳ Integrated Controller · Torque Sensing · Cadence Sensing
+            ↳ {t("Integrated Controller · Torque Sensing · Cadence Sensing")}
           </text>
 
           {/* Speed sensor → Motor */}
@@ -329,10 +333,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           {/* Note */}
           <rect x={20} y={332} width={600} height={36} rx={3} fill="#f0fdf4" stroke="#bbf7d0" strokeWidth={1} />
           <text x={320} y={349} textAnchor="middle" fill="#008F36" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
-            Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.
+            {t("Mid-drive: controller, torque sensing and cadence sensing are all integrated in the motor unit.")}
           </text>
           <text x={320} y={360} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
-            External controller and external sensors are not required.
+            {t("External controller and external sensors are not required.")}
           </text>
         </>
       ) : (
@@ -374,10 +378,10 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
           {/* Note */}
           <rect x={20} y={310} width={600} height={36} rx={3} fill="#fffbeb" stroke="#fde68a" strokeWidth={1} />
           <text x={320} y={327} textAnchor="middle" fill="#b45309" fontSize={8.5} fontFamily="var(--font-sans), Inter, sans-serif" fontWeight="600">
-            Hub motor system requires an external controller and external pedal sensing.
+            {t("Hub motor system requires an external controller and external pedal sensing.")}
           </text>
           <text x={320} y={338} textAnchor="middle" fill="#6b7280" fontSize={7.5} fontFamily="var(--font-sans), Inter, sans-serif">
-            Torque sensor and cadence sensor must be specified as separate components.
+            {t("Torque sensor and cadence sensor must be specified as separate components.")}
           </text>
         </>
       )}
@@ -389,6 +393,7 @@ function SystemDiagramSVG({ driveType, labels }: { driveType: "mid" | "hub"; lab
 
 function CableTable() {
   const s = useAnandaStore()
+  const t = useT()
   const driveKey = s.driveType ?? "mid"
   const presets = cablePresets[driveKey] ?? cablePresets.mid
   const { cables, options, extensionOptions } = useCableCatalog()
@@ -399,7 +404,7 @@ function CableTable() {
         <thead>
           <tr className="bg-graphite text-white">
             {["Connection", "Connector", "Pins", "Cable Type", "Cable (catalog)", "Length", "Extension cable"].map(h => (
-              <th key={h} className="px-3 py-2 font-semibold text-left text-xs">{h}</th>
+              <th key={h} className="px-3 py-2 font-semibold text-left text-xs">{t(h)}</th>
             ))}
           </tr>
         </thead>
@@ -409,10 +414,10 @@ function CableTable() {
             const lengthOptions = assignedCable ? connectionCableLengthOptionsFor(options, assignedCable.id) : []
             return (
               <tr key={i} className={i % 2 === 0 ? "bg-card" : "bg-surface"}>
-                <td className="px-3 py-2 font-semibold text-foreground">{p.connection}</td>
-                <td className="px-3 py-2 text-muted-foreground">{p.connector}</td>
+                <td className="px-3 py-2 font-semibold text-foreground">{t(p.connection)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{t(p.connector)}</td>
                 <td className="px-3 py-2 font-semibold text-foreground">{p.pins}</td>
-                <td className="px-3 py-2 text-muted-foreground">{p.cableType}</td>
+                <td className="px-3 py-2 text-muted-foreground">{t(p.cableType)}</td>
                 <td className="px-3 py-2">
                   <CableCatalogInfo cable={assignedCable} />
                 </td>
@@ -435,6 +440,7 @@ function CableTable() {
 
 export function Step6SystemDiagram() {
   const s = useAnandaStore()
+  const t = useT()
   const driveType = s.driveType ?? "mid"
 
   const { motors } = useMotors()
@@ -468,8 +474,8 @@ export function Step6SystemDiagram() {
       <div>
         <StepHeader
           step={6}
-          title="System Overview"
-          subtitle="Review the component placement on the bike and define the cables. Confirm your cable configuration to view the system diagram."
+          title={t("System Overview")}
+          subtitle={t("Review the component placement on the bike and define the cables. Confirm your cable configuration to view the system diagram.")}
         />
 
         <ConnectorSourcingPrompt />
@@ -487,17 +493,17 @@ export function Step6SystemDiagram() {
     <div>
       <StepHeader
         step={6}
-        title="System Diagram Overview"
-        subtitle="Define your cable lengths to match your frame layout, then confirm to view the system diagram."
+        title={t("System Diagram Overview")}
+        subtitle={t("Define your cable lengths to match your frame layout, then confirm to view the system diagram.")}
       />
 
       <ConnectorSourcingPrompt />
 
       {/* Cable length table */}
       <div>
-        <SectionLabel>Cable Length Configuration</SectionLabel>
+        <SectionLabel>{t("Cable Length Configuration")}</SectionLabel>
         <p className="text-xs text-muted-foreground mb-3">
-          Edit cable lengths to match your frame layout. These values carry through to the final configuration report.
+          {t("Edit cable lengths to match your frame layout. These values carry through to the final configuration report.")}
         </p>
         <div className="border border-border overflow-hidden">
           <CableTable />
@@ -508,11 +514,11 @@ export function Step6SystemDiagram() {
         <div className="border border-border bg-card p-4 overflow-x-auto">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-semibold text-graphite-light">
-              System Architecture — Hub Motor · {s.voltagePlatform ?? "—"}V
+              {t("System Architecture — Hub Motor")} · {s.voltagePlatform ?? "—"}V
             </p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> Power / Signal</span>
-              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> Secondary</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-primary" /> {t("Power / Signal")}</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-0.5 bg-border" style={{ borderTop: "1.5px dashed #d1d5db" }} /> {t("Secondary")}</span>
             </div>
           </div>
           <SystemDiagramSVG driveType={driveType} labels={labels} />

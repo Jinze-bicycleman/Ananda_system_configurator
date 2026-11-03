@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 
 const STEPS = [
   { n: 1, label: "Sell Region & Regulation" },
@@ -14,8 +15,9 @@ const STEPS = [
 ]
 
 export function ProgressIndicator({ current, onStep }: { current: number; onStep: (n: number) => void }) {
+  const t = useT()
   return (
-    <nav className="w-full bg-background" aria-label="Configuration steps">
+    <nav className="w-full bg-background" aria-label={t("Configuration steps")}>
       <div className="no-print flex items-center overflow-x-auto lg:hidden">
         {STEPS.map((s) => {
           const done = current > s.n
@@ -26,7 +28,7 @@ export function ProgressIndicator({ current, onStep }: { current: number; onStep
               type="button"
               onClick={() => onStep(s.n)}
               aria-current={active ? "step" : undefined}
-              aria-label={`Step ${s.n}: ${s.label}`}
+              aria-label={t("Step {n}: {label}", { n: s.n, label: t(s.label) })}
               className={cn(
                 "flex h-11 w-11 shrink-0 items-center justify-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
                 active && "bg-primary text-primary-foreground",
@@ -39,7 +41,7 @@ export function ProgressIndicator({ current, onStep }: { current: number; onStep
           )
         })}
         <div className="min-w-0 flex-1 px-3 py-2">
-          <span className="block truncate text-sm font-medium text-graphite">{STEPS[current - 1]?.label}</span>
+          <span className="block truncate text-sm font-medium text-graphite">{STEPS[current - 1] ? t(STEPS[current - 1].label) : null}</span>
         </div>
       </div>
 
@@ -75,7 +77,7 @@ export function ProgressIndicator({ current, onStep }: { current: number; onStep
                     active ? "font-semibold text-graphite" : "font-medium text-muted-foreground",
                   )}
                 >
-                  {s.label}
+                  {t(s.label)}
                 </span>
               </button>
             </li>

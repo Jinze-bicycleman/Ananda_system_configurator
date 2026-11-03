@@ -8,6 +8,9 @@ import {
   useBatteries,
   usePackageMotors,
   useSpeedSensors,
+  useCadenceSensors,
+  useTorqueSensors,
+  sensorsForPlatform,
   useBikeComponents,
   chargersForVoltage,
   productImages,
@@ -21,6 +24,7 @@ import {
   type ChargerOption,
   type ChargingPortOption,
   type SpeedSensorRow,
+  type PedalSensorRow,
   type BikeComponentRow,
 } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
@@ -28,6 +32,7 @@ import { StatusBadge } from "./status-badge"
 import { ProductImageLightbox } from "./product-image-lightbox"
 import { FullSpecDialog, type Spec } from "./full-spec-dialog"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 import { CheckCircle2, ChevronDown, Image as ImageIcon, Ban, RotateCcw, Loader2, Radio, ZoomIn, Truck, AlertTriangle } from "lucide-react"
 import {
   AlertDialog,
@@ -59,6 +64,7 @@ function OptionCard({
   fullSpecs?: Spec[]
   datasheetUrl?: string | null
 }) {
+  const t = useT()
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [specOpen, setSpecOpen] = useState(false)
   const allSpecs = [...specs, ...(fullSpecs ?? [])]
@@ -85,7 +91,7 @@ function OptionCard({
               e.stopPropagation()
               setLightboxOpen(true)
             }}
-            aria-label={`Enlarge image of ${title}${images.length > 1 ? ` (${images.length} images)` : ""}`}
+            aria-label={t("Enlarge image of {title}", { title }) + (images.length > 1 ? ` (${t("{count} images", { count: images.length })})` : "")}
             className={cn(
  "group relative flex h-24 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden",
               selected ? "bg-primary/5" : "bg-surface",
@@ -111,7 +117,7 @@ function OptionCard({
           {specs.length > 0 && (
             <div className="min-w-0 overflow-hidden rounded-md border border-border">
               {specs.map((sp) => sp.value != null && (
-                <TechSpecRow key={sp.label} label={sp.label} value={sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
+                <TechSpecRow key={sp.label} label={t(sp.label)} value={typeof sp.value === "string" ? t(sp.value) : sp.value} stacked={typeof sp.value === "string" && sp.value.length > 18} />
               ))}
             </div>
           )}
@@ -124,7 +130,7 @@ function OptionCard({
               }}
               className="mt-2 w-full rounded-md border border-primary/40 bg-primary/5 px-2 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              Full Specification
+              {t("Full Specification")}
             </button>
           )}
         </div>
@@ -136,11 +142,12 @@ function OptionCard({
 }
 
 function EmptyOptionsNotice() {
+  const t = useT()
   return (
     <div className="rounded-lg border border-dashed border-border p-6 text-center">
-      <p className="mb-1 text-sm font-semibold text-muted-foreground">No products available</p>
+      <p className="mb-1 text-sm font-semibold text-muted-foreground">{t("No products available")}</p>
       <p className="text-sm text-muted-foreground">
-        There are no products in the database for this component yet. Mark it as not needed, use a 3rd party supplier, or check back once products are added.
+        {t("There are no products in the database for this component yet. Mark it as not needed, use a 3rd party supplier, or check back once products are added.")}
       </p>
     </div>
   )
@@ -150,6 +157,7 @@ function EmptyOptionsNotice() {
 // supplier-name field (required) and a way back to Ananda products.
 function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItemKey; label: string; justEnabled: boolean }) {
   const s = useAnandaStore()
+  const t = useT()
   // The store only ever holds the confirmed name, so "complete" is exactly
   // "a name has been confirmed" — the draft below is local until then.
   const savedName = (s.thirdPartySuppliers[itemKey] ?? "").trim()
@@ -184,14 +192,14 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
       <div className="flex items-start gap-3">
         {confirmed ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /> : <Truck className="mt-0.5 h-5 w-5 shrink-0 text-warning" />}
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-graphite">3rd party supplier — {label}</p>
+          <p className="text-sm font-semibold text-graphite">{t("3rd party supplier")} — {label}</p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Ananda will need full technical documents and a component sample for integration and compatibility testing. Extra cost and delivery time apply — contact sales for details.
+            {t("Ananda will need full technical documents and a component sample for integration and compatibility testing. Extra cost and delivery time apply — contact sales for details.")}
           </p>
           {confirmed ? (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/40 bg-background px-3 py-2">
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-primary">Supplier confirmed</p>
+                <p className="text-xs font-semibold text-primary">{t("Supplier confirmed")}</p>
                 <p className="text-sm font-semibold text-graphite wrap-anywhere">{savedName}</p>
               </div>
               <button
@@ -199,7 +207,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                 onClick={() => setEditing(true)}
                 className="shrink-0 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
               >
-                Edit
+                {t("Edit")}
               </button>
             </div>
           ) : (
@@ -210,7 +218,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
               }}
             >
               <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-sm font-medium text-graphite">
-                Supplier name <span className="text-destructive">*</span>
+                {t("Supplier name")} <span className="text-destructive">*</span>
               </label>
               <div className="mt-1 flex max-w-md flex-wrap items-stretch gap-2">
                 <input
@@ -219,7 +227,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                   type="text"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder={`Name of the ${label.toLowerCase()} supplier`}
+                  placeholder={t("Name of the {item} supplier", { item: label.toLowerCase() })}
                   className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 />
                 <button
@@ -227,11 +235,11 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                   disabled={!canConfirm}
                   className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Confirm supplier
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t("Confirm supplier")}
                 </button>
               </div>
               <p className="mt-1.5 text-sm font-medium text-destructive">
-                {canConfirm ? "Press Confirm supplier to save — this component is not complete until you do." : "Enter the supplier name, then confirm it to complete this component."}
+                {canConfirm ? t("Press Confirm supplier to save — this component is not complete until you do.") : t("Enter the supplier name, then confirm it to complete this component.")}
               </p>
             </form>
           )}
@@ -240,7 +248,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
             onClick={() => s.disableThirdParty(itemKey)}
             className="mt-3 flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
           >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Choose an Ananda product instead
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> {t("Choose an Ananda product instead")}
           </button>
         </div>
       </div>
@@ -249,6 +257,7 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
 }
 
 function ThirdPartyOptionButton({ onClick }: { onClick: () => void }) {
+  const t = useT()
   return (
     <button
       type="button"
@@ -259,8 +268,8 @@ function ThirdPartyOptionButton({ onClick }: { onClick: () => void }) {
         <Truck className="h-4 w-4" aria-hidden="true" />
       </span>
       <span>
-        <span className="block text-sm font-semibold text-graphite">3rd party supplier</span>
-        <span className="block text-sm text-muted-foreground">Source this component from your own supplier instead of Ananda.</span>
+        <span className="block text-sm font-semibold text-graphite">{t("3rd party supplier")}</span>
+        <span className="block text-sm text-muted-foreground">{t("Source this component from your own supplier instead of Ananda.")}</span>
       </span>
     </button>
   )
@@ -304,6 +313,7 @@ function ConfigRow({
   onToggleExpanded,
 }: ConfigRowProps) {
   const s = useAnandaStore()
+  const t = useT()
   const [warningOpen, setWarningOpen] = useState(false)
   const [justEnabled, setJustEnabled] = useState(false)
   const isThirdParty = thirdPartyKey ? hasThirdPartySupplier(s, thirdPartyKey) : false
@@ -311,9 +321,9 @@ function ConfigRow({
 
   const thirdPartySummary = isThirdParty ? (
     <div>
-      <p className="text-sm font-semibold text-warning">3rd party supplier</p>
+      <p className="text-sm font-semibold text-warning">{t("3rd party supplier")}</p>
       <p className={cn("text-sm", supplierName.trim() ? "text-muted-foreground" : "font-semibold text-destructive")}>
-        {supplierName.trim() ? supplierName : "Supplier name required"}
+        {supplierName.trim() ? supplierName : t("Supplier name required")}
       </p>
     </div>
   ) : null
@@ -326,18 +336,18 @@ function ConfigRow({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <SectionLabel>{label}</SectionLabel>
-          {emphasize && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Core component</span>}
+          {emphasize && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{t("Core component")}</span>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {isThirdParty && <StatusBadge variant="not-required" label="3rd Party Supplier" />}
+          {isThirdParty && <StatusBadge variant="not-required" label={t("3rd Party Supplier")} />}
           {required && !skipped && !isThirdParty && <StatusBadge variant="required" />}
-          {skipped && <StatusBadge variant="not-required" label="Marked Not Needed" />}
+          {skipped && <StatusBadge variant="not-required" label={t("Marked Not Needed")} />}
           <button
             type="button"
             onClick={onToggleExpanded}
             aria-expanded={expanded}
             aria-controls={`config-${itemKey}-panel`}
-            aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
+            aria-label={`${expanded ? t("Collapse") : t("Expand")} ${label}`}
             className="flex items-center justify-center rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <ChevronDown className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} aria-hidden="true" />
@@ -347,12 +357,12 @@ function ConfigRow({
 
       {skipped ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-secondary/50 px-4 py-3">
-          <p className="min-w-0 text-sm text-muted-foreground">This component has been marked as not needed for this build.</p>
+          <p className="min-w-0 text-sm text-muted-foreground">{t("This component has been marked as not needed for this build.")}</p>
           <button
             onClick={onToggleSkip}
             className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
           >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Restore
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> {t("Restore")}
           </button>
         </div>
       ) : expanded ? (
@@ -362,11 +372,11 @@ function ConfigRow({
           ) : (
             <>
               {!selectedSummary && (
-                <div className="mb-3 text-sm font-medium text-warning">No selection yet — choose an option below.</div>
+                <div className="mb-3 text-sm font-medium text-warning">{t("No selection yet — choose an option below.")}</div>
               )}
               {optionsLoading ? (
                 <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t("Loading options…")}
                 </div>
               ) : hasOptions ? (
                 children
@@ -383,8 +393,8 @@ function ConfigRow({
                     <Ban className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-graphite">Not needed</span>
-                    <span className="block text-sm text-muted-foreground">Choose this option if this component isn&apos;t required for the build.</span>
+                    <span className="block text-sm font-semibold text-graphite">{t("Not needed")}</span>
+                    <span className="block text-sm text-muted-foreground">{t("Choose this option if this component isn't required for the build.")}</span>
                   </span>
                 </button>
               )}
@@ -393,7 +403,7 @@ function ConfigRow({
         </div>
       ) : (
         <div id={`config-${itemKey}-panel`} className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
-          {thirdPartySummary ?? selectedSummary ?? <p className="text-sm text-muted-foreground">No selection yet.</p>}
+          {thirdPartySummary ?? selectedSummary ?? <p className="text-sm text-muted-foreground">{t("No selection yet.")}</p>}
         </div>
       )}
 
@@ -408,18 +418,17 @@ function ConfigRow({
             <AlertDialogHeader>
               <div className="flex items-center gap-2 text-warning">
                 <AlertTriangle className="h-5 w-5" aria-hidden="true" />
-                <span className="text-sm font-semibold">Warning</span>
+                <span className="text-sm font-semibold">{t("Warning")}</span>
               </div>
               <AlertDialogTitle className="text-lg font-semibold text-graphite">
-                3rd party {label}
+                {t("3rd party {item}", { item: label })}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
-                When using 3rd party components, we need full technical documents and a component sample for integration and
-                compatibility testing. This will introduce extra cost and delivery time. Please contact sales for details.
+                {t("When using 3rd party components, we need full technical documents and a component sample for integration and compatibility testing. This will introduce extra cost and delivery time. Please contact sales for details.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="text-sm font-semibold">Back</AlertDialogCancel>
+              <AlertDialogCancel className="text-sm font-semibold">{t("Back")}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   setJustEnabled(true)
@@ -427,7 +436,7 @@ function ConfigRow({
                 }}
                 className="bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90"
               >
-                I Agree
+                {t("I Agree")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -440,10 +449,83 @@ function ConfigRow({
 // Fixed set of accordion sections. All expanded by default on first visit;
 // manual expand/collapse state persists for the current session (component
 // lifetime) independent of which product is selected in each section.
-const SECTION_KEYS = ["motorId", "batteryId", "displayId", "speedSensorId", "chargerId", "chargingPortId", "controllerId", "torqueSensorId"] as const
+const SECTION_KEYS = ["motorId", "batteryId", "displayId", "speedSensorId", "chargerId", "chargingPortId", "controllerId", "torqueSensorId", "cadenceSensorId"] as const
+
+/** Optional hub-system sensor (torque or cadence): pick an Ananda sensor, supply your own, or mark it not needed. */
+function PedalSensorRowSection({
+  itemKey,
+  label,
+  sensors,
+  loading,
+  expanded,
+  onToggleExpanded,
+  skipped,
+  onToggleSkip,
+}: {
+  itemKey: "torqueSensorId" | "cadenceSensorId"
+  label: string
+  sensors: PedalSensorRow[]
+  loading: boolean
+  expanded: boolean
+  onToggleExpanded: () => void
+  skipped: boolean
+  onToggleSkip: () => void
+}) {
+  const s = useAnandaStore()
+  const t = useT()
+  const selected = sensors.find((sensor) => sensor.id === s[itemKey]) ?? null
+
+  return (
+    <ConfigRow
+      itemKey={itemKey}
+      label={label}
+      required={false}
+      skippable
+      skipped={skipped}
+      onToggleSkip={onToggleSkip}
+      thirdPartyKey={itemKey}
+      hasOptions={sensors.length > 0}
+      optionsLoading={loading}
+      expanded={expanded}
+      onToggleExpanded={onToggleExpanded}
+      selectedSummary={
+        selected && (
+          <div>
+            <p className="text-sm font-semibold text-primary">{selected.model}</p>
+            <p className="text-xs text-muted-foreground">
+              {selected.mounting_position ?? "—"} · {selected.connector_type ?? "—"}
+              {selected.cable_length_mm ? ` · ${(selected.cable_length_mm / 1000).toFixed(1)}m ${t("lead")}` : ""}
+            </p>
+          </div>
+        )
+      }
+    >
+      <div className="product-option-grid">
+        {sensors.map((sensor) => (
+          <OptionCard
+            key={sensor.id}
+            title={sensor.model}
+            images={productImages(sensor.image_url)}
+            datasheetUrl={sensor.datasheet_url}
+            specs={[
+              { label: "Mounting", value: sensor.mounting_position },
+              { label: "Connector", value: sensor.connector_type },
+              { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+              { label: "Waterproof", value: sensor.waterproof },
+              { label: "Weight", value: sensor.weight_kg ? `${sensor.weight_kg} kg` : null },
+            ]}
+            selected={s[itemKey] === sensor.id}
+            onSelect={() => s.selectPackageItem(itemKey, sensor.id)}
+          />
+        ))}
+      </div>
+    </ConfigRow>
+  )
+}
 
 export function Step3PackageConfiguration() {
   const s = useAnandaStore()
+  const t = useT()
   const isHub = s.driveType === "hub"
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => Object.fromEntries(SECTION_KEYS.map((k) => [k, true])))
@@ -453,7 +535,12 @@ export function Step3PackageConfiguration() {
   const { controllers, isLoading: controllersLoading } = useControllers()
   const { displays, isLoading: displaysLoading } = useDisplays()
   const { batteries, isLoading: batteriesLoading } = useBatteries()
-  const { speedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
+  const { speedSensors: allSpeedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
+  const { cadenceSensors: allCadenceSensors, isLoading: cadenceSensorsLoading } = useCadenceSensors()
+  const { torqueSensors: allTorqueSensors, isLoading: torqueSensorsLoading } = useTorqueSensors()
+  const speedSensors = sensorsForPlatform(allSpeedSensors, s.driveType)
+  const cadenceSensors = sensorsForPlatform(allCadenceSensors, s.driveType)
+  const torqueSensors = sensorsForPlatform(allTorqueSensors, s.driveType)
 
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
   const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
@@ -499,13 +586,13 @@ export function Step3PackageConfiguration() {
     <div>
       <StepHeader
         step={3}
-        title="Package Configuration"
-        subtitle="Choose the components for your system from compatible Ananda products. Every part except the motor can instead be sourced from your own 3rd party supplier, or marked as not needed where allowed."
+        title={t("Package Configuration")}
+        subtitle={t("Choose the components for your system from compatible Ananda products. Every part except the motor can instead be sourced from your own 3rd party supplier, or marked as not needed where allowed.")}
       />
 
       <ConfigRow
         itemKey="motorId"
-        label="Motor"
+        label={t("Motor")}
         required
         emphasize
         skippable={false}
@@ -520,8 +607,8 @@ export function Step3PackageConfiguration() {
             <div>
               <p className="text-sm font-semibold text-primary">{selectedMotor.model}</p>
               <p className="text-xs text-muted-foreground">
-                {selectedMotor.voltage_v}V · {selectedMotor.torque_nm ?? "—"}Nm · {selectedMotor.rated_power_w ?? "—"}W rated
-                {selectedMotor.shaft_interface ? ` · ${selectedMotor.shaft_interface} shaft` : ""}
+                {selectedMotor.voltage_v}V · {selectedMotor.torque_nm ?? "—"}Nm · {selectedMotor.rated_power_w ?? "—"}W {t("rated")}
+                {selectedMotor.shaft_interface ? ` · ${selectedMotor.shaft_interface} ${t("shaft")}` : ""}
               </p>
             </div>
           )
@@ -542,14 +629,14 @@ export function Step3PackageConfiguration() {
                 { label: "Shaft Type", value: m.shaft_interface },
               ]}
               fullSpecs={[
-                { label: "Motor Type", value: m.motor_type === "mid_drive" ? "Mid-Drive" : "Hub Motor" },
+                { label: "Motor Type", value: m.motor_type === "mid_drive" ? t("Mid-Drive") : t("Hub Motor") },
                 { label: "Voltage", value: `${m.voltage_v}V` },
                 { label: "Speed", value: m.rpm ? `${m.rpm} rpm` : null },
                 { label: "Max Efficiency", value: m.max_efficiency },
                 { label: "Noise Grade", value: m.noise_grade_db ? `${m.noise_grade_db} dB` : null },
                 { label: "Size", value: m.size },
                 { label: "Mounting Interface", value: m.mounting_interface },
-                { label: "Controller", value: m.controller_requirement === "integrated" ? "Integrated" : "External" },
+                { label: "Controller", value: m.controller_requirement === "integrated" ? t("Integrated") : t("External") },
                 { label: "Pedal Sensing", value: m.pedal_sensing },
                 { label: "Sensor", value: m.sensor_description },
                 { label: "Communication", value: m.communication_protocol },
@@ -568,7 +655,7 @@ export function Step3PackageConfiguration() {
 
       <ConfigRow
         itemKey="batteryId"
-        label="Battery"
+        label={t("Battery")}
         required
         emphasize
         skippable={false}
@@ -617,7 +704,7 @@ export function Step3PackageConfiguration() {
 
       <ConfigRow
         itemKey="displayId"
-        label="Display (HMI)"
+        label={t("Display (HMI)")}
         required
         skippable={false}
         skipped={false}
@@ -638,8 +725,8 @@ export function Step3PackageConfiguration() {
       >
         <div className="mb-4 flex items-center gap-3 border border-border bg-surface px-3 py-2">
           <Radio className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-          <span className="text-xs font-semibold text-graphite">Communication protocol</span>
-          <div role="tablist" aria-label="HMI communication protocol" className="ml-auto inline-grid grid-cols-2 border border-border">
+          <span className="text-xs font-semibold text-graphite">{t("Communication protocol")}</span>
+          <div role="tablist" aria-label={t("HMI communication protocol")} className="ml-auto inline-grid grid-cols-2 border border-border">
             {(["can", "uart"] as const).map((protocol) => (
               <button
                 key={protocol}
@@ -652,7 +739,7 @@ export function Step3PackageConfiguration() {
                   s.hmiProtocolPreference === protocol ? "bg-primary text-white" : "bg-card text-muted-foreground hover:text-primary",
                 )}
               >
-                {protocol === "can" ? "CAN Bus" : "UART"}
+                {protocol === "can" ? t("CAN Bus") : "UART"}
               </button>
             ))}
           </div>
@@ -683,7 +770,7 @@ export function Step3PackageConfiguration() {
 
       <ConfigRow
         itemKey="speedSensorId"
-        label="Speed Sensor"
+        label={t("Speed Sensor")}
         required
         skippable={false}
         skipped={false}
@@ -699,7 +786,8 @@ export function Step3PackageConfiguration() {
               <p className="text-sm font-semibold text-primary">{selectedSpeedSensor.model}</p>
               <p className="text-xs text-muted-foreground">
                 {speedSensorTypeLabel(selectedSpeedSensor.mounting_position)} · {selectedSpeedSensor.connector_type ?? "—"}
-                {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m lead` : ""}
+                {selectedSpeedSensor.cable_length_mm ? ` · ${(selectedSpeedSensor.cable_length_mm / 1000).toFixed(1)}m ${t("lead")}` : ""}
+                    {selectedSpeedSensor.waterproof ? ` · ${selectedSpeedSensor.waterproof}` : ""}
               </p>
             </div>
           )
@@ -710,11 +798,14 @@ export function Step3PackageConfiguration() {
             <OptionCard
               key={sensor.id}
               title={sensor.model}
+              images={productImages(sensor.image_url)}
+              datasheetUrl={sensor.datasheet_url}
               specs={[
                 { label: "Type", value: speedSensorTypeLabel(sensor.mounting_position) },
                 { label: "Mounting", value: sensor.mounting_position },
                 { label: "Connector", value: sensor.connector_type },
                 { label: "Lead length", value: sensor.cable_length_mm ? `${(sensor.cable_length_mm / 1000).toFixed(1)}m` : null },
+                { label: "Waterproof", value: sensor.waterproof },
               ]}
               selected={s.speedSensorId === sensor.id}
               onSelect={() => s.selectPackageItem("speedSensorId", sensor.id)}
@@ -725,7 +816,7 @@ export function Step3PackageConfiguration() {
 
       <ConfigRow
         itemKey="chargerId"
-        label="Charger"
+        label={t("Charger")}
         required
         skippable={false}
         skipped={false}
@@ -763,7 +854,7 @@ export function Step3PackageConfiguration() {
 
       <ConfigRow
         itemKey="chargingPortId"
-        label="Charging Port"
+        label={t("Charging Port")}
         required
         skippable={false}
         skipped={false}
@@ -790,7 +881,7 @@ export function Step3PackageConfiguration() {
       {isHub && (
         <ConfigRow
           itemKey="controllerId"
-          label="Controller"
+          label={t("Controller")}
           required
           skippable={false}
           skipped={false}
@@ -832,31 +923,39 @@ export function Step3PackageConfiguration() {
       )}
 
       {isHub && (
-        <ConfigRow
+        <PedalSensorRowSection
           itemKey="torqueSensorId"
-          label="Torque Sensor"
-          required
-          skippable
-          skipped={s.skippedItems.includes("torqueSensorId")}
-          onToggleSkip={() => toggleSkip("torqueSensorId", "torqueSensorId")}
-          thirdPartyKey="torqueSensorId"
-          hasOptions={false}
+          label={t("Torque Sensor")}
+          sensors={torqueSensors}
+          loading={torqueSensorsLoading}
           expanded={expanded.torqueSensorId}
           onToggleExpanded={() => toggleExpanded("torqueSensorId")}
-          selectedSummary={s.torqueSensorId ? <p className="text-sm font-semibold text-primary">{s.torqueSensorId}</p> : null}
-        >
-          <EmptyOptionsNotice />
-        </ConfigRow>
+          skipped={s.skippedItems.includes("torqueSensorId")}
+          onToggleSkip={() => toggleSkip("torqueSensorId", "torqueSensorId")}
+        />
+      )}
+
+      {isHub && (
+        <PedalSensorRowSection
+          itemKey="cadenceSensorId"
+          label={t("Cadence Sensor")}
+          sensors={cadenceSensors}
+          loading={cadenceSensorsLoading}
+          expanded={expanded.cadenceSensorId}
+          onToggleExpanded={() => toggleExpanded("cadenceSensorId")}
+          skipped={s.skippedItems.includes("cadenceSensorId")}
+          onToggleSkip={() => toggleSkip("cadenceSensorId", "cadenceSensorId")}
+        />
       )}
 
       <section id="config-bikeComponents-panel" className="mb-6 border border-transparent">
         <div className="mb-4 flex items-center gap-2">
-          <SectionLabel>Bike Components</SectionLabel>
-          <span className="text-xs font-semibold text-muted-foreground">Optional</span>
+          <SectionLabel>{t("Bike Components")}</SectionLabel>
+          <span className="text-xs font-semibold text-muted-foreground">{t("Optional")}</span>
         </div>
         {bikeComponentsLoading ? (
           <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" /> Loading options…
+            <Loader2 className="w-4 h-4 animate-spin" /> {t("Loading options…")}
           </div>
         ) : (
           <div className="space-y-6">
@@ -866,10 +965,10 @@ export function Step3PackageConfiguration() {
               if (options.length === 0) return null
               return (
                 <div key={category.id}>
-                  <p className="mb-3 text-xs font-semibold text-graphite">{category.label}</p>
+                  <p className="mb-3 text-xs font-semibold text-graphite">{t(category.label)}</p>
                   {category.id === "chainring" && (
                     <p className="mb-3 text-xs text-muted-foreground">
-                      The chainring&apos;s tooth count is carried into the Drivetrain stage and must match the front chainring entered there.
+                      {t("The chainring's tooth count is carried into the Drivetrain stage and must match the front chainring entered there.")}
                     </p>
                   )}
                   <div className="product-option-grid">
@@ -877,6 +976,7 @@ export function Step3PackageConfiguration() {
                       <OptionCard
                         key={c.id}
                         title={c.model}
+                        images={productImages(c.image_url)}
                         specs={[
                           { label: "Teeth", value: c.teeth != null ? `${c.teeth}T` : null },
                           { label: "Description", value: c.short_description },

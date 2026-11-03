@@ -7,6 +7,7 @@ import { CUSTOM_LENGTH_LIMITS_MM, formatLengthCm, validateCustomLengthMm } from 
 import type { ResolvedCable } from "@/lib/bike-overview/use-bike-overview"
 import { ExtensionCableControl, useCableCatalog } from "../cable-spec-controls"
 import { cn } from "@/lib/utils"
+import { useT } from "@/lib/i18n/provider"
 
 const modeButton = (active: boolean) =>
   cn(
@@ -16,6 +17,7 @@ const modeButton = (active: boolean) =>
 
 export function CableEditor({ cable }: { cable: ResolvedCable }) {
   const s = useAnandaStore()
+  const t = useT()
   const { extensionOptions } = useCableCatalog()
   const uid = useId()
   const { connection } = cable.meta
@@ -51,10 +53,10 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
         <span className="h-1.5 w-10 shrink-0" style={{ backgroundColor: cable.meta.stroke }} aria-hidden="true" />
         <div className="min-w-0">
           <h3 id={`${uid}-title`} className="text-sm font-semibold text-graphite">
-            {cable.meta.title} <span className="font-semibold text-muted-foreground">({cable.meta.colorName})</span>
+            {t(cable.meta.title)} <span className="font-semibold text-muted-foreground">({t(cable.meta.colorName)})</span>
           </h3>
           <p className="text-xs text-muted-foreground">
-            {cable.meta.from} → {cable.meta.to}
+            {t(cable.meta.from)} → {t(cable.meta.to)}
           </p>
         </div>
         <p className="ml-auto tabular-nums text-lg font-semibold text-graphite">{formatLengthCm(cable.lengthMm)}</p>
@@ -65,40 +67,40 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cable.meta.connectorImage}
-            alt={`${cable.placement.connectorLabel} connector drawing`}
+            alt={t("{name} connector drawing", { name: t(cable.placement.connectorLabel) })}
             className="max-h-full max-w-full object-contain"
           />
         </div>
         <dl className="grid min-w-0 flex-1 grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
           <div>
-            <dt className="font-semibold text-muted-foreground">Connector</dt>
-            <dd className="mt-0.5 text-foreground">{cable.placement.connectorLabel}</dd>
+            <dt className="font-semibold text-muted-foreground">{t("Connector")}</dt>
+            <dd className="mt-0.5 text-foreground">{t(cable.placement.connectorLabel)}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-muted-foreground">Pins</dt>
+            <dt className="font-semibold text-muted-foreground">{t("Pins")}</dt>
             <dd className="mt-0.5 text-foreground">{cable.pins ?? "—"}</dd>
           </div>
           <div>
-            <dt className="font-semibold text-muted-foreground">Length</dt>
+            <dt className="font-semibold text-muted-foreground">{t("Length")}</dt>
             <dd className="mt-0.5 text-foreground">{cable.lengthMm} mm</dd>
           </div>
         </dl>
       </div>
 
       <div className="space-y-3">
-        <div role="group" aria-label="Length source" className="flex gap-2">
+        <div role="group" aria-label={t("Length source")} className="flex gap-2">
           <button type="button" aria-pressed={cable.mode === "standard"} onClick={chooseStandard} className={modeButton(cable.mode === "standard")}>
-            Standard length
+            {t("Standard length")}
           </button>
           <button type="button" aria-pressed={cable.mode === "custom"} onClick={chooseCustom} className={modeButton(cable.mode === "custom")}>
-            Custom length
+            {t("Custom length")}
           </button>
         </div>
 
         {cable.mode === "standard" ? (
           <div>
             <label htmlFor={`${uid}-standard`} className="mb-1 block text-xs font-semibold text-muted-foreground">
-              Standard lengths
+              {t("Standard lengths")}
             </label>
             <select
               id={`${uid}-standard`}
@@ -116,7 +118,7 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
         ) : (
           <div>
             <label htmlFor={`${uid}-custom`} className="mb-1 block text-xs font-semibold text-muted-foreground">
-              Custom length (mm)
+              {t("Custom length (mm)")}
             </label>
             <input
               id={`${uid}-custom`}
@@ -135,17 +137,17 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
               )}
             />
             <p id={`${uid}-custom-help`} className={cn("mt-1.5 text-xs", draftError ? "text-destructive" : "text-muted-foreground")}>
-              {draftError ?? `Between ${CUSTOM_LENGTH_LIMITS_MM.min} and ${CUSTOM_LENGTH_LIMITS_MM.max} mm.`}
+              {draftError ? t(draftError) : t("Between {min} and {max} mm.", { min: CUSTOM_LENGTH_LIMITS_MM.min, max: CUSTOM_LENGTH_LIMITS_MM.max })}
             </p>
             <p className="mt-2 flex items-start gap-1.5 text-xs text-warning">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Custom lengths are outside the standard range. Confirm with the Ananda sales team before ordering.
+              {t("Custom lengths are outside the standard range. Confirm with the Ananda sales team before ordering.")}
             </p>
           </div>
         )}
 
         <div>
-          <p className="mb-1 text-xs font-semibold text-muted-foreground">Extension cable (optional)</p>
+          <p className="mb-1 text-xs font-semibold text-muted-foreground">{t("Extension cable (optional)")}</p>
           <ExtensionCableControl connection={connection} extensionOptions={extensionOptions} />
         </div>
       </div>

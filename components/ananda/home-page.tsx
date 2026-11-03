@@ -7,8 +7,11 @@ import { BrandNameField } from "./home/brand-name-field"
 import { ProjectRow } from "./home/project-row"
 import { ProjectReportRunner } from "./home/project-report-runner"
 import { BrandLogo } from "./brand-logo"
+import { useT } from "@/lib/i18n/provider"
+import { LanguageSwitch } from "@/components/language-switch"
 
 export function HomePage() {
+  const t = useT()
   const brandName = useProjectsStore((s) => s.brandName)
   const projects = useProjectsStore((s) => s.projects)
   const createProject = useProjectsStore((s) => s.createProject)
@@ -20,7 +23,10 @@ export function HomePage() {
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <BrandLogo className="h-11 w-auto sm:h-12" />
-          <BrandNameField />
+          <div className="flex flex-wrap items-center gap-3">
+            <BrandNameField />
+            <LanguageSwitch />
+          </div>
         </div>
       </header>
 
@@ -28,13 +34,15 @@ export function HomePage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-primary">
-              {brandName.trim() ? brandName.trim() : "E-Drive System Configurator"}
+              {brandName.trim() ? brandName.trim() : t("E-Drive System Configurator")}
             </p>
-            <h1 className="mt-1 text-balance text-3xl font-semibold text-graphite sm:text-4xl">My Projects</h1>
+            <h1 className="mt-1 text-balance text-3xl font-semibold text-graphite sm:text-4xl">{t("My Projects")}</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               {projects.length === 0
-                ? "Your saved configurations will appear here."
-                : `${projects.length} saved configuration${projects.length === 1 ? "" : "s"}. Open one to keep editing, or start a new one.`}
+                ? t("Your saved configurations will appear here.")
+                : projects.length === 1
+                  ? t("1 saved configuration. Open one to keep editing, or start a new one.")
+                  : t("{count} saved configurations. Open one to keep editing, or start a new one.", { count: projects.length })}
             </p>
           </div>
           <button
@@ -43,7 +51,7 @@ export function HomePage() {
             className="flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            New Configuration
+            {t("New Configuration")}
           </button>
         </div>
 
@@ -63,7 +71,7 @@ export function HomePage() {
               className="flex w-full items-center justify-center gap-2 px-5 py-5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Start a new configuration
+              {t("Start a new configuration")}
             </button>
           </li>
         </ul>
