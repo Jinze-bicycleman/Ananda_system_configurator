@@ -119,10 +119,15 @@ export function FixedSystemDiagram() {
   useEffect(() => {
     const container = containerRef.current
     if (!container || typeof ResizeObserver === "undefined") return
-    const observer = new ResizeObserver(() => measure())
+    let frame = 0
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(measure)
+    })
     observer.observe(container)
     window.addEventListener("resize", measure)
     return () => {
+      cancelAnimationFrame(frame)
       observer.disconnect()
       window.removeEventListener("resize", measure)
     }

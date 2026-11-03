@@ -38,14 +38,26 @@ export function ClimbingSlopeVisual({
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    let frame = 0
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width
       if (!width || width <= 0) return
-      const height = Math.max(170, Math.min(260, width * 0.55))
-      setSize({ width, height })
+      cancelAnimationFrame(frame)
+      // Defer the state update to the next frame so the observer callback never
+      // changes layout in the same frame it was notified (avoids the loop error).
+      frame = requestAnimationFrame(() => {
+        const roundedWidth = Math.round(width)
+        const height = Math.max(170, Math.min(260, roundedWidth * 0.55))
+        setSize((prev) =>
+          prev.width === roundedWidth && prev.height === height ? prev : { width: roundedWidth, height },
+        )
+      })
     })
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [])
 
   const { width, height } = size
