@@ -6,7 +6,7 @@
 // consumes the exact same shape so the downloaded file can never drift from
 // what the user reviewed on screen.
 
-import { useAnandaStore, hasThirdPartySupplier, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
@@ -354,7 +354,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
 
   // ─── Project Context ───
   sectionTitle("Project Context")
-  row("Sell Market", s.sellRegion ?? "—")
+  row("Sell Market", sellRegionName(s) ?? "—")
   row("Regulation", s.regulation ?? "—")
   row("Speed Limit", s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—")
   row("Rated Power", s.ratedPowerW ? `${s.ratedPowerW} W` : "—")
