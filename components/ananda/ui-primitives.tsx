@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { ReactNode, useId } from "react"
+import { ReactNode } from "react"
 import { AlertTriangle } from "lucide-react"
 import { useT } from "@/lib/i18n/provider"
 
@@ -12,33 +12,18 @@ import { useT } from "@/lib/i18n/provider"
  * never suggests that those controls will select the card.
  */
 function MotorSilhouette({ className }: { className?: string }) {
-  const maskId = `motor-holes-${useId().replace(/[^a-zA-Z0-9]/g, "")}`
   return (
     <svg
-      viewBox="0 0 240 170"
+      viewBox="0 0 240 176"
       fill="currentColor"
       aria-hidden="true"
       focusable="false"
       className={className}
     >
-      <defs>
-        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="170">
-          <g fill="white">
-            <path d="M44 22C74 8 132 14 176 40C206 58 222 80 218 108C215 130 202 142 182 146L150 149C108 151 68 147 46 124C26 102 22 68 32 40Z" />
-            <rect x="6" y="12" width="46" height="36" rx="16" />
-            <circle cx="210" cy="130" r="18" />
-            <rect x="196" y="82" width="38" height="24" rx="5" />
-            <rect x="150" y="146" width="30" height="6" rx="3" transform="rotate(18 150 146)" />
-            <rect x="162" y="152" width="26" height="5" rx="2.5" transform="rotate(8 162 152)" />
-          </g>
-          <g fill="black">
-            <circle cx="27" cy="31" r="7" />
-            <circle cx="210" cy="130" r="6.5" />
-            <circle cx="150" cy="44" r="6" />
-          </g>
-        </mask>
-      </defs>
-      <rect width="240" height="170" mask={`url(#${maskId})`} />
+      <path
+        fillRule="evenodd"
+        d="M2.7 6.1 L1.0 9.3 L0.3 11.9 L0.2 17.3 L0.9 20.1 L2.0 22.4 L3.5 24.5 L6.4 27.2 L7.9 32.0 L8.4 35.3 L8.7 45.6 L9.7 50.2 L11.3 65.5 L13.6 76.3 L12.7 79.6 L12.9 81.9 L13.8 83.5 L16.0 85.3 L20.1 97.0 L24.5 106.6 L28.9 114.4 L36.4 125.2 L44.2 133.2 L50.0 138.2 L57.0 143.1 L72.4 152.2 L84.9 158.3 L101.3 164.5 L114.4 167.9 L125.0 169.7 L134.9 170.7 L153.2 171.6 L174.9 170.9 L179.2 172.3 L180.9 172.1 L183.8 170.0 L194.9 169.0 L198.5 170.0 L206.1 173.2 L214.2 175.8 L215.7 175.8 L217.1 175.2 L219.1 172.8 L219.4 170.1 L219.0 168.7 L217.5 167.2 L215.0 166.0 L214.0 165.0 L214.2 164.2 L219.0 156.4 L220.8 154.8 L225.0 155.6 L227.5 155.6 L230.2 155.0 L232.5 153.8 L235.2 151.9 L237.3 149.0 L238.9 145.7 L239.8 142.1 L239.9 138.4 L239.4 135.3 L238.3 132.6 L235.7 129.6 L233.4 128.1 L230.6 127.0 L229.1 125.8 L228.1 122.8 L227.8 112.5 L229.3 108.3 L230.6 102.5 L230.8 94.4 L229.9 88.5 L228.7 84.6 L226.5 80.0 L225.2 72.8 L223.4 65.9 L222.2 62.3 L219.0 55.5 L214.4 48.6 L208.2 42.1 L204.2 39.1 L200.7 37.0 L195.8 33.1 L194.6 30.8 L193.6 29.8 L191.8 28.9 L187.9 27.9 L183.6 25.2 L174.0 20.7 L167.8 18.8 L165.9 17.8 L143.8 11.0 L128.6 7.5 L116.0 5.2 L96.7 2.4 L80.7 1.1 L64.0 0.5 L49.8 0.5 L26.9 1.9 L16.9 0.2 L12.9 0.0 L9.8 0.6 L7.3 1.7 L5.1 3.4ZM39.699999999999996 23.3a5.7 5.7 0 1 0 11.4 0a5.7 5.7 0 1 0 -11.4 0ZM164.4 32.8a5 5 0 1 0 10 0a5 5 0 1 0 -10 0ZM223.1 141.5a4.8 4.8 0 1 0 9.6 0a4.8 4.8 0 1 0 -9.6 0ZM215.8 106.0a4.1 4.1 0 1 0 8.2 0a4.1 4.1 0 1 0 -8.2 0Z"
+      />
     </svg>
   )
 }
