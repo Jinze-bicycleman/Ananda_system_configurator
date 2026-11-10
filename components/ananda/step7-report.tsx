@@ -93,6 +93,7 @@ export function Step7Report() {
     battery,
     charger,
     chargingPort,
+    speedSensorModel,
     accessories,
     torqueSensorSkipped,
     speedSensorSkipped,
@@ -194,7 +195,7 @@ export function Step7Report() {
         {!isMid && (
           <PackageRow s={s} itemKey="cadenceSensorId" fallback={s.skippedItems.includes("cadenceSensorId") ? "Not Needed" : s.cadenceSensorId ?? "—"} />
         )}
-        <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—"} />
+        <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : speedSensorModel ?? "—"} />
       </ReportSection>
 
       {/* ─── Drivetrain ─── */}
