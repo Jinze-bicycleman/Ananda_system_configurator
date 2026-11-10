@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PRODUCT_TABLES, type ProductRecord } from "@/lib/admin/product-schema"
 import { ContentEditor, type ContentRow } from "./content-editor"
 import { ProductManager } from "./product-manager"
+import { SignupSettings } from "./signup-settings"
 import { TranslationEditor, type TranslationRow } from "./translation-editor"
 import { CATALOG_SECTIONS, ZH_DEFAULTS } from "@/lib/i18n/catalog"
 
@@ -11,14 +12,16 @@ type Props = {
   content: ContentRow[]
   products: Record<string, ProductRecord[]>
   translations: TranslationRow[]
+  inviteCode: string
 }
 
-export function AdminTabs({ content, products, translations }: Props) {
+export function AdminTabs({ content, products, translations, inviteCode }: Props) {
   return (
     <Tabs defaultValue="content" className="gap-6">
       <TabsList className="h-auto flex-wrap justify-start">
         <TabsTrigger value="content">Pictures and text</TabsTrigger>
         <TabsTrigger value="translations">Translations</TabsTrigger>
+        <TabsTrigger value="signup">Sign-up</TabsTrigger>
         {PRODUCT_TABLES.map((t) => (
           <TabsTrigger key={t.table} value={t.table}>
             {t.label}
@@ -31,6 +34,9 @@ export function AdminTabs({ content, products, translations }: Props) {
       </TabsContent>
       <TabsContent value="translations">
         <TranslationEditor sections={CATALOG_SECTIONS} zhDefaults={ZH_DEFAULTS} rows={translations} />
+      </TabsContent>
+      <TabsContent value="signup">
+        <SignupSettings inviteCode={inviteCode} />
       </TabsContent>
       {PRODUCT_TABLES.map((t) => (
         <TabsContent key={t.table} value={t.table}>
