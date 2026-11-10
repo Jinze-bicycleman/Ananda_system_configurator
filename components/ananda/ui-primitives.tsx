@@ -5,6 +5,28 @@ import { ReactNode } from "react"
 import { AlertTriangle } from "lucide-react"
 import { useT } from "@/lib/i18n/provider"
 
+/**
+ * Hover affordance for selectable part cards: a light green mask with a faint
+ * "choose" label. The card must carry the `group/choose` class. The mask hides
+ * itself while an inner button (zoom, full specification…) is hovered, so it
+ * never suggests that those controls will select the card.
+ */
+export function ChooseOverlay({ className }: { className?: string }) {
+  const t = useT()
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-primary/15 opacity-0 transition-opacity duration-200",
+        "group-hover/choose:opacity-100 group-has-[button:hover]/choose:opacity-0",
+        className,
+      )}
+    >
+      <span className="text-xl font-semibold tracking-wide text-primary/60">{t("choose")}</span>
+    </span>
+  )
+}
+
 interface StepHeaderProps {
   step: number
   title: string

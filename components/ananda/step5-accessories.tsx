@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react"
 import { useAnandaStore, type BluetoothAppChoice } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
-import { StepHeader, SectionLabel } from "./ui-primitives"
+import { StepHeader, SectionLabel, ChooseOverlay } from "./ui-primitives"
 import { AnandaRideAppPanel } from "./ananda-ride-app-panel"
 import { cn } from "@/lib/utils"
 import { useT } from "@/lib/i18n/provider"
@@ -309,10 +309,11 @@ export function Step5Accessories() {
                       <button
                         onClick={() => s.toggleAccessory(acc.id)}
                         className={cn(
- "product-card relative text-left border transition-all p-0 w-full",
+ "product-card group/choose relative overflow-hidden text-left border transition-all p-0 w-full",
                           selected ? "border-primary shadow-md shadow-primary/10" : "border-border hover:border-primary/40",
                         )}
                       >
+                        {!selected && <ChooseOverlay />}
                         <div className={cn("h-1 w-full", selected ? "bg-primary" : "bg-border")} />
 
                         {selected && (
