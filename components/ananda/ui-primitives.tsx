@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { ReactNode } from "react"
+import { ReactNode, useId } from "react"
 import { AlertTriangle } from "lucide-react"
 import { useT } from "@/lib/i18n/provider"
 
@@ -11,6 +11,38 @@ import { useT } from "@/lib/i18n/provider"
  * itself while an inner button (zoom, full specification…) is hovered, so it
  * never suggests that those controls will select the card.
  */
+function MotorSilhouette({ className }: { className?: string }) {
+  const maskId = `motor-holes-${useId().replace(/[^a-zA-Z0-9]/g, "")}`
+  return (
+    <svg
+      viewBox="0 0 240 170"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+    >
+      <defs>
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="170">
+          <g fill="white">
+            <path d="M44 22C74 8 132 14 176 40C206 58 222 80 218 108C215 130 202 142 182 146L150 149C108 151 68 147 46 124C26 102 22 68 32 40Z" />
+            <rect x="6" y="12" width="46" height="36" rx="16" />
+            <circle cx="210" cy="130" r="18" />
+            <rect x="196" y="82" width="38" height="24" rx="5" />
+            <rect x="150" y="146" width="30" height="6" rx="3" transform="rotate(18 150 146)" />
+            <rect x="162" y="152" width="26" height="5" rx="2.5" transform="rotate(8 162 152)" />
+          </g>
+          <g fill="black">
+            <circle cx="27" cy="31" r="7" />
+            <circle cx="210" cy="130" r="6.5" />
+            <circle cx="150" cy="44" r="6" />
+          </g>
+        </mask>
+      </defs>
+      <rect width="240" height="170" mask={`url(#${maskId})`} />
+    </svg>
+  )
+}
+
 export function ChooseOverlay({ className }: { className?: string }) {
   const t = useT()
   return (
@@ -22,7 +54,8 @@ export function ChooseOverlay({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="text-xl font-semibold tracking-wide text-primary/60">{t("choose")}</span>
+      <MotorSilhouette className="absolute left-1/2 top-1/2 w-36 max-w-[75%] -translate-x-1/2 -translate-y-1/2 text-primary/30" />
+      <span className="relative text-xl font-semibold tracking-wide text-primary/60">{t("choose")}</span>
     </span>
   )
 }
