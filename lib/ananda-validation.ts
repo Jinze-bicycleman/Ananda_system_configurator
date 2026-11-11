@@ -1,5 +1,5 @@
 import type { AnandaConfig } from "./ananda-store"
-import { packageItemKeys, isItemSatisfied, hasThirdPartySupplier, chainringMismatch } from "./ananda-store"
+import { packageItemKeys, isItemSatisfied, hasThirdPartySupplier, chainringMismatch, hasSellRegion } from "./ananda-store"
 
 export interface IncompleteItem {
   /** English source text; may contain {placeholders} filled from `params`. */
@@ -32,6 +32,7 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
   switch (stepIndex) {
     case 0: {
       if (!s.sellRegion) items.push({ message: "Select a sell region / market.", targetId: "field-sellRegion" })
+      else if (!hasSellRegion(s)) items.push({ message: "Type your sell region and save it.", targetId: "field-sellRegion" })
       else if (!s.regulation) items.push({ message: "Select a regulation for the chosen market.", targetId: "field-regulation" })
       break
     }

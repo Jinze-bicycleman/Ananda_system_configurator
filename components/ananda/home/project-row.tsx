@@ -24,7 +24,8 @@ type TFn = ReturnType<typeof useT>
 function summarize(project: AnandaProject, t: TFn) {
   const { sellRegion, bikeCategory, driveType, voltagePlatform } = project.config
   const drive = driveType ? `${driveType === "mid" ? t("Mid-drive") : t("Hub motor")}${voltagePlatform ? ` ${voltagePlatform}V` : ""}` : null
-  const parts = [sellRegion ? t(sellRegion) : null, bikeCategory ? t(bikeCategory) : null, drive].filter(Boolean)
+  const marketLabel = sellRegion === "Other" && project.config.customSellRegion ? project.config.customSellRegion : sellRegion ? t(sellRegion) : null
+  const parts = [marketLabel, bikeCategory ? t(bikeCategory) : null, drive].filter(Boolean)
   return parts.length > 0 ? parts.join("  ·  ") : t("No selections yet")
 }
 

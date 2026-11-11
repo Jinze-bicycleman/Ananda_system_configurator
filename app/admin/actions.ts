@@ -147,6 +147,21 @@ export async function saveContentAction(entries: { key: string; value: string }[
   return { ok: true }
 }
 
+export async function saveInviteCodeAction(code: string): Promise<ActionResult> {
+  await requireAdmin()
+  const value = typeof code === "string" ? code.trim() : ""
+  if (value.length < 4) return { ok: false, error: "The invite code must be at least 4 characters." }
+  if (value.length > 64) return { ok: false, error: "The invite code is too long." }
+
+  const { error } = await createAdminClient()
+    .from("app_settings")
+    .upsert({ key: "signup_invite_code", value, updated_at: new Date().toISOString() }, { onConflict: "key" })
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath("/admin")
+  return { ok: true }
+}
+
 const MAX_TRANSLATION_LENGTH = 4000
 
 /** An empty value removes the override so the bundled default applies again. */

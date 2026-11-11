@@ -27,7 +27,7 @@ import {
   type PedalSensorRow,
   type BikeComponentRow,
 } from "@/lib/ananda-packages"
-import { StepHeader, SectionLabel, TechSpecRow } from "./ui-primitives"
+import { StepHeader, SectionLabel, TechSpecRow, ChooseOverlay } from "./ui-primitives"
 import { StatusBadge } from "./status-badge"
 import { ProductImageLightbox } from "./product-image-lightbox"
 import { FullSpecDialog, type Spec } from "./full-spec-dialog"
@@ -75,10 +75,11 @@ function OptionCard({
       <div
         onClick={onSelect}
         className={cn(
-          "product-card relative flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-card transition-all",
+          "product-card group/choose relative flex cursor-pointer flex-col overflow-hidden rounded-lg border bg-card transition-all",
           selected ? "border-primary ring-1 ring-primary" : "border-border hover:border-primary/40",
         )}
       >
+        {!selected && <ChooseOverlay />}
         {selected && (
           <div className="absolute right-2 top-2 z-10 rounded-full bg-primary p-0.5">
             <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" aria-hidden="true" />

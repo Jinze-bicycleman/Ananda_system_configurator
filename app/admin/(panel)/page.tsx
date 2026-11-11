@@ -9,16 +9,18 @@ export const dynamic = "force-dynamic"
 export default async function AdminPage() {
   const supabase = createAdminClient()
 
-  const [content, translations, ...products] = await Promise.all([
+  const [content, translations, settings, ...products] = await Promise.all([
     supabase.from("site_content").select("key, label, section, kind, value, sort_order").order("sort_order"),
     supabase.from("site_translations").select("locale, source, value"),
+    supabase.from("app_settings").select("value").eq("key", "signup_invite_code").maybeSingle(),
     ...PRODUCT_TABLES.map((t) => supabase.from(t.table).select("*").order("sort_order").order("model")),
   ])
 
   const productData = Object.fromEntries(
     PRODUCT_TABLES.map((t, i) => [t.table, (products[i].data ?? []) as unknown as ProductRecord[]]),
   )
-  const loadError = [content, translations, ...products].find((r) => r.error)?.error?.message
+  const loadError = [content, translations, settings, ...products].find((r) => r.error)?.error?.message
+  const inviteCode = String((settings.data as { value?: string } | null)?.value ?? "")
 
   return (
     <div className="space-y-6">
@@ -37,6 +39,7 @@ export default async function AdminPage() {
         content={(content.data ?? []) as ContentRow[]}
         products={productData}
         translations={(translations.data ?? []) as TranslationRow[]}
+        inviteCode={inviteCode}
       />
     </div>
   )

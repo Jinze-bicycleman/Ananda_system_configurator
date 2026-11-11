@@ -1,6 +1,6 @@
 "use client"
 
-import { useAnandaStore, chainringMismatch } from "@/lib/ananda-store"
+import { useAnandaStore, chainringMismatch, sellRegionName } from "@/lib/ananda-store"
 import { aAccessories } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cn } from "@/lib/utils"
@@ -54,7 +54,7 @@ export function ConfigSummaryPanel() {
           )}
         </div>
         <Divider />
-        <Row label="Sell Market" value={s.sellRegion ?? "—"} />
+        <Row label="Sell Market" value={sellRegionName(s) ?? "—"} />
         <Row label="Regulation" value={s.regulation ?? "—"} />
         <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
         <Row label="Rated Power" value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />

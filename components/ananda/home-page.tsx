@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Plus } from "lucide-react"
 import { useProjectsStore } from "@/lib/ananda-projects"
-import { BrandNameField } from "./home/brand-name-field"
+import { UserMenu } from "./home/user-menu"
 import { ProjectRow } from "./home/project-row"
 import { ProjectReportRunner } from "./home/project-report-runner"
 import { BrandLogo } from "./brand-logo"
@@ -24,8 +24,8 @@ export function HomePage() {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
           <BrandLogo className="h-11 w-auto sm:h-12" />
           <div className="flex flex-wrap items-center gap-3">
-            <BrandNameField />
             <LanguageSwitch />
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -55,26 +55,18 @@ export function HomePage() {
           </button>
         </div>
 
-        <ul className="mt-8 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-          {projects.map((project) => (
-            <ProjectRow
-              key={project.id}
-              project={project}
-              downloading={downloadingId === project.id}
-              onDownload={() => setDownloadingId(project.id)}
-            />
-          ))}
-          <li className={projects.length > 0 ? "border-t border-border" : undefined}>
-            <button
-              type="button"
-              onClick={createProject}
-              className="flex w-full items-center justify-center gap-2 px-5 py-5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              {t("Start a new configuration")}
-            </button>
-          </li>
-        </ul>
+        {projects.length > 0 && (
+          <ul className="mt-8 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            {projects.map((project) => (
+              <ProjectRow
+                key={project.id}
+                project={project}
+                downloading={downloadingId === project.id}
+                onDownload={() => setDownloadingId(project.id)}
+              />
+            ))}
+          </ul>
+        )}
       </main>
 
       {downloadingProject && (

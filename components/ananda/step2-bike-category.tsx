@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Search, Zap } from "lucide-react"
-import { useAnandaStore } from "@/lib/ananda-store"
+import { useAnandaStore, sellRegionName, OTHER_MARKET } from "@/lib/ananda-store"
 import { useTyreWidthOptions, useWheelSizeOptions, useTyreSizeMatch } from "@/lib/ananda-tyre-data"
-import { StepHeader, SectionLabel } from "./ui-primitives"
+import { StepHeader, SectionLabel, ChooseOverlay } from "./ui-primitives"
 import { cn } from "@/lib/utils"
 import { useSiteContent } from "@/lib/site-content"
 import { useT } from "@/lib/i18n/provider"
@@ -140,7 +140,7 @@ export function Step2BikeCategory() {
       <div className="mb-8 rounded-lg border border-border bg-secondary/50 p-4">
         <SectionLabel>{t("Inherited Constraints")}</SectionLabel>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <InheritedField label={t("Market")} value={s.sellRegion ? t(s.sellRegion) : "—"} />
+          <InheritedField label={t("Market")} value={sellRegionName(s) ? (s.sellRegion === OTHER_MARKET ? sellRegionName(s)! : t(s.sellRegion!)) : "—"} />
           <InheritedField label={t("Regulation")} value={s.regulation ? t(s.regulation) : "—"} />
           <InheritedField label={t("Speed Limit")} value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
           <InheritedField label={t("Rated Power")} value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
@@ -159,10 +159,11 @@ export function Step2BikeCategory() {
                 aria-pressed={selected}
                 onClick={() => s.setBikeCategory(category.id)}
                 className={cn(
-                  "group relative overflow-hidden rounded-lg border text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                  "group group/choose relative overflow-hidden rounded-lg border text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                   selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:border-primary/40",
                 )}
               >
+                {!selected && <ChooseOverlay />}
                 <div className="relative h-56 overflow-hidden bg-muted sm:h-64">
                   <img
                     src={category.image}

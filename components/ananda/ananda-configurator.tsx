@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { ArrowLeft, ArrowRight, AlertTriangle, Download, FolderOpen, PanelRightOpen } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useAnandaStore, hasBikeCategory, hasCoreComponents, hasDrivetrain } from "@/lib/ananda-store"
+import { useAnandaStore, hasBikeCategory, hasCoreComponents, hasDrivetrain, hasProjectContext } from "@/lib/ananda-store"
 import { getIncompleteItems } from "@/lib/ananda-validation"
 import { useReportData, generateReportPdf } from "@/lib/ananda-report"
 import { useProjectsStore } from "@/lib/ananda-projects"
@@ -64,7 +64,7 @@ export function AnandaConfigurator() {
   }
 
   const complete = useMemo(() => [
-    Boolean(state.sellRegion && state.regulation),
+    hasProjectContext(state),
     hasBikeCategory(state),
     hasCoreComponents(state),
     hasDrivetrain(state), true, true, false,
