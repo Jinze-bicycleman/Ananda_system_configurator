@@ -6,9 +6,9 @@
 // consumes the exact same shape so the downloaded file can never drift from
 // what the user reviewed on screen.
 
-import { useAnandaStore, hasThirdPartySupplier, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
-import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
@@ -57,7 +57,13 @@ export function useReportData(config?: AnandaConfig) {
   const { displays, isLoading: displaysLoading } = useDisplays()
   const { batteries, isLoading: batteriesLoading } = useBatteries()
   const { modes: assistModes, isLoading: modesLoading } = useMotorAssistModes(s.motorId)
-  const loading = motorsLoading || controllersLoading || displaysLoading || batteriesLoading || modesLoading
+  const { speedSensors, isLoading: speedSensorsLoading } = useSpeedSensors()
+  const { components: bikeComponents, isLoading: bikeComponentsLoading } = useBikeComponents()
+  const loading = motorsLoading || controllersLoading || displaysLoading || batteriesLoading || modesLoading || speedSensorsLoading || bikeComponentsLoading
+
+  const speedSensor = speedSensors.find((x) => x.id === s.speedSensorId) ?? null
+  const speedSensorModel = speedSensor?.model ?? s.speedSensorId ?? null
+  const bikeComponentModel = (id: string) => bikeComponents.find((c) => c.id === id)?.model ?? id
 
   const motor = motors.find((m) => m.id === s.motorId) ?? null
   const controller = controllers.find((c) => c.id === s.controllerId) ?? null
@@ -113,11 +119,11 @@ export function useReportData(config?: AnandaConfig) {
   pushScope(packageItemScope("batteryId", battery?.model ?? null))
   pushScope(packageItemScope("chargerId", charger?.model ?? null))
   pushScope(packageItemScope("chargingPortId", chargingPort?.model ?? null))
-  if (!speedSensorSkipped) pushScope(packageItemScope("speedSensorId", s.speedSensorId))
+  if (!speedSensorSkipped) pushScope(packageItemScope("speedSensorId", speedSensorModel))
   if (!isMid && !torqueSensorSkipped) pushScope(packageItemScope("torqueSensorId", s.torqueSensorId))
   if (!isMid && !s.skippedItems.includes("cadenceSensorId")) pushScope(packageItemScope("cadenceSensorId", s.cadenceSensorId))
   for (const [category, id] of Object.entries(s.bikeComponentSelections)) {
-    if (id) scopeOfSupplyItems.push({ label: category.charAt(0).toUpperCase() + category.slice(1), value: id })
+    if (id) scopeOfSupplyItems.push({ label: category.charAt(0).toUpperCase() + category.slice(1), value: bikeComponentModel(id) })
   }
   for (const a of accessories) scopeOfSupplyItems.push({ label: a.category.toUpperCase(), value: a.name })
   for (const a of s.customAccessories) scopeOfSupplyItems.push({ label: "Custom Accessory", value: a.name || "Untitled" })
@@ -192,6 +198,7 @@ export function useReportData(config?: AnandaConfig) {
     battery,
     charger,
     chargingPort,
+    speedSensorModel,
     accessories,
     torqueSensorSkipped,
     speedSensorSkipped,
@@ -228,7 +235,7 @@ function fileSafe(value: string) {
 
 export async function generateReportPdf(data: ReportData, meta: ReportMeta = {}) {
   const { jsPDF } = await import("jspdf")
-  const { s, motor, controller, display, battery, charger, chargingPort, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, systemWeightKg, isMid, cableRows, thirdPartyItems, climbing, scopeOfSupplyItems, salesConsultationItems } = data
+  const { s, motor, controller, display, battery, charger, chargingPort, speedSensorModel, accessories, torqueSensorSkipped, speedSensorSkipped, batterySkipped, systemWeightKg, isMid, cableRows, thirdPartyItems, climbing, scopeOfSupplyItems, salesConsultationItems } = data
 
   const doc = new jsPDF({ unit: "pt", format: "a4" })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -347,7 +354,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
 
   // ─── Project Context ───
   sectionTitle("Project Context")
-  row("Sell Market", s.sellRegion ?? "—")
+  row("Sell Market", sellRegionName(s) ?? "—")
   row("Regulation", s.regulation ?? "—")
   row("Speed Limit", s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—")
   row("Rated Power", s.ratedPowerW ? `${s.ratedPowerW} W` : "—")
@@ -374,7 +381,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   pkgRow("displayId", display ? display.model : "—")
   if (!isMid) pkgRow("torqueSensorId", torqueSensorSkipped ? "Not Needed" : s.torqueSensorId ?? "—")
   if (!isMid) pkgRow("cadenceSensorId", s.skippedItems.includes("cadenceSensorId") ? "Not Needed" : s.cadenceSensorId ?? "—")
-  pkgRow("speedSensorId", speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—")
+  pkgRow("speedSensorId", speedSensorSkipped ? "Not Needed" : speedSensorModel ?? "—")
 
   // ─── Drivetrain ───
   sectionTitle("Drivetrain")

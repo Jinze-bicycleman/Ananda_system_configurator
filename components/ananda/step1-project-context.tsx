@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Check, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAnandaStore } from "@/lib/ananda-store"
+import { useAnandaStore, hasSellRegion, OTHER_MARKET } from "@/lib/ananda-store"
 import { regulationsForMarket, sellMarkets } from "@/lib/ananda-regulations"
 import { StepHeader } from "@/components/ananda/ui-primitives"
 import { useT } from "@/lib/i18n/provider"
@@ -62,6 +62,10 @@ export function Step1ProjectContext() {
   const s = useAnandaStore()
   const t = useT()
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({ sellRegion: true, regulation: true })
+  const [regionDraft, setRegionDraft] = useState(s.customSellRegion ?? "")
+  const trimmedDraft = regionDraft.trim()
+  const regionSaved = Boolean(trimmedDraft) && trimmedDraft === (s.customSellRegion ?? "")
+  const canSaveRegion = Boolean(trimmedDraft) && !regionSaved
   const regulations = regulationsForMarket(s.sellRegion)
   const selectedRegulationOption = regulations.find((option) => option.label === s.regulation)
   const showCustomFields = Boolean(
@@ -86,8 +90,16 @@ export function Step1ProjectContext() {
         <SectionHeader
           index={1}
           title={t("Sell region / market")}
-          summary={s.sellRegion ? t(s.sellRegion) : t("Select the market where the system will be sold.")}
-          done={Boolean(s.sellRegion)}
+          summary={
+            s.sellRegion === OTHER_MARKET
+              ? s.customSellRegion
+                ? `${t(OTHER_MARKET)} · ${s.customSellRegion}`
+                : t("Type your sell region and save it.")
+              : s.sellRegion
+                ? t(s.sellRegion)
+                : t("Select the market where the system will be sold.")
+          }
+          done={hasSellRegion(s)}
           open={openSections.sellRegion}
           onToggle={() => toggle("sellRegion")}
         />
@@ -99,7 +111,10 @@ export function Step1ProjectContext() {
                   key={market}
                   type="button"
                   aria-pressed={s.sellRegion === market}
-                  onClick={() => s.setMarket(market)}
+                  onClick={() => {
+                    if (s.sellRegion !== market) setRegionDraft("")
+                    s.setMarket(market)
+                  }}
                   className={cn(
                     "min-h-12 rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                     s.sellRegion === market
@@ -111,6 +126,36 @@ export function Step1ProjectContext() {
                 </button>
               ))}
             </div>
+            {s.sellRegion === OTHER_MARKET && (
+              <form
+                className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  if (canSaveRegion) s.setField("customSellRegion", trimmedDraft)
+                }}
+              >
+                <label className="flex-1 text-sm font-medium text-graphite">
+                  {t("Your sell region")}
+                  <input
+                    type="text"
+                    value={regionDraft}
+                    onChange={(event) => setRegionDraft(event.target.value)}
+                    placeholder={t("Type your sell region here")}
+                    maxLength={80}
+                    autoComplete="off"
+                    className={inputClass}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={!canSaveRegion}
+                  className="inline-flex h-[38px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {regionSaved && <Check className="h-4 w-4" aria-hidden="true" />}
+                  {regionSaved ? t("Saved") : t("Save")}
+                </button>
+              </form>
+            )}
           </div>
         )}
       </section>

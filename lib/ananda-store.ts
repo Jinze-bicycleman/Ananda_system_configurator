@@ -10,6 +10,8 @@ export type BluetoothAppChoice = "ananda_app" | "third_party"
 
 export interface AnandaConfig {
   sellRegion: string | null
+  // Free-text market typed in (and saved) when `sellRegion` is "Other".
+  customSellRegion: string | null
   regulation: string | null
   speedLimitKmh: number | null
   ratedPowerW: number | null
@@ -113,7 +115,7 @@ export type PackageItemKey =
   | "chargingPortId"
 
 const defaultState: AnandaConfig = {
-  sellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
+  sellRegion: null, customSellRegion: null, regulation: null, speedLimitKmh: null, ratedPowerW: null,
   bikeCategory: null, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null,
   driveType: null, voltagePlatform: null,
   motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null,
@@ -151,7 +153,7 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
     (set) => ({
       ...defaultState,
       setField: (key, value) => set((state) => ({ ...state, [key]: value })),
-      setMarket: (market) => set((state) => ({ ...state, sellRegion: market, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
+      setMarket: (market) => set((state) => ({ ...state, sellRegion: market, customSellRegion: market === state.sellRegion ? state.customSellRegion : null, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
       setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
       setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
@@ -215,7 +217,17 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
 
 export { defaultState }
 
-export const hasProjectContext = (state: AnandaConfig) => Boolean(state.sellRegion && state.regulation)
+export const OTHER_MARKET = "Other"
+
+/** True once a market is chosen; "Other" additionally needs a saved custom region name. */
+export const hasSellRegion = (state: Pick<AnandaConfig, "sellRegion" | "customSellRegion">) =>
+  Boolean(state.sellRegion) && (state.sellRegion !== OTHER_MARKET || Boolean(state.customSellRegion?.trim()))
+
+/** Display name of the market; shows the saved custom region when "Other" is chosen. */
+export const sellRegionName = (state: Pick<AnandaConfig, "sellRegion" | "customSellRegion">) =>
+  state.sellRegion === OTHER_MARKET && state.customSellRegion?.trim() ? state.customSellRegion.trim() : state.sellRegion
+
+export const hasProjectContext = (state: AnandaConfig) => hasSellRegion(state) && Boolean(state.regulation)
 export const hasBikeCategory = (state: AnandaConfig) => Boolean(state.bikeCategory && state.wheelSize && state.tyreCircumferenceMm)
 export const hasDriveAndVoltage = (state: AnandaConfig) => Boolean(state.driveType && state.voltagePlatform)
 export const hasMotor = (state: AnandaConfig) => Boolean(state.motorId)

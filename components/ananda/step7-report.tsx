@@ -1,7 +1,7 @@
 "use client"
 
 import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
-import { hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
+import { hasThirdPartySupplier, sellRegionName, type PackageItemKey } from "@/lib/ananda-store"
 import { StepHeader } from "./ui-primitives"
 import { useState } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
@@ -93,6 +93,7 @@ export function Step7Report() {
     battery,
     charger,
     chargingPort,
+    speedSensorModel,
     accessories,
     torqueSensorSkipped,
     speedSensorSkipped,
@@ -160,7 +161,7 @@ export function Step7Report() {
 
       {/* ─── Project Context ─── */}
       <ReportSection title="Project Context">
-        <Row label="Sell Market" value={s.sellRegion ?? "—"} />
+        <Row label="Sell Market" value={sellRegionName(s) ?? "—"} />
         <Row label="Regulation" value={s.regulation ?? "—"} />
         <Row label="Speed Limit" value={s.speedLimitKmh ? `${s.speedLimitKmh} km/h` : "—"} />
         <Row label="Rated Power" value={s.ratedPowerW ? `${s.ratedPowerW} W` : "—"} />
@@ -194,7 +195,7 @@ export function Step7Report() {
         {!isMid && (
           <PackageRow s={s} itemKey="cadenceSensorId" fallback={s.skippedItems.includes("cadenceSensorId") ? "Not Needed" : s.cadenceSensorId ?? "—"} />
         )}
-        <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : s.speedSensorId ?? "—"} />
+        <PackageRow s={s} itemKey="speedSensorId" fallback={speedSensorSkipped ? "Not Needed" : speedSensorModel ?? "—"} />
       </ReportSection>
 
       {/* ─── Drivetrain ─── */}
