@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { I18nProvider } from '@/lib/i18n/provider'
 import { ResizeObserverGuard } from '@/components/resize-observer-guard'
@@ -43,6 +44,7 @@ export default async function RootLayout({
         <I18nProvider initialLocale={locale} overrides={overrides}>
           {children}
         </I18nProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
