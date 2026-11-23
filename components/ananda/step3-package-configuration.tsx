@@ -785,12 +785,17 @@ export function Step3PackageConfiguration() {
               datasheetUrl={d.datasheet_url}
               specs={[
                 { label: "Size", value: d.size },
+                { label: "Protocol", value: d.communication_protocol },
+                { label: "Display Material", value: d.display_material },
                 { label: "Mounting", value: d.mounting_position },
-                { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
-                { label: "GPS", value: d.has_gps ? "Yes" : "No" },
               ]}
               fullSpecs={[
-                { label: "Protocol", value: d.communication_protocol },
+                { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
+                { label: "GPS", value: d.has_gps ? "Yes" : "No" },
+                { label: "4G", value: d.has_4g ? "Yes" : "No" },
+                { label: "Connection Type", value: d.connection_type },
+                { label: "Voltage", value: d.voltage_v != null ? `${d.voltage_v} V` : null },
+                { label: "Weight", value: d.weight_kg != null ? `${d.weight_kg} kg` : null },
                 { label: "Certifications", value: d.certifications },
               ]}
               selected={s.displayId === d.id}
