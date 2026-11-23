@@ -348,7 +348,7 @@ function ToothCountField({
   const isUntouchedDefault = hasDefault && value === String(defaultValue)
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="flex items-center justify-between gap-2 text-xs font-semibold text-graphite">
+      <label htmlFor={id} className="flex min-h-24 items-start justify-between gap-2 text-xs font-semibold text-graphite">
         <span>{label}</span>
         {hasDefault && (
           <span
