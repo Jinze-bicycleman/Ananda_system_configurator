@@ -532,7 +532,7 @@ export function useBikeComponents() {
 }
 
 export const BIKE_COMPONENT_CATEGORIES: { id: BikeComponentRow["category"]; label: string }[] = [
+  { id: "spider", label: "Spider" },
   { id: "chainring", label: "Chainring" },
   { id: "crank", label: "Crank" },
-  { id: "spider", label: "Spider" },
 ]
