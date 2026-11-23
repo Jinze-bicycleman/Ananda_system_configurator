@@ -37,6 +37,9 @@ export interface AnandaConfig {
   // A key's presence means the "3rd party supplier" warning was accepted; the
   // value is the supplier name (may be empty until the user fills it in).
   thirdPartySuppliers: Record<string, string>
+  // Product model of each 3rd-party part, keyed like `thirdPartySuppliers`.
+  // Both the supplier name and the model are required to complete the part.
+  thirdPartyModels: Record<string, string>
   // Drivetrain (stage 4) — tooth counts. `frontTeeth` is the front chainring;
   // `rearTeeth` / `largestRearTeeth` are the smallest / largest rear sprocket.
   frontTeeth: number | null
@@ -89,7 +92,8 @@ export interface AnandaActions {
   selectPackageItem: (key: PackageItemKey, id: string) => void
   /** Marks a package item as customer-sourced from a 3rd-party supplier (call after the warning is accepted). */
   enableThirdParty: (key: PackageItemKey) => void
-  setThirdPartySupplierName: (key: PackageItemKey, name: string) => void
+  /** Saves the supplier name and product model of a 3rd-party package item together. */
+  setThirdPartyDetails: (key: PackageItemKey, name: string, model: string) => void
   disableThirdParty: (key: PackageItemKey) => void
   toggleAccessory: (id: string) => void
   setCableLength: (connection: string, length: number, mode?: "standard" | "custom") => void
@@ -120,7 +124,7 @@ const defaultState: AnandaConfig = {
   driveType: null, voltagePlatform: null,
   motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null,
   displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null,
-  skippedItems: [], thirdPartySuppliers: {},
+  skippedItems: [], thirdPartySuppliers: {}, thirdPartyModels: {},
   frontTeeth: null, rearTeeth: DEFAULT_SMALLEST_REAR_TEETH, largestRearTeeth: DEFAULT_LARGEST_REAR_TEETH,
   selectedChainringTeeth: null,
   drivetrainSystemKind: null, hubGearUpRatio: null, hubGearDownRatio: null, gvwKg: null,
@@ -155,27 +159,35 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       setField: (key, value) => set((state) => ({ ...state, [key]: value })),
       setMarket: (market) => set((state) => ({ ...state, sellRegion: market, customSellRegion: market === state.sellRegion ? state.customSellRegion : null, regulation: null, speedLimitKmh: null, ratedPowerW: null })),
       setRegulation: (regulation) => set((state) => ({ ...state, regulation })),
-      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
-      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {} })),
+      setDriveType: (driveType) => set((state) => ({ ...state, driveType, motorId: null, controllerId: null, torqueSensorId: null, cadenceSensorId: null, speedSensorId: null, displayId: null, remoteId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {}, thirdPartyModels: {} })),
+      setVoltage: (voltagePlatform) => set((state) => ({ ...state, voltagePlatform, motorId: null, controllerId: null, batteryId: null, chargerId: null, chargingPortId: null, skippedItems: [], thirdPartySuppliers: {}, thirdPartyModels: {} })),
       setBikeCategory: (bikeCategory) => set((state) => ({ ...state, bikeCategory, wheelSize: null, tyreWidth: null, tyreIsoSize: null, tyreCircumferenceMm: null })),
       setItemSkipped: (key, skipped) => set((state) => ({
         skippedItems: skipped ? Array.from(new Set([...state.skippedItems, key])) : state.skippedItems.filter((item) => item !== key),
       })),
       selectPackageItem: (key, id) => set((state) => {
         const { [key]: _removed, ...suppliers } = state.thirdPartySuppliers
+        const { [key]: _removedModel, ...models } = state.thirdPartyModels ?? {}
         void _removed
-        return { [key]: id, thirdPartySuppliers: suppliers, skippedItems: state.skippedItems.filter((item) => item !== key) }
+        void _removedModel
+        return { [key]: id, thirdPartySuppliers: suppliers, thirdPartyModels: models, skippedItems: state.skippedItems.filter((item) => item !== key) }
       }),
       enableThirdParty: (key) => set((state) => ({
         [key]: null,
         skippedItems: state.skippedItems.filter((item) => item !== key),
         thirdPartySuppliers: { ...state.thirdPartySuppliers, [key]: state.thirdPartySuppliers[key] ?? "" },
+        thirdPartyModels: { ...state.thirdPartyModels, [key]: state.thirdPartyModels?.[key] ?? "" },
       })),
-      setThirdPartySupplierName: (key, name) => set((state) => ({ thirdPartySuppliers: { ...state.thirdPartySuppliers, [key]: name } })),
+      setThirdPartyDetails: (key, name, model) => set((state) => ({
+        thirdPartySuppliers: { ...state.thirdPartySuppliers, [key]: name },
+        thirdPartyModels: { ...state.thirdPartyModels, [key]: model },
+      })),
       disableThirdParty: (key) => set((state) => {
         const { [key]: _removed, ...suppliers } = state.thirdPartySuppliers
+        const { [key]: _removedModel, ...models } = state.thirdPartyModels ?? {}
         void _removed
-        return { thirdPartySuppliers: suppliers }
+        void _removedModel
+        return { thirdPartySuppliers: suppliers, thirdPartyModels: models }
       }),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length, mode = "standard") => set((state) => ({
@@ -240,10 +252,19 @@ export function packageItemKeys(driveType: AnandaConfig["driveType"]): (keyof An
 
 export const hasThirdPartySupplier = (state: AnandaConfig, key: string) => key in state.thirdPartySuppliers
 
+/** Product model entered for a 3rd-party part; saved projects from before models existed have none. */
+export const thirdPartyModelOf = (state: AnandaConfig, key: string) => state.thirdPartyModels?.[key] ?? ""
+
+/** A 3rd-party part is complete only once both the supplier name and the product model are filled in. */
+export const isThirdPartyComplete = (state: AnandaConfig, key: string) =>
+  hasThirdPartySupplier(state, key) &&
+  (state.thirdPartySuppliers[key] ?? "").trim().length > 0 &&
+  thirdPartyModelOf(state, key).trim().length > 0
+
 export const isItemSatisfied = (state: AnandaConfig, key: keyof AnandaConfig) =>
   Boolean(state[key]) ||
   state.skippedItems.includes(key) ||
-  (hasThirdPartySupplier(state, key) && state.thirdPartySuppliers[key].trim().length > 0)
+  isThirdPartyComplete(state, key)
 
 export const hasCoreComponents = (state: AnandaConfig) =>
   hasMotor(state) && packageItemKeys(state.driveType).every((key) => isItemSatisfied(state, key))

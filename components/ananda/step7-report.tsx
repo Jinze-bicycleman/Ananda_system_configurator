@@ -1,7 +1,7 @@
 "use client"
 
 import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
-import { hasThirdPartySupplier, sellRegionName, type PackageItemKey } from "@/lib/ananda-store"
+import { hasThirdPartySupplier, thirdPartyModelOf, sellRegionName, type PackageItemKey } from "@/lib/ananda-store"
 import { StepHeader } from "./ui-primitives"
 import { useState } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
@@ -77,7 +77,7 @@ function PackageRow({ s, itemKey, fallback }: { s: Parameters<typeof hasThirdPar
   return (
     <Row
       label={PACKAGE_ITEM_LABELS[itemKey]}
-      value={thirdParty ? thirdPartyValue(s.thirdPartySuppliers[itemKey] ?? "") : fallback}
+      value={thirdParty ? thirdPartyValue(s.thirdPartySuppliers[itemKey] ?? "", thirdPartyModelOf(s, itemKey)) : fallback}
       thirdParty={thirdParty}
       warn={!thirdParty && fallback === "—"}
     />
@@ -137,7 +137,7 @@ export function Step7Report() {
                 {thirdPartyItems.map((item) => (
                   <li key={item.key} className="text-sm text-graphite">
                     <span className="font-semibold ">{t(item.label)}:</span>{" "}
-                    {item.supplier.trim() || <span className="italic text-muted-foreground">{t("supplier name not provided")}</span>}
+                    {item.summary || <span className="italic text-muted-foreground">{t("supplier name not provided")}</span>}
                   </li>
                 ))}
               </ul>
@@ -351,7 +351,7 @@ export function Step7Report() {
                   {i < thirdPartyItems.length
                     ? t("{label}: 3rd party supplier{supplier} — full technical documents and a component sample are required for integration and compatibility testing. Extra cost and delivery time apply; contact sales for details.", {
                         label: t(thirdPartyItems[i].label),
-                        supplier: thirdPartyItems[i].supplier.trim() ? ` (${thirdPartyItems[i].supplier.trim()})` : "",
+                        supplier: thirdPartyItems[i].summary ? ` (${thirdPartyItems[i].summary})` : "",
                       })
                     : t(msg)}
                 </p>

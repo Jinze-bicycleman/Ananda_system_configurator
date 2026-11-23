@@ -6,7 +6,7 @@
 // consumes the exact same shape so the downloaded file can never drift from
 // what the user reviewed on screen.
 
-import { useAnandaStore, hasThirdPartySupplier, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, thirdPartyModelOf, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
@@ -30,8 +30,14 @@ export interface ScopeItem {
   thirdParty?: boolean
 }
 
-export function thirdPartyValue(supplier: string) {
-  return supplier.trim() ? `3rd party supplier: ${supplier.trim()}` : "3rd party supplier (name not provided)"
+/** "Supplier · Model", leaving out whichever part has not been filled in. */
+export function thirdPartySummary(supplier: string, model: string) {
+  return [supplier.trim(), model.trim()].filter(Boolean).join(" · ")
+}
+
+export function thirdPartyValue(supplier: string, model = "") {
+  const summary = thirdPartySummary(supplier, model)
+  return summary ? `3rd party supplier: ${summary}` : "3rd party supplier (name not provided)"
 }
 
 export interface CableRow {
@@ -101,11 +107,15 @@ export function useReportData(config?: AnandaConfig) {
   // ─── Third-party sourced parts (every package part except the motor) ───
   const thirdPartyItems = (Object.keys(PACKAGE_ITEM_LABELS) as PackageItemKey[])
     .filter((key) => hasThirdPartySupplier(s, key) && !(isMid && (key === "controllerId" || key === "torqueSensorId" || key === "cadenceSensorId")))
-    .map((key) => ({ key, label: PACKAGE_ITEM_LABELS[key], supplier: s.thirdPartySuppliers[key] ?? "" }))
+    .map((key) => {
+      const supplier = s.thirdPartySuppliers[key] ?? ""
+      const model = thirdPartyModelOf(s, key)
+      return { key, label: PACKAGE_ITEM_LABELS[key], supplier, model, summary: thirdPartySummary(supplier, model) }
+    })
 
   const packageItemScope = (key: PackageItemKey, model: string | null): ScopeItem | null => {
     if (hasThirdPartySupplier(s, key)) {
-      return { label: PACKAGE_ITEM_LABELS[key], value: thirdPartyValue(s.thirdPartySuppliers[key] ?? ""), thirdParty: true }
+      return { label: PACKAGE_ITEM_LABELS[key], value: thirdPartyValue(s.thirdPartySuppliers[key] ?? "", thirdPartyModelOf(s, key)), thirdParty: true }
     }
     return model ? { label: PACKAGE_ITEM_LABELS[key], value: model } : null
   }
@@ -133,7 +143,7 @@ export function useReportData(config?: AnandaConfig) {
   const salesConsultationItems: string[] = []
   for (const item of thirdPartyItems) {
     salesConsultationItems.push(
-      `${item.label}: 3rd party supplier${item.supplier.trim() ? ` (${item.supplier.trim()})` : ""} — full technical documents and a component sample are required for integration and compatibility testing. Extra cost and delivery time apply; contact sales for details.`,
+      `${item.label}: 3rd party supplier${item.summary ? ` (${item.summary})` : ""} — full technical documents and a component sample are required for integration and compatibility testing. Extra cost and delivery time apply; contact sales for details.`,
     )
   }
   if (s.connectorSourcing === "custom") {
@@ -341,7 +351,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   // ─── 3rd Party Supplier Notice ───
   if (thirdPartyItems.length > 0) {
     sectionTitle("3rd Party Supplier Components")
-    for (const item of thirdPartyItems) row(item.label, item.supplier.trim() || "Name not provided", true)
+    for (const item of thirdPartyItems) row(item.label, item.summary || "Name not provided", true)
     paragraph(
       "Using 3rd party components requires full technical documents and component samples for integration and compatibility testing. This introduces extra cost and delivery time; contact sales for details.",
     )
@@ -375,7 +385,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   // ─── Package Configuration ───
   sectionTitle("Package Configuration")
   const pkgRow = (key: PackageItemKey, fallback: string) =>
-    hasThirdPartySupplier(s, key) ? row(PACKAGE_ITEM_LABELS[key], thirdPartyValue(s.thirdPartySuppliers[key] ?? ""), true) : row(PACKAGE_ITEM_LABELS[key], fallback)
+    hasThirdPartySupplier(s, key) ? row(PACKAGE_ITEM_LABELS[key], thirdPartyValue(s.thirdPartySuppliers[key] ?? "", thirdPartyModelOf(s, key)), true) : row(PACKAGE_ITEM_LABELS[key], fallback)
   if (isMid) row("Controller", "Integrated")
   else pkgRow("controllerId", controller ? controller.model : "—")
   pkgRow("displayId", display ? display.model : "—")
@@ -393,7 +403,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
 
   // ─── Battery & Charging ───
   sectionTitle("Battery & Charging")
-  if (hasThirdPartySupplier(s, "batteryId")) row("Battery", thirdPartyValue(s.thirdPartySuppliers.batteryId ?? ""), true)
+  if (hasThirdPartySupplier(s, "batteryId")) row("Battery", thirdPartyValue(s.thirdPartySuppliers.batteryId ?? "", thirdPartyModelOf(s, "batteryId")), true)
   else row("Battery", batterySkipped ? "Not Needed" : battery ? battery.model : "—")
   if (battery?.capacity_wh) row("Capacity", `${battery.capacity_wh} Wh`)
   if (battery?.weight_kg) row("Battery Weight", `${battery.weight_kg} kg`)
