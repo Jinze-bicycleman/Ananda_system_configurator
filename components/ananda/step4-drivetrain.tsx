@@ -206,7 +206,7 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
 
         {isGearHub ? (
           <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-y-0">
               <ToothCountField
                 id="front-chainring-teeth"
                 label={t("Chainring teeth")}
@@ -223,7 +223,7 @@ export function Step4Drivetrain({ onEditStep }: { onEditStep?: (stepNumber: numb
             </p>
           </>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-y-0">
             <ToothCountField
               id="front-chainring-teeth"
               label={t("Front chainring teeth")}
@@ -306,8 +306,8 @@ function RatioField({
 }) {
   const t = useT()
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-semibold text-graphite">
+    <div className="flex flex-col gap-1.5 sm:row-span-3 sm:grid sm:grid-rows-subgrid sm:gap-y-1.5">
+      <label htmlFor={id} className="self-end pb-2.5 text-xs font-semibold text-graphite">
         {label}
       </label>
       <input
@@ -347,8 +347,8 @@ function ToothCountField({
   const hasDefault = defaultValue != null
   const isUntouchedDefault = hasDefault && value === String(defaultValue)
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="flex min-h-24 items-start justify-between gap-2 text-xs font-semibold text-graphite">
+    <div className="flex flex-col gap-1.5 sm:row-span-3 sm:grid sm:grid-rows-subgrid sm:gap-y-1.5">
+      <label htmlFor={id} className="flex items-start justify-between gap-2 self-end pb-2.5 text-xs font-semibold text-graphite">
         <span>{label}</span>
         {hasDefault && (
           <span
