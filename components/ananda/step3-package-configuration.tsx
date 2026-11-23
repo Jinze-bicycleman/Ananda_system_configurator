@@ -588,6 +588,18 @@ export function Step3PackageConfiguration() {
     return protocol.includes(s.hmiProtocolPreference)
   })
 
+  // Displays store every protocol they support (e.g. "UART/CAN"); the card
+  // should only mention the protocol the user picked above.
+  const selectedProtocolLabel = s.hmiProtocolPreference === "can" ? t("CAN Bus") : "UART"
+  const protocolForSelection = (raw: string | null): string | null => {
+    if (!raw) return null
+    const supportsSelected = raw
+      .toLowerCase()
+      .split(/[\/,&+]|\band\b/)
+      .some((token) => token.trim().replace(/\s*bus$/, "") === s.hmiProtocolPreference)
+    return supportsSelected ? selectedProtocolLabel : raw
+  }
+
   const selectedMotor = compatibleMotors.find((m) => m.id === s.motorId) ?? null
   const selectedController = compatibleControllers.find((c) => c.id === s.controllerId) ?? null
   const selectedDisplay = displays.find((d) => d.id === s.displayId) ?? null
@@ -785,7 +797,7 @@ export function Step3PackageConfiguration() {
               datasheetUrl={d.datasheet_url}
               specs={[
                 { label: "Size", value: d.size },
-                { label: "Protocol", value: d.communication_protocol },
+                { label: "Protocol", value: protocolForSelection(d.communication_protocol) },
                 { label: "Display Material", value: d.display_material },
                 { label: "Mounting", value: d.mounting_position },
               ]}
