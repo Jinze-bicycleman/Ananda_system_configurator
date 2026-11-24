@@ -1,5 +1,6 @@
 "use client"
 
+import { harnessLengthLabel } from "@/lib/m7200-harness"
 import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
 import { hasThirdPartySupplier, thirdPartyModelOf, sellRegionName, type PackageItemKey } from "@/lib/ananda-store"
 import { StepHeader } from "./ui-primitives"
@@ -101,6 +102,7 @@ export function Step7Report() {
     systemWeightKg,
     isMid,
     cableRows,
+    harnessSlots,
     thirdPartyItems,
     climbing,
     scopeOfSupplyItems,
@@ -257,6 +259,10 @@ export function Step7Report() {
         )}
       </ReportSection>
 
+      {harnessSlots.length > 0 && <ReportSection title="M7200 Harness Slots">
+        {harnessSlots.map(slot => <Row key={slot.id} label={slot.label} value={slot.model ? `${slot.model} · ${harnessLengthLabel(slot)}` : "empty"} />)}
+      </ReportSection>}
+
       {/* ─── Cable & Harness Specification ─── */}
       <ReportSection title="Cable & Harness Specification">
         <div className="overflow-x-auto -mx-1">
@@ -275,7 +281,7 @@ export function Step7Report() {
                   <td className="px-3 py-2 text-muted-foreground">{t(c.connector)}</td>
                   <td className="px-3 py-2 font-semibold text-foreground">{c.pins}</td>
                   <td className="px-3 py-2 text-muted-foreground">{t(c.cableType)}</td>
-                  <td className="px-3 py-2 font-semibold text-primary">{c.lengthM.toFixed(1)} m</td>
+                  <td className="px-3 py-2 font-semibold text-primary">{c.lengthM == null ? t("Unspecified") : `${Number(c.lengthM.toFixed(3))} m`}</td>
                   <td className="px-3 py-2 text-muted-foreground">
                     {c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—"}
                   </td>

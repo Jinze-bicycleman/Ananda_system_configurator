@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react"
 import { AlertTriangle } from "lucide-react"
+import { cableValue } from "@/lib/cable-connections"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { CUSTOM_LENGTH_LIMITS_MM, formatLengthCm, validateCustomLengthMm } from "@/lib/bike-overview/templates"
 import type { ResolvedCable } from "@/lib/bike-overview/use-bike-overview"
@@ -28,7 +29,7 @@ export function CableEditor({ cable }: { cable: ResolvedCable }) {
   const draftError = cable.mode === "custom" ? validateCustomLengthMm(draftMm) : null
 
   const chooseStandard = () => {
-    if (cable.mode === "standard") return
+    if (cable.mode === "standard" && cableValue(s.cableLengths, connection) != null) return
     const fallback = standardLengthsMm.includes(cable.placement.defaultLengthMm) ? cable.placement.defaultLengthMm : standardLengthsMm[0]
     s.setCableLength(connection, fallback / 1000, "standard")
   }
