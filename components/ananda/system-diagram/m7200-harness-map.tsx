@@ -1,13 +1,13 @@
 "use client"
 
-import { useRef, useState, type CSSProperties } from "react"
+import type { CSSProperties } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
 import { harnessLengthLabel, type HarnessSlot } from "@/lib/m7200-harness"
 import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
 import { CableEditor } from "../bike-overview/cable-editor"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 // Centres of the red annotation boxes, in the unchanged SVG coordinate system.
 const CABLE_LENGTH_AREAS: Record<string, { x: number; y: number; width: number }> = {
@@ -32,17 +32,22 @@ export function Series7000HarnessMap() {
   const diagramTitle = `${motor?.model ?? "7000 series"} harness map`
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")
-  const lengthButtonRef = useRef<HTMLButtonElement>(null)
-  const [editorOpen, setEditorOpen] = useState(false)
   const hmi = harnessSlots.find(slot => slot.id === "hmi")
   const length = (slot: HarnessSlot) => {
     if (!slot.model) return null
     const label = harnessLengthLabel(slot)
     return slot.editable && hmiCable ? (
-      <button ref={lengthButtonRef} type="button" onClick={() => setEditorOpen(true)} aria-label={`Edit ${slot.label} cable length: ${label}`}
-        className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
-        {label}
-      </button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" aria-label={`Edit ${slot.label} cable length: ${label}`}
+            className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
+            {label}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="center" collisionPadding={16} className="max-h-[80vh] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto p-0">
+          <CableEditor cable={hmiCable} />
+        </PopoverContent>
+      </Popover>
     ) : <span className="inline-block rounded bg-white px-2 py-1 text-slate-700" aria-label={`${slot.label}: ${label} (read-only)`}>{label}</span>
   }
 
@@ -89,12 +94,6 @@ export function Series7000HarnessMap() {
           </div>
         </div>
       </div>
-      <Dialog open={editorOpen && !!hmi?.editable} onOpenChange={setEditorOpen}>
-        <DialogContent onCloseAutoFocus={event => { event.preventDefault(); lengthButtonRef.current?.focus() }} className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader><DialogTitle>P2 Display / HMI cable length</DialogTitle><DialogDescription>Changes save to the project cable specification in metres and appear here in mm.</DialogDescription></DialogHeader>
-          {hmiCable && <CableEditor key={editorOpen ? "open" : "closed"} cable={hmiCable} />}
-        </DialogContent>
-      </Dialog>
     </section>
   )
 }
