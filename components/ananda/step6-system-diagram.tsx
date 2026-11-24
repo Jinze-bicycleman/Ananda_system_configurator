@@ -7,8 +7,8 @@ import { cablePresets, aAccessories } from "@/lib/ananda-data"
 import { useMotors, useDisplays, useBatteries, CHARGERS, CHARGING_PORTS, connectionCableLengthOptionsFor } from "@/lib/ananda-packages"
 import { StepHeader, SectionLabel } from "./ui-primitives"
 import { BikeOverview } from "./bike-overview/bike-overview"
-import { isM7200 } from "@/lib/m7200-harness"
-import { M7200HarnessMap } from "./system-diagram/m7200-harness-map"
+import { supportsSeries7000Harness } from "@/lib/m7200-harness"
+import { Series7000HarnessMap } from "./system-diagram/m7200-harness-map"
 import { FixedSystemDiagram } from "./system-diagram/fixed-system-diagram"
 import { useCableCatalog, assignCable, CableCatalogInfo, CableLengthSelect, ExtensionCableControl } from "./cable-spec-controls"
 import { cn } from "@/lib/utils"
@@ -471,6 +471,22 @@ export function Step6SystemDiagram() {
     remote: "R1 / R2 / R3",
   }
 
+  if (driveType === "mid" && supportsSeries7000Harness(s, motor)) {
+    return (
+      <div>
+        <StepHeader
+          step={6}
+          title={t("System Overview")}
+          subtitle={t("Review the harness map and select a cable length on the map to edit it.")}
+        />
+
+        <ConnectorSourcingPrompt />
+
+        <Series7000HarnessMap />
+      </div>
+    )
+  }
+
   if (driveType === "mid") {
     return (
       <div>
@@ -485,10 +501,7 @@ export function Step6SystemDiagram() {
         <BikeOverview />
 
         <ViewDiagramGate>
-          {isM7200(s, motor) ? <div className="space-y-6">
-            <M7200HarnessMap />
-            <details className="border border-border p-4"><summary className="cursor-pointer text-sm font-semibold">System overview</summary><div className="mt-4"><FixedSystemDiagram /></div></details>
-          </div> : <FixedSystemDiagram />}
+          <FixedSystemDiagram />
         </ViewDiagramGate>
       </div>
     )
