@@ -47,7 +47,7 @@ export function getIncompleteItems(stepIndex: number, s: AnandaConfig): Incomple
         if (isItemSatisfied(s, key)) continue
         const label = CORE_COMPONENT_LABELS[key] ?? String(key)
         if (hasThirdPartySupplier(s, key as string)) {
-          items.push({ message: "Enter the 3rd party supplier name for {label}.", params: { label }, targetId: `config-${String(key)}` })
+          items.push({ message: "Enter the 3rd party supplier name and product model for {label}.", params: { label }, targetId: `config-${String(key)}` })
         } else {
           items.push({ message: "{label} still needs a selection or must be marked not needed.", params: { label }, targetId: `config-${String(key)}` })
         }

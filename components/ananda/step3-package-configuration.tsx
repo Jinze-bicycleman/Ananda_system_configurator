@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useAnandaStore, hasThirdPartySupplier, type PackageItemKey } from "@/lib/ananda-store"
+import { useAnandaStore, hasThirdPartySupplier, thirdPartyModelOf, type PackageItemKey } from "@/lib/ananda-store"
 import {
   useControllers,
   useDisplays,
@@ -159,15 +159,18 @@ function EmptyOptionsNotice() {
 function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItemKey; label: string; justEnabled: boolean }) {
   const s = useAnandaStore()
   const t = useT()
-  // The store only ever holds the confirmed name, so "complete" is exactly
-  // "a name has been confirmed" — the draft below is local until then.
+  // The store only ever holds the confirmed values, so "complete" is exactly
+  // "a supplier name and a product model have both been confirmed" — the
+  // drafts below are local until then.
   const savedName = (s.thirdPartySuppliers[itemKey] ?? "").trim()
+  const savedModel = thirdPartyModelOf(s, itemKey).trim()
   const [draft, setDraft] = useState(savedName)
-  const [editing, setEditing] = useState(savedName.length === 0)
+  const [modelDraft, setModelDraft] = useState(savedModel)
+  const [editing, setEditing] = useState(savedName.length === 0 || savedModel.length === 0)
   const panelRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const confirmed = savedName.length > 0 && !editing
-  const canConfirm = draft.trim().length > 0
+  const confirmed = savedName.length > 0 && savedModel.length > 0 && !editing
+  const canConfirm = draft.trim().length > 0 && modelDraft.trim().length > 0
 
   // Right after the agreement dialog closes the product grid collapses into
   // this shorter panel, which shifts the page. Wait for the dialog's scroll
@@ -183,8 +186,9 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
 
   const confirm = () => {
     if (!canConfirm) return
-    s.setThirdPartySupplierName(itemKey, draft.trim())
+    s.setThirdPartyDetails(itemKey, draft.trim(), modelDraft.trim())
     setDraft(draft.trim())
+    setModelDraft(modelDraft.trim())
     setEditing(false)
   }
 
@@ -201,7 +205,16 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/40 bg-background px-3 py-2">
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-primary">{t("Supplier confirmed")}</p>
-                <p className="text-sm font-semibold text-graphite wrap-anywhere">{savedName}</p>
+                <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{t("Supplier name")}</dt>
+                    <dd className="text-sm font-semibold text-graphite wrap-anywhere">{savedName}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">{t("Product model")}</dt>
+                    <dd className="text-sm font-semibold text-graphite wrap-anywhere">{savedModel}</dd>
+                  </div>
+                </dl>
               </div>
               <button
                 type="button"
@@ -218,29 +231,44 @@ function ThirdPartyPanel({ itemKey, label, justEnabled }: { itemKey: PackageItem
                 confirm()
               }}
             >
-              <label htmlFor={`${itemKey}-supplier`} className="mt-3 block text-sm font-medium text-graphite">
-                {t("Supplier name")} <span className="text-destructive">*</span>
-              </label>
-              <div className="mt-1 flex max-w-md flex-wrap items-stretch gap-2">
-                <input
-                  ref={inputRef}
-                  id={`${itemKey}-supplier`}
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder={t("Name of the {item} supplier", { item: label.toLowerCase() })}
-                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                />
-                <button
-                  type="submit"
-                  disabled={!canConfirm}
-                  className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" /> {t("Confirm supplier")}
-                </button>
+              <div className="mt-3 grid max-w-2xl gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor={`${itemKey}-supplier`} className="block text-sm font-medium text-graphite">
+                    {t("Supplier name")} <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    ref={inputRef}
+                    id={`${itemKey}-supplier`}
+                    type="text"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={t("Name of the {item} supplier", { item: label.toLowerCase() })}
+                    className="mt-1 w-full min-w-0 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`${itemKey}-model`} className="block text-sm font-medium text-graphite">
+                    {t("Product model")} <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    id={`${itemKey}-model`}
+                    type="text"
+                    value={modelDraft}
+                    onChange={(e) => setModelDraft(e.target.value)}
+                    placeholder={t("Model of the {item}", { item: label.toLowerCase() })}
+                    className="mt-1 w-full min-w-0 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  />
+                </div>
               </div>
+              <button
+                type="submit"
+                disabled={!canConfirm}
+                className="mt-3 flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted-foreground"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" /> {t("Confirm supplier")}
+              </button>
               <p className="mt-1.5 text-sm font-medium text-destructive">
-                {canConfirm ? t("Press Confirm supplier to save — this component is not complete until you do.") : t("Enter the supplier name, then confirm it to complete this component.")}
+                {canConfirm ? t("Press Confirm supplier to save — this component is not complete until you do.") : t("Enter the supplier name and product model, then confirm to complete this component.")}
               </p>
             </form>
           )}
@@ -319,12 +347,15 @@ function ConfigRow({
   const [justEnabled, setJustEnabled] = useState(false)
   const isThirdParty = thirdPartyKey ? hasThirdPartySupplier(s, thirdPartyKey) : false
   const supplierName = thirdPartyKey ? (s.thirdPartySuppliers[thirdPartyKey] ?? "") : ""
+  const supplierModel = thirdPartyKey ? thirdPartyModelOf(s, thirdPartyKey) : ""
+  const thirdPartyDetails = [supplierName.trim(), supplierModel.trim()].filter(Boolean).join(" · ")
+  const thirdPartyComplete = supplierName.trim().length > 0 && supplierModel.trim().length > 0
 
   const thirdPartySummary = isThirdParty ? (
     <div>
       <p className="text-sm font-semibold text-warning">{t("3rd party supplier")}</p>
-      <p className={cn("text-sm", supplierName.trim() ? "text-muted-foreground" : "font-semibold text-destructive")}>
-        {supplierName.trim() ? supplierName : t("Supplier name required")}
+      <p className={cn("text-sm wrap-anywhere", thirdPartyComplete ? "text-muted-foreground" : "font-semibold text-destructive")}>
+        {thirdPartyComplete ? thirdPartyDetails : t("Supplier name and model required")}
       </p>
     </div>
   ) : null
@@ -557,6 +588,18 @@ export function Step3PackageConfiguration() {
     return protocol.includes(s.hmiProtocolPreference)
   })
 
+  // Displays store every protocol they support (e.g. "UART/CAN"); the card
+  // should only mention the protocol the user picked above.
+  const selectedProtocolLabel = s.hmiProtocolPreference === "can" ? t("CAN Bus") : "UART"
+  const protocolForSelection = (raw: string | null): string | null => {
+    if (!raw) return null
+    const supportsSelected = raw
+      .toLowerCase()
+      .split(/[\/,&+]|\band\b/)
+      .some((token) => token.trim().replace(/\s*bus$/, "") === s.hmiProtocolPreference)
+    return supportsSelected ? selectedProtocolLabel : raw
+  }
+
   const selectedMotor = compatibleMotors.find((m) => m.id === s.motorId) ?? null
   const selectedController = compatibleControllers.find((c) => c.id === s.controllerId) ?? null
   const selectedDisplay = displays.find((d) => d.id === s.displayId) ?? null
@@ -754,12 +797,17 @@ export function Step3PackageConfiguration() {
               datasheetUrl={d.datasheet_url}
               specs={[
                 { label: "Size", value: d.size },
+                { label: "Protocol", value: protocolForSelection(d.communication_protocol) },
+                { label: "Display Material", value: d.display_material },
                 { label: "Mounting", value: d.mounting_position },
-                { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
-                { label: "GPS", value: d.has_gps ? "Yes" : "No" },
               ]}
               fullSpecs={[
-                { label: "Protocol", value: d.communication_protocol },
+                { label: "Bluetooth", value: d.bluetooth ? "Yes" : "No" },
+                { label: "GPS", value: d.has_gps ? "Yes" : "No" },
+                { label: "4G", value: d.has_4g ? "Yes" : "No" },
+                { label: "Connection Type", value: d.connection_type },
+                { label: "Voltage", value: d.voltage_v != null ? `${d.voltage_v} V` : null },
+                { label: "Weight", value: d.weight_kg != null ? `${d.weight_kg} kg` : null },
                 { label: "Certifications", value: d.certifications },
               ]}
               selected={s.displayId === d.id}

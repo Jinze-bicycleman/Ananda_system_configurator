@@ -127,7 +127,7 @@ export function ClimbingAbilityPanel({
         {modesLoading ? (
           <div className="h-9 w-full animate-pulse bg-muted" />
         ) : (
-          <div className="choice-group" role="group" aria-label={t("Assistance mode")}>
+          <div className="choice-group grid grid-cols-2 sm:grid-cols-5" role="group" aria-label={t("Assistance mode")}>
             {modes.map((m) => (
               <button
                 key={m.mode_key}

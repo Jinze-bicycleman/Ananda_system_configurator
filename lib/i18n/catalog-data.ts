@@ -209,7 +209,7 @@ export const DATA_SECTIONS: CatalogSection[] = [
       "Choose a bike category.": "请选择自行车类别。",
       "Select a wheel size.": "请选择车轮尺寸。",
       "Enter or look up a tyre circumference.": "请输入或查询轮胎周长。",
-      "Enter the 3rd party supplier name for {label}.": "请输入{label}的第三方供应商名称。",
+      "Enter the 3rd party supplier name and product model for {label}.": "请输入{label}的第三方供应商名称和产品型号。",
       "{label} still needs a selection or must be marked not needed.": "{label}仍需选择，或必须标记为不需要。",
       "Enter the front chainring teeth.": "请输入前链盘齿数。",
       "Enter the smallest rear sprocket teeth.": "请输入最小后飞轮齿数。",
