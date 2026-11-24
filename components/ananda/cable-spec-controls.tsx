@@ -1,5 +1,7 @@
 "use client"
 
+import { cableValue } from "@/lib/cable-connections"
+
 import { useState } from "react"
 import { ChevronDown, Plus, X } from "lucide-react"
 import { useAnandaStore } from "@/lib/ananda-store"
@@ -67,7 +69,7 @@ export function CableLengthSelect({
 }) {
   const s = useAnandaStore()
   const t = useT()
-  const storedM = s.cableLengths[connection]
+  const storedM = cableValue(s.cableLengths, connection)
   const storedMm = storedM !== undefined ? Math.round(storedM * 1000) : null
   const inputId = `cable-length-select-${connection.replace(/[^a-z0-9]+/gi, "-")}`
 
@@ -88,6 +90,9 @@ export function CableLengthSelect({
         <option value="" disabled hidden>
           {t("Choose a length")}
         </option>
+        {storedMm != null && !lengthOptions.some(opt => opt.length_mm === storedMm) && (
+          <option value={storedMm}>{storedMm} mm</option>
+        )}
         {lengthOptions.map((opt) => (
           <option key={opt.id} value={opt.length_mm} className="text-foreground">
             {opt.label}
@@ -114,7 +119,7 @@ export function ExtensionCableControl({
 }) {
   const s = useAnandaStore()
   const t = useT()
-  const storedM = s.extensionCableLengths[connection]
+  const storedM = cableValue(s.extensionCableLengths, connection)
   const storedMm = storedM !== undefined ? Math.round(storedM * 1000) : null
   const [adding, setAdding] = useState(storedMm !== null)
   const inputId = `extension-cable-select-${connection.replace(/[^a-z0-9]+/gi, "-")}`

@@ -1,5 +1,7 @@
 "use client"
 
+import { cableValue } from "@/lib/cable-connections"
+
 import { useMemo } from "react"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
@@ -123,9 +125,9 @@ export function useBikeOverview() {
             ? { ...basePlacement, connectorLabel: profile.connectorModel, defaultLengthMm: profile.defaultLengthMm }
             : basePlacement
       const spec = CABLE_SPECS.find((c) => c.connection === meta.connection)
-      const storedM = s.cableLengths[meta.connection]
+      const storedM = cableValue(s.cableLengths, meta.connection)
       const lengthMm = storedM != null ? Math.round(storedM * 1000) : placement.defaultLengthMm
-      const storedMode = s.cableLengthModes?.[meta.connection]
+      const storedMode = cableValue(s.cableLengthModes, meta.connection)
       const mode = storedMode ?? (placement.standardLengthsMm.includes(lengthMm) ? "standard" : "custom")
       const visible = meta.requires === null || products[meta.requires] !== null
       return {

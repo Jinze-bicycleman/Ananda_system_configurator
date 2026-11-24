@@ -2,6 +2,7 @@
 
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { canonicalCableConnection, writeCableValue } from "./cable-connections"
 
 export const DEFAULT_SMALLEST_REAR_TEETH = 11
 export const DEFAULT_LARGEST_REAR_TEETH = 43
@@ -179,16 +180,17 @@ export const useAnandaStore = create<AnandaConfig & AnandaActions>()(
       }),
       toggleAccessory: (id) => set((state) => ({ accessoryIds: state.accessoryIds.includes(id) ? state.accessoryIds.filter((item) => item !== id) : [...state.accessoryIds, id] })),
       setCableLength: (connection, length, mode = "standard") => set((state) => ({
-        cableLengths: { ...state.cableLengths, [connection]: length },
-        cableLengthModes: { ...state.cableLengthModes, [connection]: mode },
+        cableLengths: writeCableValue(state.cableLengths, connection, length),
+        cableLengthModes: writeCableValue(state.cableLengthModes, connection, mode),
       })),
       setExtensionCableLength: (connection, length) => set((state) => {
         if (length === null) {
           const next = { ...state.extensionCableLengths }
-          delete next[connection]
+          delete next[canonicalCableConnection(connection)]
+          if (canonicalCableConnection(connection) === "Display → Motor unit") delete next["Display → Motor Unit"]
           return { extensionCableLengths: next }
         }
-        return { extensionCableLengths: { ...state.extensionCableLengths, [connection]: length } }
+        return { extensionCableLengths: writeCableValue(state.extensionCableLengths, connection, length) }
       }),
       setStep: (currentStep) => set({ currentStep }),
       resetConfig: () => set({ ...defaultState, hasStarted: true }),

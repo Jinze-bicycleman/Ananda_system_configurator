@@ -9,6 +9,8 @@
 import { useAnandaStore, hasThirdPartySupplier, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { cableValue } from "./cable-connections"
+import { isM7200, resolveM7200Harness, harnessLengthLabel } from "./m7200-harness"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
@@ -39,7 +41,7 @@ export interface CableRow {
   connector: string
   pins: number
   cableType: string
-  lengthM: number
+  lengthM: number | null
   /** Optional extension cable length (m), only present if the user added one for this connection. */
   extensionLengthM: number | null
 }
@@ -89,13 +91,25 @@ export function useReportData(config?: AnandaConfig) {
   // `s.cableLengths` map by connection name, falling back to each
   // connection's default length when the user hasn't edited it.
   const cablePresetList = s.driveType === "hub" ? cablePresets.hub : CABLE_SPECS
-  const cableRows: CableRow[] = cablePresetList.map((c) => ({
+  const harnessSlots = isM7200(s, motor) ? resolveM7200Harness(s, { display, battery, speedSensor }) : []
+  const sensorLeadMm = harnessSlots.find(slot => slot.id === "speedSensor")?.lengthMm ?? null
+  const cableRows: CableRow[] = cablePresetList.filter(c => {
+    if (!harnessSlots.length) return true
+    if (c.connection === "Battery → Motor unit") return false // P1 is a cable-free docking interface.
+    if (c.connection === "Display → Motor unit") return !!harnessSlots.find(slot => slot.id === "hmi")?.model
+    if (c.connection === "Speed sensor → Motor unit") return !!harnessSlots.find(slot => slot.id === "speedSensor")?.model
+    return true
+  }).map((c) => ({
     connection: c.connection,
     connector: c.connector,
     pins: c.pins,
     cableType: c.cableType,
-    lengthM: s.cableLengths[c.connection] ?? c.defaultLength,
-    extensionLengthM: s.extensionCableLengths[c.connection] ?? null,
+    lengthM: harnessSlots.length && c.connection === "Speed sensor → Motor unit"
+      ? sensorLeadMm === null ? null : sensorLeadMm / 1000
+      : harnessSlots.length && c.connection === "Display → Motor unit"
+        ? cableValue(s.cableLengths, c.connection) ?? null
+        : cableValue(s.cableLengths, c.connection) ?? c.defaultLength,
+    extensionLengthM: cableValue(s.extensionCableLengths, c.connection) ?? null,
   }))
 
   // ─── Third-party sourced parts (every package part except the motor) ───
@@ -127,7 +141,7 @@ export function useReportData(config?: AnandaConfig) {
   }
   for (const a of accessories) scopeOfSupplyItems.push({ label: a.category.toUpperCase(), value: a.name })
   for (const a of s.customAccessories) scopeOfSupplyItems.push({ label: "Custom Accessory", value: a.name || "Untitled" })
-  scopeOfSupplyItems.push({ label: "Cable & Harness Set", value: `${cablePresetList.length} connections specified` })
+  scopeOfSupplyItems.push({ label: "Cable & Harness Set", value: `${cableRows.length} connections specified` })
 
   // ─── Items requiring a sample, additional cost, or sales-team consultation ───
   const salesConsultationItems: string[] = []
@@ -206,6 +220,7 @@ export function useReportData(config?: AnandaConfig) {
     systemWeightKg,
     isMid,
     cableRows,
+    harnessSlots,
     thirdPartyItems,
     climbing,
     scopeOfSupplyItems,
@@ -440,13 +455,18 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
         c.connector,
         String(c.pins),
         c.cableType,
-        `${c.lengthM.toFixed(1)} m`,
+        c.lengthM == null ? "Unspecified" : `${Number(c.lengthM.toFixed(3))} m`,
         c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—",
       ],
       cableColX,
       i % 2 === 1,
     )
   })
+
+  if (data.harnessSlots.length) {
+    sectionTitle("M7200 Harness Slots")
+    for (const slot of data.harnessSlots) row(slot.label, `${slot.model ?? "empty"}${slot.model ? ` · ${harnessLengthLabel(slot)}` : ""}`)
+  }
 
   // ─── System Weight Estimate ───
   if (systemWeightKg > 0) {

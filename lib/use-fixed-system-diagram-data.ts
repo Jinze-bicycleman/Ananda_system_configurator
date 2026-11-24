@@ -1,5 +1,7 @@
 "use client"
 
+import { cableValue } from "@/lib/cable-connections"
+
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useMotors, useDisplays, useBatteries, useSpeedSensors, resolveImageUrl, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { aAccessories, aRemotes } from "@/lib/ananda-data"
@@ -173,7 +175,7 @@ export function useFixedSystemDiagramData(): FixedDiagramData {
     return cable ? `${cable.connector_model} · ${cable.pin_count}-pin` : null
   }
   const storedLengthMm = (storeKey: string): number | null => {
-    const storedM = s.cableLengths[storeKey]
+    const storedM = cableValue(s.cableLengths, storeKey)
     return storedM != null ? Math.round(storedM * 1000) : null
   }
 
