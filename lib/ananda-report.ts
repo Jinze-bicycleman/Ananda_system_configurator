@@ -10,7 +10,7 @@ import { useAnandaStore, hasThirdPartySupplier, thirdPartyModelOf, sellRegionNam
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cableValue } from "./cable-connections"
-import { supportsSeries7000Harness, resolveSeries7000Harness, harnessLengthLabel } from "./m7200-harness"
+import { supportsSeries7000Harness, resolveSeries7000Harness, resolveHarnessCableSections, harnessLengthLabel } from "./m7200-harness"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
@@ -45,7 +45,7 @@ export function thirdPartyValue(supplier: string, model = "") {
 export interface CableRow {
   connection: string
   connector: string
-  pins: number
+  pins: number | null
   cableType: string
   lengthM: number | null
   /** Optional extension cable length (m), only present if the user added one for this connection. */
@@ -98,23 +98,20 @@ export function useReportData(config?: AnandaConfig) {
   // connection's default length when the user hasn't edited it.
   const cablePresetList = s.driveType === "hub" ? cablePresets.hub : CABLE_SPECS
   const harnessSlots = supportsSeries7000Harness(s, motor) ? resolveSeries7000Harness(s, { display, battery, speedSensor }) : []
-  const sensorLeadMm = harnessSlots.find(slot => slot.id === "speedSensor")?.lengthMm ?? null
-  const cableRows: CableRow[] = cablePresetList.filter(c => {
-    if (!harnessSlots.length) return true
-    if (c.connection === "Battery → Motor unit") return false // P1 is a cable-free docking interface.
-    if (c.connection === "Display → Motor unit") return !!harnessSlots.find(slot => slot.id === "hmi")?.model
-    if (c.connection === "Speed sensor → Motor unit") return !!harnessSlots.find(slot => slot.id === "speedSensor")?.model
-    return true
-  }).map((c) => ({
-    connection: c.connection,
-    connector: c.connector,
-    pins: c.pins,
-    cableType: c.cableType,
-    lengthM: harnessSlots.length && c.connection === "Speed sensor → Motor unit"
-      ? sensorLeadMm === null ? null : sensorLeadMm / 1000
-      : harnessSlots.length && c.connection === "Display → Motor unit"
-        ? cableValue(s.cableLengths, c.connection) ?? null
-        : cableValue(s.cableLengths, c.connection) ?? c.defaultLength,
+  const harnessSections = harnessSlots.length ? resolveHarnessCableSections(s, harnessSlots) : []
+  const cableRows: CableRow[] = harnessSections.length ? harnessSections.map(section => {
+    const spec = CABLE_SPECS.find(c => c.connection === section.connection)
+    return {
+      connection: section.label,
+      connector: section.id === "speedSensor" ? speedSensor?.connector_type ?? "—" : spec?.connector ?? "—",
+      pins: spec?.pins ?? null,
+      cableType: "Harness cable",
+      lengthM: section.lengthMm == null ? null : section.lengthMm / 1000,
+      extensionLengthM: cableValue(s.extensionCableLengths, section.connection) ?? null,
+    }
+  }) : cablePresetList.map(c => ({
+    connection: c.connection, connector: c.connector, pins: c.pins, cableType: c.cableType,
+    lengthM: cableValue(s.cableLengths, c.connection) ?? c.defaultLength,
     extensionLengthM: cableValue(s.extensionCableLengths, c.connection) ?? null,
   }))
 
@@ -231,6 +228,7 @@ export function useReportData(config?: AnandaConfig) {
     isMid,
     cableRows,
     harnessSlots,
+    harnessSections,
     thirdPartyItems,
     climbing,
     scopeOfSupplyItems,
@@ -463,7 +461,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
       [
         c.connection,
         c.connector,
-        String(c.pins),
+        c.pins == null ? "—" : String(c.pins),
         c.cableType,
         c.lengthM == null ? "Unspecified" : `${Number(c.lengthM.toFixed(3))} m`,
         c.extensionLengthM != null ? `+${c.extensionLengthM.toFixed(2)} m` : "—",
@@ -472,6 +470,9 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
       i % 2 === 1,
     )
   })
+
+  const sensorSection = data.harnessSections.find(section => section.id === "speedSensor")
+  if (sensorSection?.catalogLengthMm != null) paragraph(`Catalog sensor lead: ${sensorSection.catalogLengthMm} mm. The configured P5 section length is listed in the cable specification.`)
 
   if (data.harnessSlots.length) {
     sectionTitle(`${motor?.model ?? "7000 Series"} Harness Slots`)

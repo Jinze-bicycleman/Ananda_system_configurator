@@ -4,19 +4,11 @@ import type { CSSProperties } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
-import { harnessLengthLabel, type HarnessSlot } from "@/lib/m7200-harness"
+import type { HarnessCableSection } from "@/lib/m7200-harness"
+import { HarnessSectionLengthEditor } from "./harness-section-length-editor"
 import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
 import { CableEditor } from "../bike-overview/cable-editor"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-
-// Centres of the red annotation boxes, in the unchanged SVG coordinate system.
-const CABLE_LENGTH_AREAS: Record<string, { x: number; y: number; width: number }> = {
-  hmi: { x: 3420, y: 235, width: 630 },
-  rearLight: { x: 3340, y: 1655, width: 630 },
-  speedSensor: { x: 3235, y: 2995, width: 630 },
-  battery: { x: 4060, y: 6020, width: 630 },
-  cage: { x: 3345, y: 6650, width: 630 },
-}
 
 const position = (x: number, y: number, width: number): CSSProperties => ({
   position: "absolute", left: `${x / 6468 * 100}%`, top: `${y / 7288 * 100}%`,
@@ -28,33 +20,31 @@ export function Series7000HarnessMap() {
   const projectName = useProjectsStore(state => state.projects.find(project => project.id === state.activeProjectId)?.name)
   const brandName = useProjectsStore(state => state.brandName)
   // The report owns the slot data for both this drawing and exported reports.
-  const { harnessSlots, motor } = useReportData()
+  const { harnessSlots, harnessSections, motor } = useReportData()
   const diagramTitle = `${motor?.model ?? "7000 series"} harness map`
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")
-  const hmi = harnessSlots.find(slot => slot.id === "hmi")
-  const length = (slot: HarnessSlot) => {
-    if (!slot.model) return null
-    const label = harnessLengthLabel(slot)
-    return slot.editable && hmiCable ? (
+  const length = (section: HarnessCableSection) => {
+    const label = section.lengthMm == null ? "Set length" : `${section.lengthMm} mm`
+    return (
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" aria-label={`Edit ${slot.label} cable length: ${label}`}
+          <button type="button" aria-label={`Edit ${section.label} length: ${label}`}
             className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
             {label}
           </button>
         </PopoverTrigger>
         <PopoverContent align="center" collisionPadding={16} className="max-h-[80vh] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto p-0">
-          <CableEditor cable={hmiCable} />
+          {section.id === "hmi" && hmiCable ? <CableEditor cable={hmiCable} /> : <HarnessSectionLengthEditor section={section} />}
         </PopoverContent>
       </Popover>
-    ) : <span className="inline-block rounded bg-white px-2 py-1 text-slate-700" aria-label={`${slot.label}: ${label} (read-only)`}>{label}</span>
+    )
   }
 
   return (
     <section aria-label={diagramTitle} className="space-y-3">
       <h3 className="text-base font-semibold">{diagramTitle}</h3>
-      <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the length above the HMI cable to edit it. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
+      <p className="text-sm text-muted-foreground">Select a length above any of the five cable sections to edit it. Cable specifications are saved separately from component selections. Scroll horizontally to inspect the drawing.</p>
       <div className="overflow-x-auto border border-border" tabIndex={0} role="region" aria-label={`Scrollable ${motor?.model ?? "7000 series"} harness drawing`}>
         <div className="relative w-full min-w-[1600px]" style={{ aspectRatio: "6468 / 7288", containerType: "inline-size" }}>
           {/* Preserve the approved artwork as an external, unmodified image. */}
@@ -70,21 +60,15 @@ export function Series7000HarnessMap() {
                   className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 text-slate-900 outline-offset-2 focus-visible:outline-2 focus-visible:outline-green-800">
                   <span className="min-w-0 flex-1 break-words font-semibold">{slot.model ?? "empty"}</span>
                 </div>
-                {slot.model && CABLE_LENGTH_AREAS[slot.id] && (
-                  <div data-harness-length-for={slot.id}
-                    style={position(CABLE_LENGTH_AREAS[slot.id].x, CABLE_LENGTH_AREAS[slot.id].y, CABLE_LENGTH_AREAS[slot.id].width)}
-                    className="text-center">
-                    {slot.id === "hmi" && <span className="mb-1 block bg-white text-slate-600">HMI cable</span>}
-                    {length(slot)}
-                  </div>
-                )}
               </div>
             ))}
-            {/* The HMI editor controls the named Display → Motor route, not the shared P2 trunk. */}
-            {!hmi?.model && harnessSlots.some(slot => slot.id === "frontLight" && slot.model) && (
-              <p style={position(3420, 235, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P2 cable mapping pending</p>
-            )}
-            <p style={position(3370, 4300, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P3 cable mapping pending</p>
+            {harnessSections.map(section => (
+              <div key={section.id} data-harness-length-for={section.id} style={position(section.x, section.y, 630)} className="text-center">
+                <span className="mb-1 block bg-white text-slate-600">{section.label.slice(0, 2)} cable</span>
+                {length(section)}
+              </div>
+            ))}
+            <p style={position(4060, 6020, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">Docking interface · no cable</p>
             <dl style={{ ...position(1200, 6280, 2050), fontSize: "0.98cqw" }} className="space-y-3 rounded bg-[#bdd5bc] p-4 text-slate-900">
               <dt className="font-bold">Project specification</dt>
               {[["Project", projectName], ["Brand", brandName], ["Motor", motor?.model], ["Bike", s.bikeCategory], ["Market", s.customSellRegion || s.sellRegion], ["Voltage", s.voltagePlatform ? `${s.voltagePlatform} V` : null], ["Rated power", (s.ratedPowerW ?? motor?.rated_power_w) ? `${s.ratedPowerW ?? motor?.rated_power_w} W` : null], ["Wheel", s.wheelSize]].map(([label, value]) => (

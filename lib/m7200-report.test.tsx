@@ -43,13 +43,32 @@ function report(config = useAnandaStore.getState()) {
 
 afterEach(() => vi.restoreAllMocks())
 describe("7000-series shared report and PDF", () => {
+  it("exports all five independent edits, including empty component sections", async () => {
+    useAnandaStore.setState({ ...defaultState, driveType: "mid", motorId: "m", speedSensorId: "s" })
+    const values = [1370, 450, 1200, 900, 650]
+    const initial = report()
+    initial.harnessSections.forEach((section, index) => useAnandaStore.getState().setCableLength(section.connection, values[index] / 1000, "custom"))
+    const data = report()
+    expect(data.harnessSections.map(section => section.lengthMm)).toEqual(values)
+    expect(data.harnessSections[2].catalogLengthMm).toBe(850)
+    expect(data.cableRows.map(row => row.lengthM)).toEqual(values.map(mm => mm / 1000))
+    const map = renderToStaticMarkup(<Series7000HarnessMap />)
+    expect(map.match(/aria-label="Edit P[1-5][^"]*length:/g)).toHaveLength(5)
+    expect(map).toContain("P4 Rear Light / turn signals: empty")
+    expect(map).not.toContain("mm · fixed")
+    const screen = renderToStaticMarkup(<Step7Report />)
+    expect(screen).toContain("0.45 m")
+    expect(screen).toContain("1.2 m")
+    await generateReportPdf(data)
+    for (const mm of values) expect(captured.pdf).toContain(`${mm / 1000} m`)
+  })
   it.each([["m7100", "M7100"], ["m", "M7200"], ["m7600", "M7600"]])("carries %s saved HMI lengths through map, Step 7 and PDF", async (motorId, model) => {
     useAnandaStore.setState({ ...defaultState, driveType: "mid", motorId, displayId: "d", batteryId: "b", speedSensorId: "s", cableLengths: { "Display → Motor Unit": 1.235 } })
     expect(report().harnessSlots[0].lengthMm).toBe(1235)
     useAnandaStore.getState().setCableLength("Display → Motor unit", 1.37, "custom")
     const data = report()
-    expect(data.cableRows.find(c => c.connection === "Display → Motor unit")?.lengthM).toBe(1.37)
-    expect(data.cableRows.find(c => c.connection === "Speed sensor → Motor unit")?.lengthM).toBe(.85)
+    expect(data.cableRows.find(c => c.connection.startsWith("P2 "))?.lengthM).toBe(1.37)
+    expect(data.cableRows.find(c => c.connection.startsWith("P5 "))?.lengthM).toBe(.85)
     expect(data.cableRows.some(c => c.connection === "Battery → Motor unit")).toBe(false)
     const screen = renderToStaticMarkup(<Step7Report />)
     expect(screen).toContain(`${model} Harness Slots`)
@@ -63,7 +82,7 @@ describe("7000-series shared report and PDF", () => {
     expect(map).toContain("P2 Brake 1: empty")
     // Editing belongs to the cable overlay; the right-hand component slot is a label only.
     expect(map).toMatch(/data-harness-length-for="hmi"[^>]*style="[^"]*left:52\.875/)
-    expect(map).toMatch(/data-harness-length-for="hmi"[\s\S]*?<button[^>]*aria-label="Edit P2 Display \/ HMI cable length: 1370 mm"/)
+    expect(map).toMatch(/data-harness-length-for="hmi"[\s\S]*?<button[^>]*aria-label="Edit P2 HMI \/ light \/ brake cable length: 1370 mm"/)
     const componentSlot = map.match(/data-harness-component-for="hmi"[\s\S]*?<\/div>/)?.[0]
     expect(componentSlot).toContain("D16")
     expect(componentSlot).not.toContain("<button")
@@ -78,7 +97,7 @@ describe("7000-series shared report and PDF", () => {
   it("omits the skipped sensor length in the summary and has no harness for another motor", () => {
     const data = report({ ...defaultState, driveType: "mid", motorId: "m", speedSensorId: "s", skippedItems: ["speedSensorId"] } as ReturnType<typeof useAnandaStore.getState>)
     expect(data.harnessSlots.find(slot => slot.id === "speedSensor")?.model).toBeNull()
-    expect(data.cableRows.find(c => c.connection === "Speed sensor → Motor unit")?.lengthM).toBeUndefined()
+    expect(data.cableRows.find(c => c.connection.startsWith("P5 "))?.lengthM).toBeNull()
     expect(report({ ...defaultState, driveType: "mid", motorId: "other" } as ReturnType<typeof useAnandaStore.getState>).harnessSlots).toEqual([])
     expect(report({ ...defaultState, driveType: "hub", motorId: "m" } as ReturnType<typeof useAnandaStore.getState>).harnessSlots).toEqual([])
   })
