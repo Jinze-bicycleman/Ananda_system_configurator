@@ -61,6 +61,13 @@ describe("7000-series shared report and PDF", () => {
     expect(map).toContain("1370 mm")
     expect(map).toContain('width="6468" height="7288"')
     expect(map).toContain("P2 Brake 1: empty")
+    // Editing belongs to the cable overlay; the right-hand component slot is a label only.
+    expect(map).toMatch(/data-harness-length-for="hmi"[^>]*style="[^"]*left:52\.875/)
+    expect(map).toMatch(/data-harness-length-for="hmi"[\s\S]*?<button[^>]*aria-label="Edit P2 Display \/ HMI cable length: 1370 mm"/)
+    const componentSlot = map.match(/data-harness-component-for="hmi"[\s\S]*?<\/div>/)?.[0]
+    expect(componentSlot).toContain("D16")
+    expect(componentSlot).not.toContain("<button")
+    expect(map).toContain('data-harness-length-for="speedSensor"')
     await generateReportPdf(data, { projectName: "Harness verification" })
     expect(captured.pdf).toContain(`${model} HARNESS SLOTS`)
     expect(captured.pdf).toContain("1.37 m")

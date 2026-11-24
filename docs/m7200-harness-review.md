@@ -37,3 +37,7 @@ No shared accessory length is copied to individual branches. No catalog cable is
 Live Supabase catalog verification was unavailable because this checkout contains no Supabase environment configuration. Fixtures are isolated to tests; no demo product data was added to application code. Existing BikeOverview controls remain intact, including its separately modeled power/sensor routes; their reference/default lengths do not redefine 7000-series docking or the catalog-fixed P5 lead.
 
 The scope expansion has parameterized render/PDF tests for all three models, plus an unsupported M8000 and hub exclusion check. The original browser verification above describes the initial M7200-only scope.
+
+## Cable overlay placement update
+
+Length displays and the HMI editor now sit over the cable drawing in the red-box areas supplied in `m7200-harness-map with red boxes note.png`. Right-hand slots contain component names only. The P2 editor remains explicitly labeled HMI cable and continues to update the verified Display → Motor route; it does not introduce a shared-trunk cable assignment. P5 remains catalog-fixed, P1 docking remains cable-free, and unverified P3/rear-light/cage mappings stay non-editable. Empty component slots have no associated length overlay. The SVG is unchanged.

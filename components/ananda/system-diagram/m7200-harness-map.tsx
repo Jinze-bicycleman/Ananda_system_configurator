@@ -9,6 +9,15 @@ import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
 import { CableEditor } from "../bike-overview/cable-editor"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
+// Centres of the red annotation boxes, in the unchanged SVG coordinate system.
+const CABLE_LENGTH_AREAS: Record<string, { x: number; y: number; width: number }> = {
+  hmi: { x: 3420, y: 235, width: 630 },
+  rearLight: { x: 3340, y: 1655, width: 630 },
+  speedSensor: { x: 3235, y: 2995, width: 630 },
+  battery: { x: 4060, y: 6020, width: 630 },
+  cage: { x: 3345, y: 6650, width: 630 },
+}
+
 const position = (x: number, y: number, width: number): CSSProperties => ({
   position: "absolute", left: `${x / 6468 * 100}%`, top: `${y / 7288 * 100}%`,
   width: `${width / 6468 * 100}%`, transform: "translate(-50%, -50%)",
@@ -26,7 +35,7 @@ export function Series7000HarnessMap() {
   const lengthButtonRef = useRef<HTMLButtonElement>(null)
   const [editorOpen, setEditorOpen] = useState(false)
   const hmi = harnessSlots.find(slot => slot.id === "hmi")
-  const length = (slot: HarnessSlot, inSlot = false) => {
+  const length = (slot: HarnessSlot) => {
     if (!slot.model) return null
     const label = harnessLengthLabel(slot)
     return slot.editable && hmiCable ? (
@@ -34,13 +43,13 @@ export function Series7000HarnessMap() {
         className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
         {label}
       </button>
-    ) : <span className={inSlot ? "text-right text-slate-600" : "rounded bg-white px-2 py-1 text-slate-700"}>{label}</span>
+    ) : <span className="inline-block rounded bg-white px-2 py-1 text-slate-700" aria-label={`${slot.label}: ${label} (read-only)`}>{label}</span>
   }
 
   return (
     <section aria-label={diagramTitle} className="space-y-3">
       <h3 className="text-base font-semibold">{diagramTitle}</h3>
-      <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the HMI length to edit it. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
+      <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the length above the HMI cable to edit it. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
       <div className="overflow-x-auto border border-border" tabIndex={0} role="region" aria-label={`Scrollable ${motor?.model ?? "7000 series"} harness drawing`}>
         <div className="relative w-full min-w-[1600px]" style={{ aspectRatio: "6468 / 7288", containerType: "inline-size" }}>
           {/* Preserve the approved artwork as an external, unmodified image. */}
@@ -52,18 +61,25 @@ export function Series7000HarnessMap() {
             ))}
             {harnessSlots.map(slot => (
               <div key={slot.id}>
-                <div style={{ ...position(slot.x, slot.y, slot.width), minHeight: "2.4cqw" }} tabIndex={0} aria-label={`${slot.label}: ${slot.model ?? "empty"}`}
+                <div style={{ ...position(slot.x, slot.y, slot.width), minHeight: "2.4cqw" }} tabIndex={0} data-harness-component-for={slot.id} aria-label={`${slot.label}: ${slot.model ?? "empty"}`}
                   className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 text-slate-900 outline-offset-2 focus-visible:outline-2 focus-visible:outline-green-800">
                   <span className="min-w-0 flex-1 break-words font-semibold">{slot.model ?? "empty"}</span>
-                  {!slot.lengthAnchor && slot.model && slot.id !== "battery" && length(slot, true)}
                 </div>
-                {slot.model && slot.lengthAnchor && <div style={position(...slot.lengthAnchor, 1170)} className="text-center">{length(slot)}</div>}
-                {slot.id === "battery" && slot.model && <div style={position(3398, 5593, 1170)} className="text-center">{length(slot)}</div>}
+                {slot.model && CABLE_LENGTH_AREAS[slot.id] && (
+                  <div data-harness-length-for={slot.id}
+                    style={position(CABLE_LENGTH_AREAS[slot.id].x, CABLE_LENGTH_AREAS[slot.id].y, CABLE_LENGTH_AREAS[slot.id].width)}
+                    className="text-center">
+                    {slot.id === "hmi" && <span className="mb-1 block bg-white text-slate-600">HMI cable</span>}
+                    {length(slot)}
+                  </div>
+                )}
               </div>
             ))}
-            {/* No store connection identifies the shared P2 or P3 trunk. */}
-            <p style={position(2826, 266, 1200)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P2 trunk · mapping pending</p>
-            <p style={position(3050, 4454, 1200)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P3 trunk · mapping pending</p>
+            {/* The HMI editor controls the named Display → Motor route, not the shared P2 trunk. */}
+            {!hmi?.model && harnessSlots.some(slot => slot.id === "frontLight" && slot.model) && (
+              <p style={position(3420, 235, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P2 cable mapping pending</p>
+            )}
+            <p style={position(3370, 4300, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">P3 cable mapping pending</p>
             <dl style={{ ...position(1200, 6280, 2050), fontSize: "0.98cqw" }} className="space-y-3 rounded bg-[#bdd5bc] p-4 text-slate-900">
               <dt className="font-bold">Project specification</dt>
               {[["Project", projectName], ["Brand", brandName], ["Motor", motor?.model], ["Bike", s.bikeCategory], ["Market", s.customSellRegion || s.sellRegion], ["Voltage", s.voltagePlatform ? `${s.voltagePlatform} V` : null], ["Rated power", (s.ratedPowerW ?? motor?.rated_power_w) ? `${s.ratedPowerW ?? motor?.rated_power_w} W` : null], ["Wheel", s.wheelSize]].map(([label, value]) => (
