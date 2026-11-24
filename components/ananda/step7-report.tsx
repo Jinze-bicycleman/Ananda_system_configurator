@@ -103,6 +103,7 @@ export function Step7Report() {
     isMid,
     cableRows,
     harnessSlots,
+    harnessSections,
     thirdPartyItems,
     climbing,
     scopeOfSupplyItems,
@@ -263,6 +264,10 @@ export function Step7Report() {
         {harnessSlots.map(slot => <Row key={slot.id} label={slot.label} value={slot.model ? `${slot.model} · ${harnessLengthLabel(slot)}` : "empty"} />)}
       </ReportSection>}
 
+      {harnessSections.find(section => section.id === "speedSensor")?.catalogLengthMm != null && <p className="mb-3 text-xs text-muted-foreground">
+        Catalog sensor lead: {harnessSections.find(section => section.id === "speedSensor")!.catalogLengthMm} mm. The configured P5 section length is listed separately below.
+      </p>}
+
       {/* ─── Cable & Harness Specification ─── */}
       <ReportSection title="Cable & Harness Specification">
         <div className="overflow-x-auto -mx-1">
@@ -279,7 +284,7 @@ export function Step7Report() {
                 <tr key={c.connection} className={i % 2 === 0 ? "bg-card" : "bg-surface"}>
                   <td className="px-3 py-2 font-semibold text-foreground">{t(c.connection)}</td>
                   <td className="px-3 py-2 text-muted-foreground">{t(c.connector)}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground">{c.pins}</td>
+                  <td className="px-3 py-2 font-semibold text-foreground">{c.pins ?? "—"}</td>
                   <td className="px-3 py-2 text-muted-foreground">{t(c.cableType)}</td>
                   <td className="px-3 py-2 font-semibold text-primary">{c.lengthM == null ? t("Unspecified") : `${Number(c.lengthM.toFixed(3))} m`}</td>
                   <td className="px-3 py-2 text-muted-foreground">

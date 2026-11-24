@@ -2,12 +2,30 @@ import { describe, expect, it } from "vitest"
 import { defaultState, useAnandaStore } from "./ananda-store"
 import { useProjectsStore } from "./ananda-projects"
 import { cableValue, HMI_CONNECTION } from "./cable-connections"
-import { harnessLengthLabel, supportsSeries7000Harness, resolveSeries7000Harness } from "./m7200-harness"
+import { harnessLengthLabel, supportsSeries7000Harness, resolveSeries7000Harness, resolveHarnessCableSections } from "./m7200-harness"
 
 const products = { display: { model: "D16" }, battery: { model: "BT01" }, speedSensor: { model: "SR01", cable_length_mm: 850 } }
 const config = () => ({ ...defaultState, driveType: "mid" as const, motorId: "catalog-uuid", displayId: "d", batteryId: "b", speedSensorId: "s", accessoryIds: ["ACC-FL", "ACC-RL", "ACC-TH01"] })
 
 describe("7000-series harness selection and cable boundary", () => {
+  it("saves and reloads five independent section lengths without changing the catalog", () => {
+    useAnandaStore.setState({ ...config(), cableLengths: {} })
+    const sections = resolveHarnessCableSections(useAnandaStore.getState(), resolveSeries7000Harness(config(), products))
+    const lengths = [1.1, 0.45, 1.2, 0.9, 0.65]
+    sections.forEach((section, i) => useAnandaStore.getState().setCableLength(section.connection, lengths[i], "custom"))
+    const id = "five-sections"
+    useProjectsStore.setState({ activeProjectId: id, projects: [{ id, name: "Five cables", createdAt: 0, updatedAt: 0, config: config() }] })
+    useProjectsStore.getState().saveActive()
+    useAnandaStore.setState({ cableLengths: {} })
+    useProjectsStore.getState().openProject(id)
+    const slots = resolveSeries7000Harness(useAnandaStore.getState(), products)
+    const restored = resolveHarnessCableSections(useAnandaStore.getState(), slots)
+    expect(restored.map(section => section.lengthMm)).toEqual(lengths.map(m => m * 1000))
+    expect(restored[2].catalogLengthMm).toBe(850)
+    expect(slots.find(slot => slot.id === "speedSensor")?.lengthMm).toBe(1200)
+    expect(products.speedSensor.cable_length_mm).toBe(850)
+    expect(harnessLengthLabel(slots.find(slot => slot.id === "battery")!)).toContain("no cable")
+  })
   it("gates on the selected catalog model, including drive type", () => {
     expect(supportsSeries7000Harness(config(), { model: "M7200" })).toBe(true)
     expect(supportsSeries7000Harness(config(), { model: "M7100" })).toBe(true)
@@ -29,7 +47,7 @@ describe("7000-series harness selection and cable boundary", () => {
     }
     expect(harnessLengthLabel(slots.find(x => x.id === "battery")!)).toContain("no cable")
   })
-  it("reads fixed sensor lead and hides it when skipped, even with a stale selection", () => {
+  it("reads the catalog sensor lead and hides it when skipped, even with a stale selection", () => {
     expect(resolveSeries7000Harness(config(), products).find(x => x.id === "speedSensor")?.lengthMm).toBe(850)
     const slot = resolveSeries7000Harness({ ...config(), skippedItems: ["speedSensorId"] }, products).find(x => x.id === "speedSensor")!
     expect(slot.model).toBeNull()
