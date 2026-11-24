@@ -10,7 +10,7 @@ import { useAnandaStore, hasThirdPartySupplier, thirdPartyModelOf, sellRegionNam
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
 import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cableValue } from "./cable-connections"
-import { isM7200, resolveM7200Harness, harnessLengthLabel } from "./m7200-harness"
+import { supportsSeries7000Harness, resolveSeries7000Harness, harnessLengthLabel } from "./m7200-harness"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
 import { computeClimbingAbility, resolveWheelRadiusMetres, PEDAL_EFFORT_PRESETS, type MotorType, type ClimbingAbilityResult } from "@/lib/ananda-climbing"
 
@@ -97,7 +97,7 @@ export function useReportData(config?: AnandaConfig) {
   // `s.cableLengths` map by connection name, falling back to each
   // connection's default length when the user hasn't edited it.
   const cablePresetList = s.driveType === "hub" ? cablePresets.hub : CABLE_SPECS
-  const harnessSlots = isM7200(s, motor) ? resolveM7200Harness(s, { display, battery, speedSensor }) : []
+  const harnessSlots = supportsSeries7000Harness(s, motor) ? resolveSeries7000Harness(s, { display, battery, speedSensor }) : []
   const sensorLeadMm = harnessSlots.find(slot => slot.id === "speedSensor")?.lengthMm ?? null
   const cableRows: CableRow[] = cablePresetList.filter(c => {
     if (!harnessSlots.length) return true
@@ -474,7 +474,7 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   })
 
   if (data.harnessSlots.length) {
-    sectionTitle("M7200 Harness Slots")
+    sectionTitle(`${motor?.model ?? "7000 Series"} Harness Slots`)
     for (const slot of data.harnessSlots) row(slot.label, `${slot.model ?? "empty"}${slot.model ? ` · ${harnessLengthLabel(slot)}` : ""}`)
   }
 

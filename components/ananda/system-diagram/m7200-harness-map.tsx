@@ -14,12 +14,13 @@ const position = (x: number, y: number, width: number): CSSProperties => ({
   width: `${width / 6468 * 100}%`, transform: "translate(-50%, -50%)",
 })
 
-export function M7200HarnessMap() {
+export function Series7000HarnessMap() {
   const s = useAnandaStore()
   const projectName = useProjectsStore(state => state.projects.find(project => project.id === state.activeProjectId)?.name)
   const brandName = useProjectsStore(state => state.brandName)
   // The report owns the slot data for both this drawing and exported reports.
   const { harnessSlots, motor } = useReportData()
+  const diagramTitle = `${motor?.model ?? "7000 series"} harness map`
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")
   const lengthButtonRef = useRef<HTMLButtonElement>(null)
@@ -37,14 +38,14 @@ export function M7200HarnessMap() {
   }
 
   return (
-    <section aria-label="M7200 harness map" className="space-y-3">
-      <h3 className="text-base font-semibold">M7200 harness map</h3>
+    <section aria-label={diagramTitle} className="space-y-3">
+      <h3 className="text-base font-semibold">{diagramTitle}</h3>
       <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the HMI length to edit it. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
-      <div className="overflow-x-auto border border-border" tabIndex={0} role="region" aria-label="Scrollable M7200 harness drawing">
+      <div className="overflow-x-auto border border-border" tabIndex={0} role="region" aria-label={`Scrollable ${motor?.model ?? "7000 series"} harness drawing`}>
         <div className="relative w-full min-w-[1600px]" style={{ aspectRatio: "6468 / 7288", containerType: "inline-size" }}>
           {/* Preserve the approved artwork as an external, unmodified image. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/system-diagrams/m7200-harness-map.svg" alt="Approved M7200 wiring artwork. Live component labels and cable lengths are overlaid." width={6468} height={7288} className="absolute inset-0 h-full w-full" />
+          <img src="/system-diagrams/m7200-harness-map.svg" alt={`7000-series wiring artwork for ${motor?.model ?? "the selected motor"}. Live component labels and cable lengths are overlaid. These models share the approved M7200 artwork.`} width={6468} height={7288} className="absolute inset-0 h-full w-full" />
           <div style={{ fontSize: "0.88cqw", lineHeight: 1.25 }}>
             {([["P2 · HMI / brake / front light", 80], ["P4 · Rear light / turn signals", 1518], ["P5 · Speed sensor", 2728], ["P3 · Throttle / gear sensor / IoT", 4015], ["P1 · Battery", 5594]] as const).map(([label, y]) => (
               <h4 key={y} style={position(y === 5594 ? 5510 : 4300, y, y === 5594 ? 1780 : 3900)} className="bg-[#bdd5bc] px-2 text-center font-bold text-slate-900">{label}</h4>

@@ -1,8 +1,10 @@
-# M7200 harness map review
+# 7000-series harness map review
 
-Branch: `codex/m7200-harness-preview`.
+Current preview branch: `codex/7000-series-harness`.
 
-The approved SVG is copied byte-for-byte to `public/system-diagrams/m7200-harness-map.svg`. Step 6 resolves the selected catalog motor model and reveals this map only for a mid-drive M7200, inside the existing confirmation gate. BikeOverview and sourcing controls remain above it. The existing fixed overview remains in a disclosure; other mid-drive models and the hub path retain their existing diagrams.
+Scope update: the shared artwork now covers M7100, M7200 and M7600, as requested. Titles and report headings use the selected catalog motor model. The approved asset filename and bytes are unchanged.
+
+The approved SVG is copied byte-for-byte to `public/system-diagrams/m7200-harness-map.svg`. Step 6 resolves the selected catalog motor model and reveals this map for mid-drive M7100, M7200 and M7600 motors, inside the existing confirmation gate. BikeOverview and sourcing controls remain above it. The existing fixed overview remains in a disclosure; unsupported mid-drive models and the hub path retain their existing diagrams.
 
 ## Length support
 
@@ -14,7 +16,7 @@ The approved SVG is copied byte-for-byte to `public/system-diagrams/m7200-harnes
 | P1 cage to motor | Live derived matching battery cage label; length disabled | Verified cage/harness connection and named cable/length-option relationship |
 | P2/P3 shared trunks | Length disabled | Explicit trunk connection keys and cable mapping |
 | P2 front light and P4 rear light | Live selected accessory labels; lengths disabled | Independent per-branch cable connection keys, compatibility and length options |
-| Brakes, throttle, gear sensor, IoT | Empty without a compatible explicit selection | Slot-specific compatible selections and named cable mappings; current throttle records do not verify M7200 compatibility |
+| Brakes, throttle, gear sensor, IoT | Empty without a compatible explicit selection | Slot-specific compatible selections and named cable mappings; current throttle records do not verify 7000-series compatibility |
 
 No shared accessory length is copied to individual branches. No catalog cable is assigned to the new drawing by row position. Existing overview cable assignment behavior is retained.
 
@@ -22,14 +24,16 @@ No shared accessory length is copied to individual branches. No catalog cable is
 
 `cable-connections.ts` reads both saved HMI spellings. Canonical lowercase `Motor unit` wins if both exist. Edits write the canonical key and remove the obsolete alias for that value; existing project snapshots remain readable without destructive migration. Lengths remain in metres in state; the drawing and slot summary use mm. Report precision now preserves millimetre edits.
 
-`useReportData` supplies the same harness slots to the map, Step 7 and PDF. Empty slot summaries say literal `empty` and have no length. For M7200 cable rows, the speed-sensor length comes from the sensor catalog, empty HMI/sensor rows are omitted, and the cable-free battery docking route is omitted. Other report/export flows remain in place.
+`useReportData` supplies the same harness slots to the map, Step 7 and PDF. Empty slot summaries say literal `empty` and have no length. For these 7000-series cable rows, the speed-sensor length comes from the sensor catalog, empty HMI/sensor rows are omitted, and the cable-free battery docking route is omitted. Other report/export flows remain in place.
 
 ## Verification
 
-- TypeScript check, production Next build and 28 tests.
+- TypeScript check, production Next build and 30 tests.
 - Tests cover saved HMI aliases, canonical precedence, project save/reload after a custom edit, configured and empty slots, stale selections with skipped/third-party flags, fixed sensor leads, and other motor/drive gating.
 - Integration tests render Step 7 and the map and inspect output from the actual jsPDF generator after a 1370 mm edit (1.37 m in the cable table).
-- Browser preview with controlled catalog fixtures: confirmation gate, 1235 mm legacy value, focused custom editor, 1370 mm live update, Step 7 agreement, skipped sensor, M7100 fixed overview, keyboard horizontal scrolling, readable empty slots and lower-left project specification panel. Temporary QA route removed after review.
+- Browser preview with controlled catalog fixtures: confirmation gate, 1235 mm legacy value, focused custom editor, 1370 mm live update, Step 7 agreement, skipped sensor, M7100 fixed overview (before the 7000-series scope expansion), keyboard horizontal scrolling, readable empty slots and lower-left project specification panel. Temporary QA route removed after review.
 - SVG byte equality confirmed with `cmp`.
 
-Live Supabase catalog verification was unavailable because this checkout contains no Supabase environment configuration. Fixtures are isolated to tests; no demo product data was added to application code. Existing BikeOverview controls remain intact, including its separately modeled power/sensor routes; their reference/default lengths do not redefine M7200 docking or the catalog-fixed P5 lead.
+Live Supabase catalog verification was unavailable because this checkout contains no Supabase environment configuration. Fixtures are isolated to tests; no demo product data was added to application code. Existing BikeOverview controls remain intact, including its separately modeled power/sensor routes; their reference/default lengths do not redefine 7000-series docking or the catalog-fixed P5 lead.
+
+The scope expansion has parameterized render/PDF tests for all three models, plus an unsupported M8000 and hub exclusion check. The original browser verification above describes the initial M7200-only scope.

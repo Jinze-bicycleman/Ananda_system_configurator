@@ -2,8 +2,10 @@ import type { AnandaConfig } from "./ananda-store"
 import { aAccessories } from "./ananda-data"
 import { cableValue, HMI_CONNECTION } from "./cable-connections"
 
-export const isM7200 = (s: Pick<AnandaConfig, "driveType">, motor: { model: string } | null) =>
-  s.driveType === "mid" && motor?.model.trim().toUpperCase() === "M7200"
+const SERIES_7000_MODELS = new Set(["M7100", "M7200", "M7600"])
+
+export const supportsSeries7000Harness = (s: Pick<AnandaConfig, "driveType">, motor: { model: string } | null) =>
+  s.driveType === "mid" && motor != null && SERIES_7000_MODELS.has(motor.model.trim().toUpperCase())
 
 export interface HarnessSlot {
   id: string
@@ -19,7 +21,7 @@ export interface HarnessSlot {
 }
 
 type Product = { model: string } | null
-export function resolveM7200Harness(s: AnandaConfig, products: {
+export function resolveSeries7000Harness(s: AnandaConfig, products: {
   display: Product; battery: Product; speedSensor: ({ model: string; cable_length_mm: number | null } | null)
 }): HarnessSlot[] {
   const component = (key: string, product: Product): string | null => {
@@ -40,7 +42,7 @@ export function resolveM7200Harness(s: AnandaConfig, products: {
     { id: "frontLight", label: "P2 Front Light", x: 5601, y: 970, width: 1250, model: accessory("ACC-FL"), lengthNote: "Length mapping pending" },
     { id: "rearLight", label: "P4 Rear Light / turn signals", x: 5493, y: 1938, width: 1070, model: accessory("ACC-RL"), lengthNote: "Length mapping pending", lengthAnchor: [3328, 1718] },
     { id: "speedSensor", label: "P5 Speed Sensor", x: 5027, y: 3158, width: 1830, model: sensor, lengthMm: sensor && !("speedSensorId" in s.thirdPartySuppliers) ? products.speedSensor?.cable_length_mm ?? null : null, lengthNote: "Lead unspecified · read-only", lengthAnchor: [3218, 3088] },
-    // ACC-TH01 is explicitly hub-only. ACC-THO has no verified M7200 compatibility.
+    // ACC-TH01 is explicitly hub-only. ACC-THO has no verified 7000-series compatibility.
     { id: "throttle", label: "P3 Throttle", x: 5499, y: 4236, width: 1350, model: null },
     { id: "gear", label: "P3 Gear Shift Sensor", x: 5499, y: 4655, width: 1350, model: null },
     { id: "iot", label: "P3 IoT", x: 5499, y: 5081, width: 1350, model: null },

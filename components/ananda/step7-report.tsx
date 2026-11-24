@@ -259,7 +259,7 @@ export function Step7Report() {
         )}
       </ReportSection>
 
-      {harnessSlots.length > 0 && <ReportSection title="M7200 Harness Slots">
+      {harnessSlots.length > 0 && <ReportSection title={`${motor?.model ?? "7000 Series"} Harness Slots`}>
         {harnessSlots.map(slot => <Row key={slot.id} label={slot.label} value={slot.model ? `${slot.model} · ${harnessLengthLabel(slot)}` : "empty"} />)}
       </ReportSection>}
 

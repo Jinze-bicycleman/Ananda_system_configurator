@@ -20,7 +20,7 @@ vi.mock("./ananda-store", async (importOriginal) => {
 })
 vi.mock("./ananda-packages", async (importOriginal) => ({
   ...await importOriginal<typeof import("./ananda-packages")>(),
-  useMotors: () => ({ motors: [{ id: "m", model: "M7200", voltage_v: 36 }], isLoading: false }),
+  useMotors: () => ({ motors: [{ id: "m", model: "M7200", voltage_v: 36 }, { id: "m7100", model: "M7100", voltage_v: 36 }, { id: "m7600", model: "M7600", voltage_v: 36 }, { id: "other", model: "M8000", voltage_v: 36 }], isLoading: false }),
   useDisplays: () => ({ displays: [{ id: "d", model: "D16" }], isLoading: false }),
   useBatteries: () => ({ batteries: [{ id: "b", model: "BT01" }], isLoading: false }),
   useSpeedSensors: () => ({ speedSensors: [{ id: "s", model: "SR01", cable_length_mm: 850 }], isLoading: false }),
@@ -32,7 +32,7 @@ vi.mock("./i18n/provider", () => ({ useT: () => (text: string) => text }))
 vi.mock("./bike-overview/use-cable-profiles", () => ({ useCableProfiles: () => null }))
 import { generateReportPdf, useReportData, type ReportData } from "./ananda-report"
 import { Step7Report } from "../components/ananda/step7-report"
-import { M7200HarnessMap } from "../components/ananda/system-diagram/m7200-harness-map"
+import { Series7000HarnessMap } from "../components/ananda/system-diagram/m7200-harness-map"
 
 function report(config = useAnandaStore.getState()) {
   let data!: ReportData
@@ -42,9 +42,9 @@ function report(config = useAnandaStore.getState()) {
 }
 
 afterEach(() => vi.restoreAllMocks())
-describe("M7200 shared report and PDF", () => {
-  it("carries a legacy saved HMI length through map, Step 7 and the real PDF generator", async () => {
-    useAnandaStore.setState({ ...defaultState, driveType: "mid", motorId: "m", displayId: "d", batteryId: "b", speedSensorId: "s", cableLengths: { "Display → Motor Unit": 1.235 } })
+describe("7000-series shared report and PDF", () => {
+  it.each([["m7100", "M7100"], ["m", "M7200"], ["m7600", "M7600"]])("carries %s saved HMI lengths through map, Step 7 and PDF", async (motorId, model) => {
+    useAnandaStore.setState({ ...defaultState, driveType: "mid", motorId, displayId: "d", batteryId: "b", speedSensorId: "s", cableLengths: { "Display → Motor Unit": 1.235 } })
     expect(report().harnessSlots[0].lengthMm).toBe(1235)
     useAnandaStore.getState().setCableLength("Display → Motor unit", 1.37, "custom")
     const data = report()
@@ -52,14 +52,17 @@ describe("M7200 shared report and PDF", () => {
     expect(data.cableRows.find(c => c.connection === "Speed sensor → Motor unit")?.lengthM).toBe(.85)
     expect(data.cableRows.some(c => c.connection === "Battery → Motor unit")).toBe(false)
     const screen = renderToStaticMarkup(<Step7Report />)
+    expect(screen).toContain(`${model} Harness Slots`)
     expect(screen).toContain("1370 mm")
     expect(screen).toContain("1.37 m")
     expect(screen).toContain("empty")
-    const map = renderToStaticMarkup(<M7200HarnessMap />)
+    const map = renderToStaticMarkup(<Series7000HarnessMap />)
+    expect(map).toContain(`${model} harness map`)
     expect(map).toContain("1370 mm")
     expect(map).toContain('width="6468" height="7288"')
     expect(map).toContain("P2 Brake 1: empty")
     await generateReportPdf(data, { projectName: "Harness verification" })
+    expect(captured.pdf).toContain(`${model} HARNESS SLOTS`)
     expect(captured.pdf).toContain("1.37 m")
     expect(captured.pdf).toContain("1370 mm")
     expect(captured.pdf).toContain("850 mm")
@@ -69,6 +72,7 @@ describe("M7200 shared report and PDF", () => {
     const data = report({ ...defaultState, driveType: "mid", motorId: "m", speedSensorId: "s", skippedItems: ["speedSensorId"] } as ReturnType<typeof useAnandaStore.getState>)
     expect(data.harnessSlots.find(slot => slot.id === "speedSensor")?.model).toBeNull()
     expect(data.cableRows.find(c => c.connection === "Speed sensor → Motor unit")?.lengthM).toBeUndefined()
+    expect(report({ ...defaultState, driveType: "mid", motorId: "other" } as ReturnType<typeof useAnandaStore.getState>).harnessSlots).toEqual([])
     expect(report({ ...defaultState, driveType: "hub", motorId: "m" } as ReturnType<typeof useAnandaStore.getState>).harnessSlots).toEqual([])
   })
 })
