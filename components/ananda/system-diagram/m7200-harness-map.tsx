@@ -1,13 +1,13 @@
 "use client"
 
-import { useRef, useState, type CSSProperties } from "react"
+import type { CSSProperties } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
 import { harnessLengthLabel, type HarnessSlot } from "@/lib/m7200-harness"
 import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
 import { CableEditor } from "../bike-overview/cable-editor"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const position = (x: number, y: number, width: number): CSSProperties => ({
   position: "absolute", left: `${x / 6468 * 100}%`, top: `${y / 7288 * 100}%`,
@@ -23,24 +23,28 @@ export function Series7000HarnessMap() {
   const diagramTitle = `${motor?.model ?? "7000 series"} harness map`
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")
-  const lengthButtonRef = useRef<HTMLButtonElement>(null)
-  const [editorOpen, setEditorOpen] = useState(false)
-  const hmi = harnessSlots.find(slot => slot.id === "hmi")
   const length = (slot: HarnessSlot, inSlot = false) => {
     if (!slot.model) return null
     const label = harnessLengthLabel(slot)
     return slot.editable && hmiCable ? (
-      <button ref={lengthButtonRef} type="button" onClick={() => setEditorOpen(true)} aria-label={`Edit ${slot.label} cable length: ${label}`}
-        className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
-        {label}
-      </button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" aria-label={`Edit ${slot.label} cable length: ${label}`}
+            className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
+            {label}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="center" collisionPadding={16} className="max-h-[80vh] w-[min(34rem,calc(100vw-2rem))] overflow-y-auto p-0">
+          <CableEditor cable={hmiCable} />
+        </PopoverContent>
+      </Popover>
     ) : <span className={inSlot ? "text-right text-slate-600" : "rounded bg-white px-2 py-1 text-slate-700"}>{label}</span>
   }
 
   return (
     <section aria-label={diagramTitle} className="space-y-3">
       <h3 className="text-base font-semibold">{diagramTitle}</h3>
-      <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the HMI length to edit it. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
+      <p className="text-sm text-muted-foreground">Scroll horizontally to inspect the drawing. Select the underlined HMI length on the map to edit it in place. Empty slots have no length. Independent branch lengths await verified cable mappings.</p>
       <div className="overflow-x-auto border border-border" tabIndex={0} role="region" aria-label={`Scrollable ${motor?.model ?? "7000 series"} harness drawing`}>
         <div className="relative w-full min-w-[1600px]" style={{ aspectRatio: "6468 / 7288", containerType: "inline-size" }}>
           {/* Preserve the approved artwork as an external, unmodified image. */}
@@ -73,12 +77,6 @@ export function Series7000HarnessMap() {
           </div>
         </div>
       </div>
-      <Dialog open={editorOpen && !!hmi?.editable} onOpenChange={setEditorOpen}>
-        <DialogContent onCloseAutoFocus={event => { event.preventDefault(); lengthButtonRef.current?.focus() }} className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader><DialogTitle>P2 Display / HMI cable length</DialogTitle><DialogDescription>Changes save to the project cable specification in metres and appear here in mm.</DialogDescription></DialogHeader>
-          {hmiCable && <CableEditor key={editorOpen ? "open" : "closed"} cable={hmiCable} />}
-        </DialogContent>
-      </Dialog>
     </section>
   )
 }

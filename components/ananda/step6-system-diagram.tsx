@@ -471,6 +471,22 @@ export function Step6SystemDiagram() {
     remote: "R1 / R2 / R3",
   }
 
+  if (driveType === "mid" && supportsSeries7000Harness(s, motor)) {
+    return (
+      <div>
+        <StepHeader
+          step={6}
+          title={t("System Overview")}
+          subtitle={t("Review the harness map and select a cable length on the map to edit it.")}
+        />
+
+        <ConnectorSourcingPrompt />
+
+        <Series7000HarnessMap />
+      </div>
+    )
+  }
+
   if (driveType === "mid") {
     return (
       <div>
@@ -485,10 +501,7 @@ export function Step6SystemDiagram() {
         <BikeOverview />
 
         <ViewDiagramGate>
-          {supportsSeries7000Harness(s, motor) ? <div className="space-y-6">
-            <Series7000HarnessMap />
-            <details className="border border-border p-4"><summary className="cursor-pointer text-sm font-semibold">System overview</summary><div className="mt-4"><FixedSystemDiagram /></div></details>
-          </div> : <FixedSystemDiagram />}
+          <FixedSystemDiagram />
         </ViewDiagramGate>
       </div>
     )
