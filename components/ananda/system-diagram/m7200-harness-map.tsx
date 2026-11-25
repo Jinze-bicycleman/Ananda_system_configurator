@@ -18,6 +18,24 @@ const position = (x: number, y: number, width: number): CSSProperties => ({
   width: `${width / 6468 * 100}%`, transform: "translate(-50%, -50%)",
 })
 
+type ReportParts = ReturnType<typeof useReportData>
+
+const joinDetails = (parts: (string | null | undefined | false)[]) => parts.filter(Boolean).join(" · ")
+
+/** Chosen components with a one-line spec summary, taken from the same scope-of-supply list the report uses. */
+function componentSummary(r: Pick<ReportParts, "motor" | "display" | "battery" | "charger" | "chargingPort" | "controller" | "speedSensorModel" | "scopeOfSupplyItems" | "isMid">) {
+  const details: Record<string, string> = {
+    Motor: joinDetails([r.motor?.torque_nm != null && `${r.motor.torque_nm} Nm`, r.motor?.rated_power_w != null && `${r.motor.rated_power_w} W`, r.motor?.weight_kg != null && `${r.motor.weight_kg} kg`, r.motor?.communication_protocol]),
+    Controller: joinDetails([r.controller?.rated_current_a != null && `${r.controller.rated_current_a} A`, r.controller?.communication_protocol]),
+    "Display (HMI)": joinDetails([r.display?.size, r.display?.connection_type, r.display?.bluetooth && "Bluetooth", r.display?.communication_protocol]),
+    Battery: joinDetails([r.battery?.voltage_v != null && `${r.battery.voltage_v} V`, r.battery?.capacity_wh != null && `${r.battery.capacity_wh} Wh`, r.battery?.weight_kg != null && `${r.battery.weight_kg} kg`]),
+    Charger: joinDetails([r.charger?.voltage_v != null && `${r.charger.voltage_v} V`, r.charger?.outputCurrentA != null && `${r.charger.outputCurrentA} A`]),
+  }
+  return r.scopeOfSupplyItems
+    .filter(item => !item.label.startsWith("Cable"))
+    .map(item => ({ label: item.label, value: item.value, detail: item.thirdParty ? "" : details[item.label] ?? "" }))
+}
+
 /** Drawing + live overlays. `fitWidthPx` renders the sheet at that pixel width (full size view); omit it for the inline scrollable version. */
 function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
   const fit = fitWidthPx !== undefined
@@ -25,7 +43,8 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
   const projectName = useProjectsStore(state => state.projects.find(project => project.id === state.activeProjectId)?.name)
   const brandName = useProjectsStore(state => state.brandName)
   // The report owns the slot data for both this drawing and exported reports.
-  const { harnessSlots, harnessSections, motor } = useReportData()
+  const { harnessSlots, harnessSections, motor, display, battery, charger, chargingPort, controller, speedSensorModel, scopeOfSupplyItems, isMid } = useReportData()
+  const selectedComponents = componentSummary({ motor, display, battery, charger, chargingPort, controller, speedSensorModel, scopeOfSupplyItems, isMid })
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")
   const length = (section: HarnessCableSection) => {
@@ -72,12 +91,29 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
             ))}
             <p style={position(4060, 6020, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">Docking interface · no cable</p>
             {/* Anchored to the top-left of the artwork's second white panel (x 100-1947, y 2656-7188) so it scales with the sheet. */}
-            <dl style={{ position: "absolute", left: `${150 / 6468 * 100}%`, top: `${2716 / 7288 * 100}%`, width: `${1650 / 6468 * 100}%`, fontSize: "0.98cqw", lineHeight: 1.25, padding: "1cqw", display: "flex", flexDirection: "column", gap: "0.8cqw" }} className="rounded bg-white text-slate-900">
-              <dt className="font-bold">Project specification</dt>
-              {[["Project", projectName], ["Brand", brandName], ["Motor", motor?.model], ["Bike", s.bikeCategory], ["Market", s.customSellRegion || s.sellRegion], ["Voltage", s.voltagePlatform ? `${s.voltagePlatform} V` : null], ["Rated power", (s.ratedPowerW ?? motor?.rated_power_w) ? `${s.ratedPowerW ?? motor?.rated_power_w} W` : null], ["Wheel", s.wheelSize]].map(([label, value]) => (
-                <div key={label} className="grid grid-cols-[40%_1fr]" style={{ columnGap: "0.6cqw" }}><dt className="font-semibold">{label}</dt><dd>{value || "Unspecified"}</dd></div>
-              ))}
-            </dl>
+            <div style={{ position: "absolute", left: `${150 / 6468 * 100}%`, top: `${2716 / 7288 * 100}%`, width: `${1650 / 6468 * 100}%`, height: `${4400 / 7288 * 100}%`, fontSize: "0.98cqw", lineHeight: 1.25, padding: "1cqw", display: "flex", flexDirection: "column", gap: "1.2cqw", overflow: "hidden" }} className="rounded bg-white text-slate-900">
+              <dl className="flex shrink-0 flex-col" style={{ gap: "0.8cqw" }}>
+                <dt className="font-bold">Project specification</dt>
+                {[["Project", projectName], ["Brand", brandName], ["Motor", motor?.model], ["Bike", s.bikeCategory], ["Market", s.customSellRegion || s.sellRegion], ["Voltage", s.voltagePlatform ? `${s.voltagePlatform} V` : null], ["Rated power", (s.ratedPowerW ?? motor?.rated_power_w) ? `${s.ratedPowerW ?? motor?.rated_power_w} W` : null], ["Wheel", s.wheelSize]].map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[40%_minmax(0,1fr)]" style={{ columnGap: "0.6cqw" }}><dt className="font-semibold">{label}</dt><dd className="break-words">{value || "Unspecified"}</dd></div>
+                ))}
+              </dl>
+              <div className="min-h-0 flex-1 overflow-hidden border-t border-slate-300" style={{ paddingTop: "1cqw" }}>
+                <p className="font-bold" style={{ marginBottom: "0.8cqw" }}>Selected components</p>
+                <ul className="flex flex-col" style={{ gap: "0.8cqw" }}>
+                  {selectedComponents.map(item => (
+                    <li key={`${item.label}-${item.value}`} className="min-w-0">
+                      <div className="grid grid-cols-[40%_minmax(0,1fr)]" style={{ columnGap: "0.6cqw" }}>
+                        <span className="break-words font-semibold">{item.label}</span>
+                        <span className="break-words">{item.value}</span>
+                      </div>
+                      {item.detail && <p className="break-words text-slate-600" style={{ marginTop: "0.2cqw" }}>{item.detail}</p>}
+                    </li>
+                  ))}
+                  {selectedComponents.length === 0 && <li className="text-slate-600">No components selected yet.</li>}
+                </ul>
+              </div>
+            </div>
           </div>
       </div>
     </div>
