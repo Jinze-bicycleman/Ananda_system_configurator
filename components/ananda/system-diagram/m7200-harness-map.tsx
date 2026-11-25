@@ -71,10 +71,11 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
               </div>
             ))}
             <p style={position(4060, 6020, 630)} className="rounded bg-white px-2 py-1 text-center text-slate-600">Docking interface · no cable</p>
-            <dl style={{ ...position(1100, 3800, 1800), marginTop: "-124px", marginLeft: "-18px", fontSize: "0.98cqw" }} className="space-y-3 rounded bg-white p-4 text-slate-900">
+            {/* Anchored to the top-left of the artwork's second white panel (x 100-1947, y 2656-7188) so it scales with the sheet. */}
+            <dl style={{ position: "absolute", left: `${150 / 6468 * 100}%`, top: `${2716 / 7288 * 100}%`, width: `${1650 / 6468 * 100}%`, fontSize: "0.98cqw", lineHeight: 1.25, padding: "1cqw", display: "flex", flexDirection: "column", gap: "0.8cqw" }} className="rounded bg-white text-slate-900">
               <dt className="font-bold">Project specification</dt>
               {[["Project", projectName], ["Brand", brandName], ["Motor", motor?.model], ["Bike", s.bikeCategory], ["Market", s.customSellRegion || s.sellRegion], ["Voltage", s.voltagePlatform ? `${s.voltagePlatform} V` : null], ["Rated power", (s.ratedPowerW ?? motor?.rated_power_w) ? `${s.ratedPowerW ?? motor?.rated_power_w} W` : null], ["Wheel", s.wheelSize]].map(([label, value]) => (
-                <div key={label} className="grid grid-cols-[40%_1fr] gap-2"><dt className="font-semibold">{label}</dt><dd>{value || "Unspecified"}</dd></div>
+                <div key={label} className="grid grid-cols-[40%_1fr]" style={{ columnGap: "0.6cqw" }}><dt className="font-semibold">{label}</dt><dd>{value || "Unspecified"}</dd></div>
               ))}
             </dl>
           </div>
