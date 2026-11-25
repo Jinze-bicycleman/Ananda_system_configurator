@@ -31,6 +31,7 @@ export function resolveSeries7000Harness(s: AnandaConfig, products: {
     return product?.model ?? null
   }
   const accessory = (id: string) => s.accessoryIds.includes(id) ? aAccessories.find(a => a.id === id)?.name ?? null : null
+  const throttle = aAccessories.find(a => a.category === "throttle" && s.accessoryIds.includes(a.id))?.name ?? null
   const display = component("displayId", products.display)
   const hmiLengthM = display && !("displayId" in s.thirdPartySuppliers) ? cableValue(s.cableLengths, HMI_CONNECTION) : undefined
   const battery = component("batteryId", products.battery)
@@ -48,8 +49,7 @@ export function resolveSeries7000Harness(s: AnandaConfig, products: {
     { id: "frontLight", label: "P2 Front Light", x: 5601, y: 970, width: 1250, model: accessory("ACC-FL"), lengthNote: "Length mapping pending" },
     { id: "rearLight", label: "P4 Rear Light / turn signals", x: 5493, y: 1938, width: 1070, model: accessory("ACC-RL"), lengthMm: selectedLength("P4 Rear light harness → Motor unit"), lengthNote: "Length unspecified", lengthAnchor: [3328, 1718] },
     { id: "speedSensor", label: "P5 Speed Sensor", x: 5027, y: 3158, width: 1830, model: sensor, catalogLengthMm: sensorCatalogMm, lengthMm: selectedLength("Speed sensor → Motor unit") ?? sensorCatalogMm, lengthNote: "Length unspecified", lengthAnchor: [3218, 3088] },
-    // ACC-TH01 is explicitly hub-only. ACC-THO has no verified 7000-series compatibility.
-    { id: "throttle", label: "P3 Throttle", x: 5499, y: 4236, width: 1350, model: null },
+    { id: "throttle", label: "P3 Throttle", x: 5499, y: 4236, width: 1350, model: throttle },
     { id: "gear", label: "P3 Gear Shift Sensor", x: 5499, y: 4655, width: 1350, model: null },
     { id: "iot", label: "P3 IoT", x: 5499, y: 5081, width: 1350, model: null },
     { id: "battery", label: "P1 Battery / battery interface", x: 5333, y: 6044, width: 1680, model: battery, lengthNote: "Docking interface · no cable" },
