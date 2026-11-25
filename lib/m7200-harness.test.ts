@@ -61,6 +61,14 @@ describe("7000-series harness selection and cable boundary", () => {
     expect(slots.find(x => x.id === "speedSensor")?.lengthMm).toBeNull()
     expect(slots.find(x => x.id === "cage")?.model).toBeNull()
   })
+  it("shows the chosen charging port in the battery cage slot", () => {
+    const port = { model: "XLR 3-Pin" }
+    const cage = (state: object) => resolveSeries7000Harness({ ...config(), ...state }, { ...products, chargingPort: port }).find(x => x.id === "cage")?.model
+    expect(cage({})).toBe("XLR 3-Pin")
+    expect(cage({ skippedItems: ["chargingPortId"] })).toBeNull()
+    expect(cage({ thirdPartySuppliers: { chargingPortId: "Supplier" } })).toBe("3rd party: Supplier")
+    expect(resolveSeries7000Harness(config(), products).find(x => x.id === "cage")?.model).toBeNull()
+  })
   it("preserves either saved HMI spelling and round-trips edits through project save/reload", () => {
     useAnandaStore.setState({ ...config(), cableLengths: { "Display → Motor Unit": 1.235 } })
     const id = "harness-test-project"
