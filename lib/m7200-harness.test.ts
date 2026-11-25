@@ -40,7 +40,9 @@ describe("7000-series harness selection and cable boundary", () => {
     const slots = resolveSeries7000Harness(config(), products)
     expect(slots.find(x => x.id === "hmi")).toMatchObject({ model: "D16", lengthMm: null, editable: true })
     expect(slots.find(x => x.id === "frontLight")?.model).toBe("Front Light")
-    for (const id of ["brake1", "brake2", "gear", "iot", "throttle"]) {
+    expect(slots.find(x => x.id === "throttle")?.model).toBe("TH-01 Throttle")
+    expect(resolveSeries7000Harness({ ...config(), accessoryIds: ["ACC-FL"] }, products).find(x => x.id === "throttle")?.model).toBeNull()
+    for (const id of ["brake1", "brake2", "gear", "iot"]) {
       const slot = slots.find(x => x.id === id)!
       expect(slot.model).toBeNull()
       expect(harnessLengthLabel(slot)).toBeNull()
