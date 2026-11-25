@@ -97,7 +97,7 @@ export function useReportData(config?: AnandaConfig) {
   // `s.cableLengths` map by connection name, falling back to each
   // connection's default length when the user hasn't edited it.
   const cablePresetList = s.driveType === "hub" ? cablePresets.hub : CABLE_SPECS
-  const harnessSlots = supportsSeries7000Harness(s, motor) ? resolveSeries7000Harness(s, { display, battery, speedSensor }) : []
+  const harnessSlots = supportsSeries7000Harness(s, motor) ? resolveSeries7000Harness(s, { display, battery, speedSensor, chargingPort }) : []
   const harnessSections = harnessSlots.length ? resolveHarnessCableSections(s, harnessSlots) : []
   const cableRows: CableRow[] = harnessSections.length ? harnessSections.map(section => {
     const spec = CABLE_SPECS.find(c => c.connection === section.connection)

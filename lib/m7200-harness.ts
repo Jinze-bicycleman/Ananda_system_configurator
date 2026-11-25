@@ -23,7 +23,7 @@ export interface HarnessSlot {
 
 type Product = { model: string } | null
 export function resolveSeries7000Harness(s: AnandaConfig, products: {
-  display: Product; battery: Product; speedSensor: ({ model: string; cable_length_mm: number | null } | null)
+  display: Product; battery: Product; speedSensor: ({ model: string; cable_length_mm: number | null } | null); chargingPort?: Product
 }): HarnessSlot[] {
   const component = (key: string, product: Product): string | null => {
     if (s.skippedItems.includes(key)) return null
@@ -35,6 +35,7 @@ export function resolveSeries7000Harness(s: AnandaConfig, products: {
   const display = component("displayId", products.display)
   const hmiLengthM = display && !("displayId" in s.thirdPartySuppliers) ? cableValue(s.cableLengths, HMI_CONNECTION) : undefined
   const battery = component("batteryId", products.battery)
+  const chargingPort = component("chargingPortId", products.chargingPort ?? null)
   const sensor = component("speedSensorId", products.speedSensor)
   const sensorCatalogMm = sensor && !("speedSensorId" in s.thirdPartySuppliers) ? products.speedSensor?.cable_length_mm ?? null : null
   const selectedLength = (connection: string) => {
@@ -53,7 +54,7 @@ export function resolveSeries7000Harness(s: AnandaConfig, products: {
     { id: "gear", label: "P3 Gear Shift Sensor", x: 5499, y: 4655, width: 1350, model: null },
     { id: "iot", label: "P3 IoT", x: 5499, y: 5081, width: 1350, model: null },
     { id: "battery", label: "P1 Battery / battery interface", x: 5333, y: 6044, width: 1680, model: battery, lengthNote: "Docking interface · no cable" },
-    { id: "cage", label: "P1 Battery mount / cage", x: 5330, y: 6854, width: 1680, model: battery && !("batteryId" in s.thirdPartySuppliers) ? `${battery} Cage` : null, lengthMm: selectedLength("Battery cage → Motor unit"), lengthNote: "Length unspecified", lengthAnchor: [3368, 6576] },
+    { id: "cage", label: "P1 Battery mount / cage", x: 5330, y: 6854, width: 1680, model: chargingPort, lengthMm: selectedLength("Battery cage → Motor unit"), lengthNote: "Length unspecified", lengthAnchor: [3368, 6576] },
   ]
 }
 
