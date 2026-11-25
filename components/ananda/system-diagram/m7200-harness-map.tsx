@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, type CSSProperties } from "react"
-import { Maximize2 } from "lucide-react"
+import { useEffect, useState, type CSSProperties } from "react"
+import { Maximize2, MoveHorizontal, Scan, ZoomIn, ZoomOut } from "lucide-react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
@@ -18,8 +18,9 @@ const position = (x: number, y: number, width: number): CSSProperties => ({
   width: `${width / 6468 * 100}%`, transform: "translate(-50%, -50%)",
 })
 
-/** Drawing + live overlays. `fit` sizes it to the viewport so the whole sheet is visible at once. */
-function HarnessDrawing({ fit }: { fit: boolean }) {
+/** Drawing + live overlays. `fitWidthPx` renders the sheet at that pixel width (full size view); omit it for the inline scrollable version. */
+function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
+  const fit = fitWidthPx !== undefined
   const s = useAnandaStore()
   const projectName = useProjectsStore(state => state.projects.find(project => project.id === state.activeProjectId)?.name)
   const brandName = useProjectsStore(state => state.brandName)
@@ -47,7 +48,7 @@ function HarnessDrawing({ fit }: { fit: boolean }) {
   return (
     <div className={fit ? "mx-auto w-fit" : "overflow-x-auto border border-border"} tabIndex={fit ? undefined : 0} role="region" aria-label={`${fit ? "Full size" : "Scrollable"} ${motor?.model ?? "7000 series"} harness drawing`}>
       <div className={fit ? "relative bg-white" : "relative w-full min-w-[1600px]"}
-        style={{ aspectRatio: "6468 / 7288", containerType: "inline-size", ...(fit ? { width: "min(calc(100vw - 2rem), calc((100dvh - 5.5rem) * 6468 / 7288))" } : {}) }}>
+        style={{ aspectRatio: "6468 / 7288", containerType: "inline-size", ...(fit ? { width: `${fitWidthPx}px` } : {}) }}>
           {/* Preserve the approved artwork as an external, unmodified image. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/system-diagrams/m7200-harness-map.svg" alt={`7000-series wiring artwork for ${motor?.model ?? "the selected motor"}. Live component labels and cable lengths are overlaid. These models share the approved M7200 artwork.`} width={6468} height={7288} className="absolute inset-0 h-full w-full" />
@@ -82,6 +83,58 @@ function HarnessDrawing({ fit }: { fit: boolean }) {
   )
 }
 
+const MIN_SCALE = 0.25
+const MAX_SCALE = 3
+const ZOOM_STEP = 1.25
+const VIEW_PADDING = 32
+const SHEET_RATIO = 6468 / 7288
+
+/** Zoomable full size view. Scale 1 means the sheet spans the full viewer width; `null` fits the whole sheet on screen. */
+function FullSizeViewer() {
+  const [viewport, setViewport] = useState<HTMLDivElement | null>(null)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [scale, setScale] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!viewport) return
+    const measure = () => setSize({ width: viewport.clientWidth, height: viewport.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [viewport])
+
+  const fitWidth = Math.max(size.width - VIEW_PADDING, 0)
+  const fitPage = Math.min(fitWidth, Math.max(size.height - VIEW_PADDING, 0) * SHEET_RATIO)
+  const effectiveScale = scale ?? (fitWidth > 0 ? fitPage / fitWidth : 1)
+  const zoomBy = (factor: number) => setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, effectiveScale * factor)))
+
+  return (
+    <>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2" role="toolbar" aria-label="Zoom controls">
+        <Button type="button" variant="outline" size="icon" aria-label="Zoom out" disabled={effectiveScale <= MIN_SCALE} onClick={() => zoomBy(1 / ZOOM_STEP)}>
+          <ZoomOut className="size-4" aria-hidden="true" />
+        </Button>
+        <span className="min-w-14 text-center text-sm tabular-nums" aria-live="polite">{Math.round(effectiveScale * 100)}%</span>
+        <Button type="button" variant="outline" size="icon" aria-label="Zoom in" disabled={effectiveScale >= MAX_SCALE} onClick={() => zoomBy(ZOOM_STEP)}>
+          <ZoomIn className="size-4" aria-hidden="true" />
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="ml-2 gap-2" onClick={() => setScale(1)}>
+          <MoveHorizontal className="size-4" aria-hidden="true" />
+          Fit to screen
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="gap-2" onClick={() => setScale(null)}>
+          <Scan className="size-4" aria-hidden="true" />
+          Show whole sheet
+        </Button>
+      </div>
+      <div ref={setViewport} className="min-h-0 flex-1 overflow-auto bg-muted/40 p-4">
+        {fitWidth > 0 && <HarnessDrawing fitWidthPx={Math.round(fitWidth * effectiveScale)} />}
+      </div>
+    </>
+  )
+}
+
 export function Series7000HarnessMap() {
   const [fullOpen, setFullOpen] = useState(false)
   const { motor } = useReportData()
@@ -105,13 +158,11 @@ export function Series7000HarnessMap() {
               <DialogTitle className="text-base font-semibold">{diagramTitle}</DialogTitle>
               <DialogDescription className="sr-only">Full size view of the harness map. Select a cable length to edit it.</DialogDescription>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto bg-muted/40 p-4">
-              <HarnessDrawing fit />
-            </div>
+            <FullSizeViewer />
           </DialogContent>
         </Dialog>
       </div>
-      {!fullOpen && <HarnessDrawing fit={false} />}
+      {!fullOpen && <HarnessDrawing />}
     </section>
   )
 }
