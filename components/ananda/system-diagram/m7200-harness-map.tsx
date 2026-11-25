@@ -34,7 +34,7 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
       <Popover>
         <PopoverTrigger asChild>
           <button type="button" aria-label={`Edit ${section.label} length: ${label}`}
-            className="min-h-11 rounded border border-green-700 bg-white px-2 font-semibold text-green-900 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-800">
+            className="inline-flex min-h-[2cqw] items-center justify-center whitespace-nowrap rounded-[0.35cqw] border-[0.1cqw] border-green-700 bg-white px-[0.6cqw] font-semibold text-green-900 underline underline-offset-[0.25cqw] focus-visible:outline-[0.15cqw] focus-visible:outline-offset-[0.15cqw] focus-visible:outline-green-800">
             {label}
           </button>
         </PopoverTrigger>
@@ -66,7 +66,7 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
             ))}
             {harnessSections.map(section => (
               <div key={section.id} data-harness-length-for={section.id} style={position(section.x, section.y, 630)} className="text-center">
-                <span className="mb-1 block bg-white text-slate-600">{section.label.slice(0, 2)} cable</span>
+                <span className="mb-[0.2cqw] block bg-white text-slate-600">{section.label.slice(0, 2)} cable</span>
                 {length(section)}
               </div>
             ))}
