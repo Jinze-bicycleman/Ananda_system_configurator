@@ -185,17 +185,27 @@ export function useCompatibleControllers(motor: MotorRow | null) {
 
 export const RIDER_INTERFACE_LABEL = "Rider Interface (Display)"
 
-// Charger & charging port are not yet modeled in the database — kept as static
-// reference data tied to the chosen voltage platform, shown alongside battery
-// in the package configuration screen.
-export type ChargerOption = { id: string; model: string; voltage_v: number; outputCurrentA: number; description: string }
+// Chargers are loaded from the database by `useCatalogSync` (lib/catalog-sync.ts),
+// which fills this array in place. A charger may support more than one battery
+// voltage, with its own output current for each.
+export type ChargerRating = { voltage: number; currentA: number | null }
+export type ChargerOption = { id: string; model: string; ratings: ChargerRating[]; description: string }
 export type ChargingPortOption = { id: string; model: string; description: string }
 
-export const CHARGERS: ChargerOption[] = [
-  { id: "charger-36v-2a", model: "AC-36-2", voltage_v: 36, outputCurrentA: 2, description: "Standard 2A charger for 36V packs" },
-  { id: "charger-48v-2a", model: "AC-48-2", voltage_v: 48, outputCurrentA: 2, description: "Standard 2A charger for 48V packs" },
-  { id: "charger-52v-3a", model: "AC-52-3", voltage_v: 52, outputCurrentA: 3, description: "Fast 3A charger for 52V packs" },
-]
+export const CHARGERS: ChargerOption[] = []
+
+/** "36V" or "36V / 48V" */
+export function chargerVoltageLabel(charger: ChargerOption) {
+  return charger.ratings.map((r) => `${r.voltage}V`).join(" / ")
+}
+
+/** "2A" for one voltage, "5A @ 36V / 4.5A @ 48V" for two. */
+export function chargerCurrentLabel(charger: ChargerOption) {
+  const known = charger.ratings.filter((r) => r.currentA != null)
+  if (known.length === 0) return ""
+  if (charger.ratings.length === 1) return `${known[0].currentA}A`
+  return known.map((r) => `${r.currentA}A @ ${r.voltage}V`).join(" / ")
+}
 
 export const CHARGING_PORTS: ChargingPortOption[] = [
   { id: "port-xlr", model: "XLR 3-Pin", description: "Standard round XLR charging port" },
@@ -203,7 +213,7 @@ export const CHARGING_PORTS: ChargingPortOption[] = [
 ]
 
 export function chargersForVoltage(voltagePlatform: number | null) {
-  return voltagePlatform ? CHARGERS.filter((c) => c.voltage_v === voltagePlatform) : []
+  return voltagePlatform ? CHARGERS.filter((c) => c.ratings.some((r) => r.voltage === voltagePlatform)) : []
 }
 
 // Product rows carry two possible image fields (`image_url`, `image_path`),

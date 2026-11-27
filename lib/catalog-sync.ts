@@ -11,6 +11,7 @@ import {
   type AChargingPort,
   type VoltagePlatform,
 } from "@/lib/ananda-data"
+import { CHARGERS, type ChargerOption } from "@/lib/ananda-packages"
 
 type Row = Record<string, unknown>
 
@@ -61,6 +62,21 @@ function applyCatalogs(rows: { accessories: Row[]; chargers: Row[]; chargingPort
         imageUrl: text(r.image_url),
       }),
     ),
+  )
+  CHARGERS.splice(
+    0,
+    CHARGERS.length,
+    ...rows.chargers.map((r): ChargerOption => {
+      const option = text(r.voltage_option) || String(r.voltage_v)
+      const voltages = option === "36_48" ? [36, 48] : [Number(option) || Number(r.voltage_v)]
+      const currents = [num(r.current_a), num(r.current_secondary_a)]
+      return {
+        id: text(r.code),
+        model: text(r.model),
+        ratings: voltages.map((voltage, i) => ({ voltage, currentA: currents[i] ?? null })),
+        description: text(r.short_description),
+      }
+    }),
   )
   aChargingPorts.splice(
     0,

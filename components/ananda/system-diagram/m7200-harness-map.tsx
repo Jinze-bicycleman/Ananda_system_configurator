@@ -5,7 +5,7 @@ import { Maximize2, MoveHorizontal, Scan, ZoomIn, ZoomOut } from "lucide-react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
-import { useBikeComponents, type BikeComponentRow } from "@/lib/ananda-packages"
+import { useBikeComponents, chargerVoltageLabel, chargerCurrentLabel, type BikeComponentRow } from "@/lib/ananda-packages"
 import type { HarnessCableSection } from "@/lib/m7200-harness"
 import { HarnessSectionLengthEditor } from "./harness-section-length-editor"
 import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
@@ -50,7 +50,7 @@ function componentSummary(r: SummaryInput) {
     Controller: joinDetails([r.controller?.rated_current_a != null && `${r.controller.rated_current_a} A`, r.controller?.communication_protocol]),
     "Display (HMI)": joinDetails([r.display?.connection_type, r.display?.bluetooth && "Bluetooth", displayProtocol(r.display?.communication_protocol, r.hmiProtocolPreference)]),
     Battery: joinDetails([r.battery?.voltage_v != null && `${r.battery.voltage_v} V`, r.battery?.capacity_wh != null && `${r.battery.capacity_wh} Wh`, r.battery?.weight_kg != null && `${r.battery.weight_kg} kg`]),
-    Charger: joinDetails([r.charger?.voltage_v != null && `${r.charger.voltage_v} V`, r.charger?.outputCurrentA != null && `${r.charger.outputCurrentA} A`]),
+    Charger: joinDetails(r.charger ? [chargerVoltageLabel(r.charger), chargerCurrentLabel(r.charger)] : []),
   }
   const lights = new Map(r.accessories.filter(a => a.category === "lights").map(a => [a.name, a.id]))
   return r.scopeOfSupplyItems

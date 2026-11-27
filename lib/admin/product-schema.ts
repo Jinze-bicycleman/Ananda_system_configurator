@@ -7,6 +7,10 @@ export type ProductField = {
   required?: boolean
   options?: { value: string; label: string }[]
   hint?: string
+  /** Only show (and save) this field when another field has one of the given values. */
+  showWhen?: { field: string; in: string[] }
+  /** Replace the label depending on the value of another field. */
+  labelWhen?: { field: string; labels: Record<string, string> }
 }
 
 export type ProductTable = {
@@ -66,6 +70,12 @@ const waterproofField: ProductField = {
   type: "text",
   hint: "For example IP65 or IP67.",
 }
+
+export const CHARGER_VOLTAGE_OPTIONS = [
+  { value: "36", label: "36V" },
+  { value: "48", label: "48V" },
+  { value: "36_48", label: "36V & 48V" },
+]
 
 export const PRODUCT_TABLES: ProductTable[] = [
   {
@@ -181,8 +191,31 @@ export const PRODUCT_TABLES: ProductTable[] = [
     singular: "charger",
     fields: [
       { name: "model", label: "Model", type: "text", required: true },
-      { name: "voltage_v", label: "Voltage (V)", type: "integer", required: true },
-      { name: "current_a", label: "Current (A)", type: "number", required: true },
+      {
+        name: "voltage_option",
+        label: "Battery voltage",
+        type: "select",
+        required: true,
+        options: CHARGER_VOLTAGE_OPTIONS,
+        hint: "Choose 36V & 48V for a charger that works with both battery types.",
+      },
+      {
+        name: "current_a",
+        label: "Current (A)",
+        type: "number",
+        required: true,
+        labelWhen: {
+          field: "voltage_option",
+          labels: { "36": "Current at 36V (A)", "48": "Current at 48V (A)", "36_48": "Current at 36V (A)" },
+        },
+      },
+      {
+        name: "current_secondary_a",
+        label: "Current at 48V (A)",
+        type: "number",
+        required: true,
+        showWhen: { field: "voltage_option", in: ["36_48"] },
+      },
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       ...simple,
     ],

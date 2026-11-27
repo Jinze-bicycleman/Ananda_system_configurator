@@ -13,6 +13,8 @@ import {
   sensorsForPlatform,
   useBikeComponents,
   chargersForVoltage,
+  chargerVoltageLabel,
+  chargerCurrentLabel,
   productImages,
   speedSensorTypeLabel,
   BIKE_COMPONENT_CATEGORIES,
@@ -879,7 +881,7 @@ export function Step3PackageConfiguration() {
             <div>
               <p className="text-sm font-semibold text-primary">{selectedCharger.model}</p>
               <p className="text-xs text-muted-foreground">
-                {selectedCharger.voltage_v}V · {selectedCharger.outputCurrentA}A
+                {chargerVoltageLabel(selectedCharger)} · {chargerCurrentLabel(selectedCharger)}
               </p>
             </div>
           )
@@ -891,8 +893,8 @@ export function Step3PackageConfiguration() {
               key={c.id}
               title={c.model}
               specs={[
-                { label: "Voltage", value: `${c.voltage_v}V` },
-                { label: "Current", value: `${c.outputCurrentA}A` },
+                { label: "Voltage", value: chargerVoltageLabel(c) },
+                { label: "Current", value: chargerCurrentLabel(c) },
               ]}
               selected={s.chargerId === c.id}
               onSelect={() => s.selectPackageItem("chargerId", c.id)}

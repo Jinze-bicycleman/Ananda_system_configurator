@@ -37,6 +37,15 @@ function toForm(config: ProductTable, record: ProductRecord | null): FormValues 
   return values
 }
 
+function isVisible(field: ProductField, form: FormValues) {
+  return !field.showWhen || field.showWhen.in.includes(String(form[field.showWhen.field] ?? ""))
+}
+
+function fieldLabel(field: ProductField, form: FormValues) {
+  const labels = field.labelWhen?.labels
+  return (labels && labels[String(form[field.labelWhen!.field] ?? "")]) || field.label
+}
+
 function FieldInput({ field, value, onChange }: { field: ProductField; value: string | boolean; onChange: (v: string | boolean) => void }) {
   const id = `field-${field.name}`
   switch (field.type) {
@@ -85,13 +94,24 @@ function FieldInput({ field, value, onChange }: { field: ProductField; value: st
 
 function summary(config: ProductTable, record: ProductRecord) {
   const parts: string[] = []
+  if (config.table === "chargers") {
+    const option = String(record.voltage_option ?? record.voltage_v ?? "")
+    if (option === "36_48") {
+      parts.push("36V & 48V")
+      if (record.current_a) parts.push(`${record.current_a} A @ 36V`)
+      if (record.current_secondary_a) parts.push(`${record.current_secondary_a} A @ 48V`)
+    } else {
+      if (option) parts.push(`${option}V`)
+      if (record.current_a) parts.push(`${record.current_a} A`)
+    }
+    return parts.join("  ·  ")
+  }
   if (record.voltage_v) parts.push(`${record.voltage_v} V`)
   if (config.table === "motors" && record.torque_nm) parts.push(`${record.torque_nm} Nm`)
   if (config.table === "motors" && record.motor_type) parts.push(record.motor_type === "hub" ? "Hub" : "Mid drive")
   if (config.table === "controllers" && record.peak_current_a) parts.push(`${record.peak_current_a} A peak`)
   if (config.table === "hmi_displays" && record.size) parts.push(String(record.size))
   if (config.table === "batteries" && record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
-  if (config.table === "chargers" && record.current_a) parts.push(`${record.current_a} A`)
   if (config.table === "charging_ports" && record.connector_type) parts.push(String(record.connector_type))
   if (config.table === "accessories" && record.category) parts.push(String(record.category))
   if (record.motor_platform && ["speed_sensors", "cadence_sensors", "torque_sensors"].includes(config.table)) {
@@ -223,10 +243,10 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
-              {formFields.map((field) => (
+              {formFields.filter((field) => isVisible(field, form)).map((field) => (
                 <div key={field.name} className={field.type === "textarea" ? "space-y-2 sm:col-span-2" : "space-y-2"}>
                   <Label htmlFor={`field-${field.name}`}>
-                    {field.label}
+                    {fieldLabel(field, form)}
                     {field.required && <span className="text-destructive"> *</span>}
                   </Label>
                   <FieldInput field={field} value={form[field.name] ?? ""} onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))} />
