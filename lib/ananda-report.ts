@@ -8,7 +8,7 @@
 
 import { useAnandaStore, hasThirdPartySupplier, thirdPartyModelOf, sellRegionName, type AnandaConfig, type PackageItemKey } from "@/lib/ananda-store"
 import { aAccessories, cablePresets } from "@/lib/ananda-data"
-import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, batteryDischargeLabel, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
+import { useMotors, useControllers, useDisplays, useBatteries, useMotorAssistModes, useSpeedSensors, useBikeComponents, batteryDischargeLabel, batteryNormalDischargeLabel, batteryCapacityAhLabel, batteryEnergyWhLabel, CHARGERS, CHARGING_PORTS } from "@/lib/ananda-packages"
 import { cableValue } from "./cable-connections"
 import { supportsSeries7000Harness, resolveSeries7000Harness, resolveHarnessCableSections, harnessLengthLabel } from "./m7200-harness"
 import { CABLE_SPECS } from "@/lib/ananda-system-diagram"
@@ -418,7 +418,12 @@ export async function generateReportPdf(data: ReportData, meta: ReportMeta = {})
   sectionTitle("Battery & Charging")
   if (hasThirdPartySupplier(s, "batteryId")) row("Battery", thirdPartyValue(s.thirdPartySuppliers.batteryId ?? "", thirdPartyModelOf(s, "batteryId")), true)
   else row("Battery", batterySkipped ? "Not Needed" : battery ? battery.model : "—")
-  if (battery?.capacity_wh) row("Capacity", `${battery.capacity_wh} Wh`)
+  const batteryEnergy = battery ? batteryEnergyWhLabel(battery, s.voltagePlatform) : null
+  if (batteryEnergy) row("Energy Capacity", batteryEnergy)
+  const batteryRatedCapacity = battery ? batteryCapacityAhLabel(battery, s.voltagePlatform) : null
+  if (batteryRatedCapacity) row("Rated Capacity", batteryRatedCapacity)
+  const batteryNormalDischarge = battery ? batteryNormalDischargeLabel(battery, s.voltagePlatform) : null
+  if (batteryNormalDischarge) row("Normal Discharge Current", batteryNormalDischarge)
   const batteryDischarge = battery ? batteryDischargeLabel(battery, s.voltagePlatform) : null
   if (batteryDischarge) row("Max Discharge Current", batteryDischarge)
   if (battery?.weight_kg) row("Battery Weight", `${battery.weight_kg} kg`)

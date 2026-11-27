@@ -3,6 +3,7 @@
 import { harnessLengthLabel } from "@/lib/m7200-harness"
 import { useReportData, PACKAGE_ITEM_LABELS, thirdPartyValue } from "@/lib/ananda-report"
 import { hasThirdPartySupplier, thirdPartyModelOf, sellRegionName, type PackageItemKey } from "@/lib/ananda-store"
+import { batteryDischargeLabel, batteryNormalDischargeLabel, batteryCapacityAhLabel, batteryEnergyWhLabel } from "@/lib/ananda-packages"
 import { StepHeader } from "./ui-primitives"
 import { useState } from "react"
 import { useProjectsStore } from "@/lib/ananda-projects"
@@ -303,7 +304,10 @@ export function Step7Report() {
       {/* ─── Battery / Charger ─── */}
       <ReportSection title="Battery & Charging">
         <PackageRow s={s} itemKey="batteryId" fallback={batterySkipped ? "Not Needed" : battery ? battery.model : "—"} />
-        {battery?.capacity_wh && <Row label="Capacity" value={`${battery.capacity_wh} Wh`} />}
+        {battery && batteryEnergyWhLabel(battery, s.voltagePlatform) && <Row label="Energy Capacity" value={batteryEnergyWhLabel(battery, s.voltagePlatform) ?? ""} />}
+        {battery && batteryCapacityAhLabel(battery, s.voltagePlatform) && <Row label="Rated Capacity" value={batteryCapacityAhLabel(battery, s.voltagePlatform) ?? ""} />}
+        {battery && batteryNormalDischargeLabel(battery, s.voltagePlatform) && <Row label="Normal Discharge Current" value={batteryNormalDischargeLabel(battery, s.voltagePlatform) ?? ""} />}
+        {battery && batteryDischargeLabel(battery, s.voltagePlatform) && <Row label="Max Discharge Current" value={batteryDischargeLabel(battery, s.voltagePlatform) ?? ""} />}
         {battery?.weight_kg && <Row label="Battery Weight" value={`${battery.weight_kg} kg`} />}
         <PackageRow s={s} itemKey="chargerId" fallback={charger ? charger.model : "—"} />
         <PackageRow s={s} itemKey="chargingPortId" fallback={chargingPort ? chargingPort.model : "—"} />

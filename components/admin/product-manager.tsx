@@ -108,18 +108,21 @@ function summary(config: ProductTable, record: ProductRecord) {
   }
   if (config.table === "batteries") {
     const option = String(record.voltage_option ?? record.voltage_v ?? "")
-    const discharge = record.max_continuous_discharge_current_a
-    const dischargeSecondary = record.max_continuous_discharge_current_secondary_a
-    if (option === "36_48") {
-      parts.push("36V & 48V")
-      if (record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
-      if (discharge) parts.push(`${discharge} A discharge @ 36V`)
-      if (dischargeSecondary) parts.push(`${dischargeSecondary} A discharge @ 48V`)
-    } else {
-      if (option) parts.push(`${option}V`)
-      if (record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
-      if (discharge) parts.push(`${discharge} A discharge`)
+    const dual = option === "36_48"
+    parts.push(dual ? "36V & 48V" : option ? `${option}V` : "")
+    const add = (primary: unknown, secondary: unknown, unit: string, suffix = "") => {
+      if (dual) {
+        if (primary) parts.push(`${primary} ${unit}${suffix} @ 36V`)
+        if (secondary) parts.push(`${secondary} ${unit}${suffix} @ 48V`)
+      } else if (primary) {
+        parts.push(`${primary} ${unit}${suffix}`)
+      }
     }
+    add(record.capacity_ah, record.capacity_ah_secondary, "Ah")
+    add(record.capacity_wh, record.capacity_wh_secondary, "Wh")
+    add(record.normal_discharge_current_a, record.normal_discharge_current_secondary_a, "A", " normal")
+    add(record.max_continuous_discharge_current_a, record.max_continuous_discharge_current_secondary_a, "A", " max")
+    return parts.filter(Boolean).join("  ·  ")
     return parts.join("  ·  ")
   }
   if (record.voltage_v) parts.push(`${record.voltage_v} V`)

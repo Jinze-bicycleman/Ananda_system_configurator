@@ -82,16 +82,25 @@ export type HmiDisplayRow = {
 export type BatteryRow = {
   id: string
   model: string
+  /** Rated capacity. For 36V & 48V batteries this is the 36V value. */
   capacity_ah: number | null
+  /** Rated capacity at 48V, only for 36V & 48V batteries. */
+  capacity_ah_secondary: number | null
+  /** Energy. For 36V & 48V batteries this is the 36V value. */
   capacity_wh: number | null
+  /** Energy at 48V, only for 36V & 48V batteries. */
+  capacity_wh_secondary: number | null
   weight_kg: number | null
   size: string | null
   voltage_v: number
   /** "36", "48" or "36_48" (supports both platforms). Falls back to voltage_v when missing. */
   voltage_option: string | null
   max_continuous_discharge_current_a: number | null
-  /** Discharge current at 48V, only for 36V & 48V batteries. */
+  /** Max discharge current at 48V, only for 36V & 48V batteries. */
   max_continuous_discharge_current_secondary_a: number | null
+  normal_discharge_current_a: number | null
+  /** Normal discharge current at 48V, only for 36V & 48V batteries. */
+  normal_discharge_current_secondary_a: number | null
   communication_protocol: string | null
   communication_protocols: string[] | null
   length_mm: number | null
@@ -116,7 +125,7 @@ const HMI_COLUMNS =
   "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, mounting_position, certifications, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const BATTERY_COLUMNS =
-  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, voltage_option, max_continuous_discharge_current_a, max_continuous_discharge_current_secondary_a, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, capacity_ah, capacity_ah_secondary, capacity_wh, capacity_wh_secondary, weight_kg, size, voltage_v, voltage_option, max_continuous_discharge_current_a, max_continuous_discharge_current_secondary_a, normal_discharge_current_a, normal_discharge_current_secondary_a, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 async function fetchMotors(): Promise<MotorRow[]> {
   const supabase = createClient()
@@ -182,20 +191,58 @@ export function batteryVoltageLabel(battery: Pick<BatteryRow, "voltage_v" | "vol
   return batteryVoltages(battery).map((v) => `${v}V`).join(" / ")
 }
 
-/** Max discharge current for the platform, or for every platform when none is given. */
-export function batteryDischargeLabel(
-  battery: Pick<BatteryRow, "voltage_v" | "voltage_option" | "max_continuous_discharge_current_a" | "max_continuous_discharge_current_secondary_a">,
+type BatteryVoltageFields = Pick<BatteryRow, "voltage_v" | "voltage_option">
+
+/**
+ * A per-platform battery value (first = 36V or the only voltage, second = 48V) as text:
+ * the value for the given platform, or every platform's value when none is given.
+ */
+function batteryValueLabel(
+  battery: BatteryVoltageFields,
+  values: [number | null, number | null],
+  unit: string,
   voltagePlatform?: number | null,
 ): string | null {
   const voltages = batteryVoltages(battery)
-  const currents = [battery.max_continuous_discharge_current_a, battery.max_continuous_discharge_current_secondary_a]
-  if (voltages.length === 1) return currents[0] != null ? `${currents[0]}A` : null
+  if (voltages.length === 1) return values[0] != null ? `${values[0]}${unit}` : null
   if (voltagePlatform != null) {
-    const current = currents[voltages.indexOf(voltagePlatform)]
-    return current != null ? `${current}A` : null
+    const value = values[voltages.indexOf(voltagePlatform)]
+    return value != null ? `${value}${unit}` : null
   }
-  const known = voltages.map((voltage, i) => ({ voltage, current: currents[i] })).filter((r) => r.current != null)
-  return known.length ? known.map((r) => `${r.current}A @ ${r.voltage}V`).join(" / ") : null
+  const known = voltages.map((voltage, i) => ({ voltage, value: values[i] })).filter((r) => r.value != null)
+  return known.length ? known.map((r) => `${r.value}${unit} @ ${r.voltage}V`).join(" / ") : null
+}
+
+/** Max discharge current for the platform, or for every platform when none is given. */
+export function batteryDischargeLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "max_continuous_discharge_current_a" | "max_continuous_discharge_current_secondary_a">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.max_continuous_discharge_current_a, battery.max_continuous_discharge_current_secondary_a], "A", voltagePlatform)
+}
+
+/** Normal (nominal) discharge current for the platform, or for every platform when none is given. */
+export function batteryNormalDischargeLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "normal_discharge_current_a" | "normal_discharge_current_secondary_a">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.normal_discharge_current_a, battery.normal_discharge_current_secondary_a], "A", voltagePlatform)
+}
+
+/** Rated capacity (Ah) for the platform, or for every platform when none is given. */
+export function batteryCapacityAhLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "capacity_ah" | "capacity_ah_secondary">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.capacity_ah, battery.capacity_ah_secondary], "Ah", voltagePlatform)
+}
+
+/** Energy capacity (Wh) for the platform, or for every platform when none is given. */
+export function batteryEnergyWhLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "capacity_wh" | "capacity_wh_secondary">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.capacity_wh, battery.capacity_wh_secondary], "Wh", voltagePlatform)
 }
 
 const driveTypeToMotorType: Record<"mid" | "hub", MotorRow["motor_type"]> = {

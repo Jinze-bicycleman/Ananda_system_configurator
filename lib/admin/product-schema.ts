@@ -77,6 +77,34 @@ export const CHARGER_VOLTAGE_OPTIONS = [
   { value: "36_48", label: "36V & 48V" },
 ]
 
+/**
+ * A value that can differ per voltage platform: one field for 36V (or the only voltage)
+ * and a second one, shown only for 36V & 48V products, for 48V.
+ */
+function dualVoltageFields(primary: string, secondary: string, label: string, unit: string): ProductField[] {
+  return [
+    {
+      name: primary,
+      label: `${label} (${unit})`,
+      type: "number",
+      labelWhen: {
+        field: "voltage_option",
+        labels: {
+          "36": `${label} at 36V (${unit})`,
+          "48": `${label} at 48V (${unit})`,
+          "36_48": `${label} at 36V (${unit})`,
+        },
+      },
+    },
+    {
+      name: secondary,
+      label: `${label} at 48V (${unit})`,
+      type: "number",
+      showWhen: { field: "voltage_option", in: ["36_48"] },
+    },
+  ]
+}
+
 export const PRODUCT_TABLES: ProductTable[] = [
   {
     table: "motors",
@@ -180,27 +208,10 @@ export const PRODUCT_TABLES: ProductTable[] = [
   options: CHARGER_VOLTAGE_OPTIONS,
   hint: "Choose 36V & 48V for a battery that supports both platforms.",
   },
-  {
-  name: "max_continuous_discharge_current_a",
-  label: "Max discharge current (A)",
-  type: "number",
-  labelWhen: {
-  field: "voltage_option",
-  labels: {
-  "36": "Max discharge current at 36V (A)",
-  "48": "Max discharge current at 48V (A)",
-  "36_48": "Max discharge current at 36V (A)",
-  },
-  },
-  },
-  {
-  name: "max_continuous_discharge_current_secondary_a",
-  label: "Max discharge current at 48V (A)",
-  type: "number",
-  showWhen: { field: "voltage_option", in: ["36_48"] },
-  },
-  { name: "capacity_ah", label: "Capacity (Ah)", type: "number" },
-      { name: "capacity_wh", label: "Energy (Wh)", type: "number" },
+      ...dualVoltageFields("capacity_ah", "capacity_ah_secondary", "Rated capacity", "Ah"),
+      ...dualVoltageFields("capacity_wh", "capacity_wh_secondary", "Energy capacity", "Wh"),
+      ...dualVoltageFields("normal_discharge_current_a", "normal_discharge_current_secondary_a", "Normal discharge current", "A"),
+      ...dualVoltageFields("max_continuous_discharge_current_a", "max_continuous_discharge_current_secondary_a", "Max discharge current", "A"),
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       { name: "size", label: "Size", type: "text" },
       { name: "length_mm", label: "Length (mm)", type: "number" },
