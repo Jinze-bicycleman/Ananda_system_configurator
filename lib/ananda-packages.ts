@@ -82,11 +82,25 @@ export type HmiDisplayRow = {
 export type BatteryRow = {
   id: string
   model: string
+  /** Rated capacity. For 36V & 48V batteries this is the 36V value. */
   capacity_ah: number | null
+  /** Rated capacity at 48V, only for 36V & 48V batteries. */
+  capacity_ah_secondary: number | null
+  /** Energy. For 36V & 48V batteries this is the 36V value. */
   capacity_wh: number | null
+  /** Energy at 48V, only for 36V & 48V batteries. */
+  capacity_wh_secondary: number | null
   weight_kg: number | null
   size: string | null
   voltage_v: number
+  /** "36", "48" or "36_48" (supports both platforms). Falls back to voltage_v when missing. */
+  voltage_option: string | null
+  max_continuous_discharge_current_a: number | null
+  /** Max discharge current at 48V, only for 36V & 48V batteries. */
+  max_continuous_discharge_current_secondary_a: number | null
+  normal_discharge_current_a: number | null
+  /** Normal discharge current at 48V, only for 36V & 48V batteries. */
+  normal_discharge_current_secondary_a: number | null
   communication_protocol: string | null
   communication_protocols: string[] | null
   length_mm: number | null
@@ -111,7 +125,7 @@ const HMI_COLUMNS =
   "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, mounting_position, certifications, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const BATTERY_COLUMNS =
-  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, capacity_ah, capacity_ah_secondary, capacity_wh, capacity_wh_secondary, weight_kg, size, voltage_v, voltage_option, max_continuous_discharge_current_a, max_continuous_discharge_current_secondary_a, normal_discharge_current_a, normal_discharge_current_secondary_a, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 async function fetchMotors(): Promise<MotorRow[]> {
   const supabase = createClient()
@@ -161,6 +175,76 @@ export function useBatteries() {
   return { batteries: data ?? [], isLoading, error }
 }
 
+/** Voltage platforms a battery supports, e.g. [36], [48] or [36, 48]. */
+export function batteryVoltages(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">): number[] {
+  const option = battery.voltage_option || String(battery.voltage_v)
+  if (option === "36_48") return [36, 48]
+  return [Number(option) || battery.voltage_v]
+}
+
+export function batterySupportsVoltage(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">, voltagePlatform: number | null) {
+  return voltagePlatform != null && batteryVoltages(battery).includes(voltagePlatform)
+}
+
+/** "36V" or "36V / 48V" */
+export function batteryVoltageLabel(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">) {
+  return batteryVoltages(battery).map((v) => `${v}V`).join(" / ")
+}
+
+type BatteryVoltageFields = Pick<BatteryRow, "voltage_v" | "voltage_option">
+
+/**
+ * A per-platform battery value (first = 36V or the only voltage, second = 48V) as text:
+ * the value for the given platform, or every platform's value when none is given.
+ */
+function batteryValueLabel(
+  battery: BatteryVoltageFields,
+  values: [number | null, number | null],
+  unit: string,
+  voltagePlatform?: number | null,
+): string | null {
+  const voltages = batteryVoltages(battery)
+  if (voltages.length === 1) return values[0] != null ? `${values[0]}${unit}` : null
+  if (voltagePlatform != null) {
+    const value = values[voltages.indexOf(voltagePlatform)]
+    return value != null ? `${value}${unit}` : null
+  }
+  const known = voltages.map((voltage, i) => ({ voltage, value: values[i] })).filter((r) => r.value != null)
+  return known.length ? known.map((r) => `${r.value}${unit} @ ${r.voltage}V`).join(" / ") : null
+}
+
+/** Max discharge current for the platform, or for every platform when none is given. */
+export function batteryDischargeLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "max_continuous_discharge_current_a" | "max_continuous_discharge_current_secondary_a">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.max_continuous_discharge_current_a, battery.max_continuous_discharge_current_secondary_a], "A", voltagePlatform)
+}
+
+/** Normal (nominal) discharge current for the platform, or for every platform when none is given. */
+export function batteryNormalDischargeLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "normal_discharge_current_a" | "normal_discharge_current_secondary_a">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.normal_discharge_current_a, battery.normal_discharge_current_secondary_a], "A", voltagePlatform)
+}
+
+/** Rated capacity (Ah) for the platform, or for every platform when none is given. */
+export function batteryCapacityAhLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "capacity_ah" | "capacity_ah_secondary">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.capacity_ah, battery.capacity_ah_secondary], "Ah", voltagePlatform)
+}
+
+/** Energy capacity (Wh) for the platform, or for every platform when none is given. */
+export function batteryEnergyWhLabel(
+  battery: BatteryVoltageFields & Pick<BatteryRow, "capacity_wh" | "capacity_wh_secondary">,
+  voltagePlatform?: number | null,
+): string | null {
+  return batteryValueLabel(battery, [battery.capacity_wh, battery.capacity_wh_secondary], "Wh", voltagePlatform)
+}
+
 const driveTypeToMotorType: Record<"mid" | "hub", MotorRow["motor_type"]> = {
   mid: "mid_drive",
   hub: "hub",
@@ -185,17 +269,27 @@ export function useCompatibleControllers(motor: MotorRow | null) {
 
 export const RIDER_INTERFACE_LABEL = "Rider Interface (Display)"
 
-// Charger & charging port are not yet modeled in the database — kept as static
-// reference data tied to the chosen voltage platform, shown alongside battery
-// in the package configuration screen.
-export type ChargerOption = { id: string; model: string; voltage_v: number; outputCurrentA: number; description: string }
+// Chargers are loaded from the database by `useCatalogSync` (lib/catalog-sync.ts),
+// which fills this array in place. A charger may support more than one battery
+// voltage, with its own output current for each.
+export type ChargerRating = { voltage: number; currentA: number | null }
+export type ChargerOption = { id: string; model: string; ratings: ChargerRating[]; description: string }
 export type ChargingPortOption = { id: string; model: string; description: string }
 
-export const CHARGERS: ChargerOption[] = [
-  { id: "charger-36v-2a", model: "AC-36-2", voltage_v: 36, outputCurrentA: 2, description: "Standard 2A charger for 36V packs" },
-  { id: "charger-48v-2a", model: "AC-48-2", voltage_v: 48, outputCurrentA: 2, description: "Standard 2A charger for 48V packs" },
-  { id: "charger-52v-3a", model: "AC-52-3", voltage_v: 52, outputCurrentA: 3, description: "Fast 3A charger for 52V packs" },
-]
+export const CHARGERS: ChargerOption[] = []
+
+/** "36V" or "36V / 48V" */
+export function chargerVoltageLabel(charger: ChargerOption) {
+  return charger.ratings.map((r) => `${r.voltage}V`).join(" / ")
+}
+
+/** "2A" for one voltage, "5A @ 36V / 4.5A @ 48V" for two. */
+export function chargerCurrentLabel(charger: ChargerOption) {
+  const known = charger.ratings.filter((r) => r.currentA != null)
+  if (known.length === 0) return ""
+  if (charger.ratings.length === 1) return `${known[0].currentA}A`
+  return known.map((r) => `${r.currentA}A @ ${r.voltage}V`).join(" / ")
+}
 
 export const CHARGING_PORTS: ChargingPortOption[] = [
   { id: "port-xlr", model: "XLR 3-Pin", description: "Standard round XLR charging port" },
@@ -203,7 +297,7 @@ export const CHARGING_PORTS: ChargingPortOption[] = [
 ]
 
 export function chargersForVoltage(voltagePlatform: number | null) {
-  return voltagePlatform ? CHARGERS.filter((c) => c.voltage_v === voltagePlatform) : []
+  return voltagePlatform ? CHARGERS.filter((c) => c.ratings.some((r) => r.voltage === voltagePlatform)) : []
 }
 
 // Product rows carry two possible image fields (`image_url`, `image_path`),

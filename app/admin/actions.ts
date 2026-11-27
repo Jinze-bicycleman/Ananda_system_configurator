@@ -90,9 +90,17 @@ export async function saveProductAction(
 
   const payload: Record<string, string | number | boolean | null> = {}
   for (const field of config.fields) {
+    if (field.showWhen && !field.showWhen.in.includes(String(values[field.showWhen.field] ?? ""))) {
+      payload[field.name] = null
+      continue
+    }
     const result = coerce(field, values[field.name])
     if ("error" in result) return { ok: false, error: result.error }
     payload[field.name] = result.value
+  }
+  if (config.table === "chargers" || config.table === "batteries") {
+    // voltage_v keeps the lowest supported voltage for older consumers of this column.
+    payload.voltage_v = payload.voltage_option === "48" ? 48 : 36
   }
   if (payload.sort_order === null) payload.sort_order = 100
   payload.updated_at = new Date().toISOString()

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus, Search, Trash2 } from "lucide-react"
+import { Copy, Loader2, Plus, Search, Trash2 } from "lucide-react"
 import { deleteProductAction, saveProductAction } from "@/app/admin/actions"
 import type { ProductField, ProductRecord, ProductTable } from "@/lib/admin/product-schema"
 import { Badge } from "@/components/ui/badge"
@@ -35,6 +35,15 @@ function toForm(config: ProductTable, record: ProductRecord | null): FormValues 
     else values[f.name] = raw == null ? (f.name === "sort_order" && !record ? "100" : "") : String(raw)
   }
   return values
+}
+
+function isVisible(field: ProductField, form: FormValues) {
+  return !field.showWhen || field.showWhen.in.includes(String(form[field.showWhen.field] ?? ""))
+}
+
+function fieldLabel(field: ProductField, form: FormValues) {
+  const labels = field.labelWhen?.labels
+  return (labels && labels[String(form[field.labelWhen!.field] ?? "")]) || field.label
 }
 
 function FieldInput({ field, value, onChange }: { field: ProductField; value: string | boolean; onChange: (v: string | boolean) => void }) {
@@ -85,13 +94,42 @@ function FieldInput({ field, value, onChange }: { field: ProductField; value: st
 
 function summary(config: ProductTable, record: ProductRecord) {
   const parts: string[] = []
+  if (config.table === "chargers") {
+    const option = String(record.voltage_option ?? record.voltage_v ?? "")
+    if (option === "36_48") {
+      parts.push("36V & 48V")
+      if (record.current_a) parts.push(`${record.current_a} A @ 36V`)
+      if (record.current_secondary_a) parts.push(`${record.current_secondary_a} A @ 48V`)
+    } else {
+      if (option) parts.push(`${option}V`)
+      if (record.current_a) parts.push(`${record.current_a} A`)
+    }
+    return parts.join("  ·  ")
+  }
+  if (config.table === "batteries") {
+    const option = String(record.voltage_option ?? record.voltage_v ?? "")
+    const dual = option === "36_48"
+    parts.push(dual ? "36V & 48V" : option ? `${option}V` : "")
+    const add = (primary: unknown, secondary: unknown, unit: string, suffix = "") => {
+      if (dual) {
+        if (primary) parts.push(`${primary} ${unit}${suffix} @ 36V`)
+        if (secondary) parts.push(`${secondary} ${unit}${suffix} @ 48V`)
+      } else if (primary) {
+        parts.push(`${primary} ${unit}${suffix}`)
+      }
+    }
+    add(record.capacity_ah, record.capacity_ah_secondary, "Ah")
+    add(record.capacity_wh, record.capacity_wh_secondary, "Wh")
+    add(record.normal_discharge_current_a, record.normal_discharge_current_secondary_a, "A", " normal")
+    add(record.max_continuous_discharge_current_a, record.max_continuous_discharge_current_secondary_a, "A", " max")
+    return parts.filter(Boolean).join("  ·  ")
+    return parts.join("  ·  ")
+  }
   if (record.voltage_v) parts.push(`${record.voltage_v} V`)
   if (config.table === "motors" && record.torque_nm) parts.push(`${record.torque_nm} Nm`)
   if (config.table === "motors" && record.motor_type) parts.push(record.motor_type === "hub" ? "Hub" : "Mid drive")
   if (config.table === "controllers" && record.peak_current_a) parts.push(`${record.peak_current_a} A peak`)
   if (config.table === "hmi_displays" && record.size) parts.push(String(record.size))
-  if (config.table === "batteries" && record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
-  if (config.table === "chargers" && record.current_a) parts.push(`${record.current_a} A`)
   if (config.table === "charging_ports" && record.connector_type) parts.push(String(record.connector_type))
   if (config.table === "accessories" && record.category) parts.push(String(record.category))
   if (record.motor_platform && ["speed_sensors", "cadence_sensors", "torque_sensors"].includes(config.table)) {
@@ -112,6 +150,7 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
   const [editing, setEditing] = useState<ProductRecord | "new" | null>(null)
   const [form, setForm] = useState<FormValues>({})
   const [error, setError] = useState<string | null>(null)
+  const [duplicateOf, setDuplicateOf] = useState<string | null>(null)
   const [toDelete, setToDelete] = useState<ProductRecord | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -122,7 +161,17 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
 
   function open(target: ProductRecord | "new") {
     setEditing(target)
+    setDuplicateOf(null)
     setForm(toForm(config, target === "new" ? null : target))
+    setError(null)
+  }
+
+  function duplicate(source: ProductRecord) {
+    const values = toForm(config, source)
+    values.model = `${String(source.model ?? "").trim()} (copy)`
+    setEditing("new")
+    setDuplicateOf(String(source.model ?? ""))
+    setForm(values)
     setError(null)
   }
 
@@ -183,11 +232,11 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {visible.map((record) => (
-            <li key={record.id}>
+            <li key={record.id} className="flex items-center transition-colors hover:bg-secondary">
               <button
                 type="button"
                 onClick={() => open(record)}
-                className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
+                className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 text-left focus-visible:bg-secondary focus-visible:outline-none"
               >
                 <span className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-secondary">
                   {record.image_url ? (
@@ -203,6 +252,17 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
                 </span>
                 {!record.is_active && <Badge variant="secondary">Hidden</Badge>}
               </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="mr-3 shrink-0 text-muted-foreground"
+                onClick={() => duplicate(record)}
+                aria-label={`Duplicate ${String(record.model)}`}
+                title="Duplicate"
+              >
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              </Button>
             </li>
           ))}
         </ul>
@@ -211,8 +271,14 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
       <Dialog open={editing !== null} onOpenChange={(o) => !o && !pending && setEditing(null)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing === "new" ? `Add ${config.singular}` : `Edit ${config.singular}`}</DialogTitle>
-            <DialogDescription>Saved changes go live in the configurator immediately.</DialogDescription>
+            <DialogTitle>
+              {duplicateOf !== null ? `Duplicate ${config.singular}` : editing === "new" ? `Add ${config.singular}` : `Edit ${config.singular}`}
+            </DialogTitle>
+            <DialogDescription>
+              {duplicateOf !== null
+                ? `Copy of ${duplicateOf}. Rename it and adjust what you need, then save to create a new ${config.singular.toLowerCase()}.`
+                : "Saved changes go live in the configurator immediately."}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
@@ -223,10 +289,10 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
-              {formFields.map((field) => (
+              {formFields.filter((field) => isVisible(field, form)).map((field) => (
                 <div key={field.name} className={field.type === "textarea" ? "space-y-2 sm:col-span-2" : "space-y-2"}>
                   <Label htmlFor={`field-${field.name}`}>
-                    {field.label}
+                    {fieldLabel(field, form)}
                     {field.required && <span className="text-destructive"> *</span>}
                   </Label>
                   <FieldInput field={field} value={form[field.name] ?? ""} onChange={(v) => setForm((f) => ({ ...f, [field.name]: v }))} />
@@ -243,19 +309,25 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
 
           <DialogFooter className="gap-2 sm:justify-between">
             {editing && editing !== "new" ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                disabled={pending}
-                onClick={() => {
-                  setDeleteError(null)
-                  setToDelete(editing)
-                }}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-                Delete
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  disabled={pending}
+                  onClick={() => {
+                    setDeleteError(null)
+                    setToDelete(editing)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  Delete
+                </Button>
+                <Button type="button" variant="ghost" disabled={pending} onClick={() => duplicate(editing)}>
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  Duplicate
+                </Button>
+              </div>
             ) : (
               <span />
             )}

@@ -7,6 +7,10 @@ export type ProductField = {
   required?: boolean
   options?: { value: string; label: string }[]
   hint?: string
+  /** Only show (and save) this field when another field has one of the given values. */
+  showWhen?: { field: string; in: string[] }
+  /** Replace the label depending on the value of another field. */
+  labelWhen?: { field: string; labels: Record<string, string> }
 }
 
 export type ProductTable = {
@@ -65,6 +69,40 @@ const waterproofField: ProductField = {
   label: "Waterproof rating",
   type: "text",
   hint: "For example IP65 or IP67.",
+}
+
+export const CHARGER_VOLTAGE_OPTIONS = [
+  { value: "36", label: "36V" },
+  { value: "48", label: "48V" },
+  { value: "36_48", label: "36V & 48V" },
+]
+
+/**
+ * A value that can differ per voltage platform: one field for 36V (or the only voltage)
+ * and a second one, shown only for 36V & 48V products, for 48V.
+ */
+function dualVoltageFields(primary: string, secondary: string, label: string, unit: string): ProductField[] {
+  return [
+    {
+      name: primary,
+      label: `${label} (${unit})`,
+      type: "number",
+      labelWhen: {
+        field: "voltage_option",
+        labels: {
+          "36": `${label} at 36V (${unit})`,
+          "48": `${label} at 48V (${unit})`,
+          "36_48": `${label} at 36V (${unit})`,
+        },
+      },
+    },
+    {
+      name: secondary,
+      label: `${label} at 48V (${unit})`,
+      type: "number",
+      showWhen: { field: "voltage_option", in: ["36_48"] },
+    },
+  ]
 }
 
 export const PRODUCT_TABLES: ProductTable[] = [
@@ -162,9 +200,18 @@ export const PRODUCT_TABLES: ProductTable[] = [
     singular: "battery",
     fields: [
       { name: "model", label: "Model", type: "text", required: true },
-      { name: "voltage_v", label: "Voltage (V)", type: "integer", required: true },
-      { name: "capacity_ah", label: "Capacity (Ah)", type: "number" },
-      { name: "capacity_wh", label: "Energy (Wh)", type: "number" },
+  {
+  name: "voltage_option",
+  label: "Voltage platform",
+  type: "select",
+  required: true,
+  options: CHARGER_VOLTAGE_OPTIONS,
+  hint: "Choose 36V & 48V for a battery that supports both platforms.",
+  },
+      ...dualVoltageFields("capacity_ah", "capacity_ah_secondary", "Rated capacity", "Ah"),
+      ...dualVoltageFields("capacity_wh", "capacity_wh_secondary", "Energy capacity", "Wh"),
+      ...dualVoltageFields("normal_discharge_current_a", "normal_discharge_current_secondary_a", "Normal discharge current", "A"),
+      ...dualVoltageFields("max_continuous_discharge_current_a", "max_continuous_discharge_current_secondary_a", "Max discharge current", "A"),
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       { name: "size", label: "Size", type: "text" },
       { name: "length_mm", label: "Length (mm)", type: "number" },
@@ -181,8 +228,31 @@ export const PRODUCT_TABLES: ProductTable[] = [
     singular: "charger",
     fields: [
       { name: "model", label: "Model", type: "text", required: true },
-      { name: "voltage_v", label: "Voltage (V)", type: "integer", required: true },
-      { name: "current_a", label: "Current (A)", type: "number", required: true },
+      {
+        name: "voltage_option",
+        label: "Battery voltage",
+        type: "select",
+        required: true,
+        options: CHARGER_VOLTAGE_OPTIONS,
+        hint: "Choose 36V & 48V for a charger that works with both battery types.",
+      },
+      {
+        name: "current_a",
+        label: "Current (A)",
+        type: "number",
+        required: true,
+        labelWhen: {
+          field: "voltage_option",
+          labels: { "36": "Current at 36V (A)", "48": "Current at 48V (A)", "36_48": "Current at 36V (A)" },
+        },
+      },
+      {
+        name: "current_secondary_a",
+        label: "Current at 48V (A)",
+        type: "number",
+        required: true,
+        showWhen: { field: "voltage_option", in: ["36_48"] },
+      },
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       ...simple,
     ],

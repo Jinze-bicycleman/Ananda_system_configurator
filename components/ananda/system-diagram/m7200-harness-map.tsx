@@ -5,7 +5,7 @@ import { Maximize2, MoveHorizontal, Scan, ZoomIn, ZoomOut } from "lucide-react"
 import { useProjectsStore } from "@/lib/ananda-projects"
 import { useAnandaStore } from "@/lib/ananda-store"
 import { useReportData } from "@/lib/ananda-report"
-import { useBikeComponents, type BikeComponentRow } from "@/lib/ananda-packages"
+import { useBikeComponents, chargerVoltageLabel, chargerCurrentLabel, batteryVoltageLabel, batteryDischargeLabel, batteryNormalDischargeLabel, batteryCapacityAhLabel, batteryEnergyWhLabel, type BikeComponentRow } from "@/lib/ananda-packages"
 import type { HarnessCableSection } from "@/lib/m7200-harness"
 import { HarnessSectionLengthEditor } from "./harness-section-length-editor"
 import { useBikeOverview } from "@/lib/bike-overview/use-bike-overview"
@@ -26,6 +26,7 @@ const joinDetails = (parts: (string | null | undefined | false)[]) => parts.filt
 /** Chosen components with a one-line spec summary, taken from the same scope-of-supply list the report uses. */
 type SummaryInput = Pick<ReportParts, "motor" | "display" | "battery" | "charger" | "chargingPort" | "controller" | "speedSensorModel" | "scopeOfSupplyItems" | "isMid" | "accessories"> & {
   hmiProtocolPreference: "can" | "uart"
+  voltagePlatform: number | null
   lightSpecs: Record<string, { voltageV: number | null; currentA: number | null; powerW: number | null }>
   bikeComponentSelections: Record<string, string | null>
   bikeComponents: BikeComponentRow[]
@@ -49,8 +50,8 @@ function componentSummary(r: SummaryInput) {
     Motor: joinDetails([r.motor?.torque_nm != null && `${r.motor.torque_nm} Nm`, r.motor?.rated_power_w != null && `${r.motor.rated_power_w} W`, r.motor?.weight_kg != null && `${r.motor.weight_kg} kg`, r.motor?.communication_protocol]),
     Controller: joinDetails([r.controller?.rated_current_a != null && `${r.controller.rated_current_a} A`, r.controller?.communication_protocol]),
     "Display (HMI)": joinDetails([r.display?.connection_type, r.display?.bluetooth && "Bluetooth", displayProtocol(r.display?.communication_protocol, r.hmiProtocolPreference)]),
-    Battery: joinDetails([r.battery?.voltage_v != null && `${r.battery.voltage_v} V`, r.battery?.capacity_wh != null && `${r.battery.capacity_wh} Wh`, r.battery?.weight_kg != null && `${r.battery.weight_kg} kg`]),
-    Charger: joinDetails([r.charger?.voltage_v != null && `${r.charger.voltage_v} V`, r.charger?.outputCurrentA != null && `${r.charger.outputCurrentA} A`]),
+    Battery: joinDetails([r.battery && batteryVoltageLabel(r.battery), r.battery && batteryEnergyWhLabel(r.battery, r.voltagePlatform), r.battery && batteryCapacityAhLabel(r.battery, r.voltagePlatform), r.battery && batteryNormalDischargeLabel(r.battery, r.voltagePlatform) && `${batteryNormalDischargeLabel(r.battery, r.voltagePlatform)} normal`, r.battery && batteryDischargeLabel(r.battery, r.voltagePlatform) && `${batteryDischargeLabel(r.battery, r.voltagePlatform)} max`, r.battery?.weight_kg != null && `${r.battery.weight_kg} kg`]),
+    Charger: joinDetails(r.charger ? [chargerVoltageLabel(r.charger), chargerCurrentLabel(r.charger)] : []),
   }
   const lights = new Map(r.accessories.filter(a => a.category === "lights").map(a => [a.name, a.id]))
   return r.scopeOfSupplyItems
@@ -77,7 +78,7 @@ function HarnessDrawing({ fitWidthPx }: { fitWidthPx?: number }) {
   const { components: bikeComponents } = useBikeComponents()
   const selectedComponents = componentSummary({
     motor, display, battery, charger, chargingPort, controller, speedSensorModel, scopeOfSupplyItems, isMid, accessories, bikeComponents,
-    hmiProtocolPreference: s.hmiProtocolPreference, lightSpecs: s.lightSpecs, bikeComponentSelections: s.bikeComponentSelections,
+    hmiProtocolPreference: s.hmiProtocolPreference, voltagePlatform: s.voltagePlatform, lightSpecs: s.lightSpecs, bikeComponentSelections: s.bikeComponentSelections,
   })
   const { cables } = useBikeOverview()
   const hmiCable = cables.find(c => c.key === "hmi")

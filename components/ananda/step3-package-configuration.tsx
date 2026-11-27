@@ -13,6 +13,14 @@ import {
   sensorsForPlatform,
   useBikeComponents,
   chargersForVoltage,
+  batterySupportsVoltage,
+  batteryVoltageLabel,
+  batteryDischargeLabel,
+  batteryNormalDischargeLabel,
+  batteryCapacityAhLabel,
+  batteryEnergyWhLabel,
+  chargerVoltageLabel,
+  chargerCurrentLabel,
   productImages,
   speedSensorTypeLabel,
   BIKE_COMPONENT_CATEGORIES,
@@ -575,7 +583,7 @@ export function Step3PackageConfiguration() {
   const torqueSensors = sensorsForPlatform(allTorqueSensors, s.driveType)
 
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
-  const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
+  const compatibleBatteries = batteries.filter((b) => batterySupportsVoltage(b, s.voltagePlatform))
   const compatibleChargers = chargersForVoltage(s.voltagePlatform)
   const { components: bikeComponents, isLoading: bikeComponentsLoading } = useBikeComponents()
 
@@ -714,7 +722,7 @@ export function Step3PackageConfiguration() {
           selectedBattery && (
             <div>
               <p className="text-sm font-semibold text-primary">{selectedBattery.model}</p>
-              <p className="text-xs text-muted-foreground">{selectedBattery.capacity_wh ?? "—"}Wh</p>
+              <p className="text-xs text-muted-foreground">{batteryEnergyWhLabel(selectedBattery, s.voltagePlatform) ?? "—"}</p>
             </div>
           )
         }
@@ -727,11 +735,18 @@ export function Step3PackageConfiguration() {
               images={productImages(b.image_url, b.image_path)}
               datasheetUrl={b.datasheet_url}
               specs={[
-                { label: "Capacity", value: b.capacity_wh ? `${b.capacity_wh}Wh` : null },
+                { label: "Energy", value: batteryEnergyWhLabel(b, s.voltagePlatform) },
+                { label: "Rated Capacity", value: batteryCapacityAhLabel(b, s.voltagePlatform) },
                 { label: "Weight", value: b.weight_kg ? `${b.weight_kg}kg` : null },
-                { label: "Voltage", value: `${b.voltage_v}V` },
+                { label: "Voltage", value: batteryVoltageLabel(b) },
+                { label: "Normal Discharge", value: batteryNormalDischargeLabel(b, s.voltagePlatform) },
+                { label: "Max Discharge", value: batteryDischargeLabel(b, s.voltagePlatform) },
               ]}
               fullSpecs={[
+                { label: "Energy (all platforms)", value: batteryEnergyWhLabel(b) },
+                { label: "Rated Capacity (all platforms)", value: batteryCapacityAhLabel(b) },
+                { label: "Normal Discharge Current (all platforms)", value: batteryNormalDischargeLabel(b) },
+                { label: "Max Discharge Current (all platforms)", value: batteryDischargeLabel(b) },
                 {
                   label: "Exact Dimensions",
                   value: b.length_mm && b.width_mm && b.height_mm ? `${b.length_mm} × ${b.width_mm} × ${b.height_mm} mm` : null,
@@ -879,7 +894,7 @@ export function Step3PackageConfiguration() {
             <div>
               <p className="text-sm font-semibold text-primary">{selectedCharger.model}</p>
               <p className="text-xs text-muted-foreground">
-                {selectedCharger.voltage_v}V · {selectedCharger.outputCurrentA}A
+                {chargerVoltageLabel(selectedCharger)} · {chargerCurrentLabel(selectedCharger)}
               </p>
             </div>
           )
@@ -891,8 +906,8 @@ export function Step3PackageConfiguration() {
               key={c.id}
               title={c.model}
               specs={[
-                { label: "Voltage", value: `${c.voltage_v}V` },
-                { label: "Current", value: `${c.outputCurrentA}A` },
+                { label: "Voltage", value: chargerVoltageLabel(c) },
+                { label: "Current", value: chargerCurrentLabel(c) },
               ]}
               selected={s.chargerId === c.id}
               onSelect={() => s.selectPackageItem("chargerId", c.id)}
