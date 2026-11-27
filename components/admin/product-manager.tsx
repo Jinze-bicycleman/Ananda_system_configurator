@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus, Search, Trash2 } from "lucide-react"
+import { Copy, Loader2, Plus, Search, Trash2 } from "lucide-react"
 import { deleteProductAction, saveProductAction } from "@/app/admin/actions"
 import type { ProductField, ProductRecord, ProductTable } from "@/lib/admin/product-schema"
 import { Badge } from "@/components/ui/badge"
@@ -150,6 +150,7 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
   const [editing, setEditing] = useState<ProductRecord | "new" | null>(null)
   const [form, setForm] = useState<FormValues>({})
   const [error, setError] = useState<string | null>(null)
+  const [duplicateOf, setDuplicateOf] = useState<string | null>(null)
   const [toDelete, setToDelete] = useState<ProductRecord | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -160,7 +161,17 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
 
   function open(target: ProductRecord | "new") {
     setEditing(target)
+    setDuplicateOf(null)
     setForm(toForm(config, target === "new" ? null : target))
+    setError(null)
+  }
+
+  function duplicate(source: ProductRecord) {
+    const values = toForm(config, source)
+    values.model = `${String(source.model ?? "").trim()} (copy)`
+    setEditing("new")
+    setDuplicateOf(String(source.model ?? ""))
+    setForm(values)
     setError(null)
   }
 
@@ -221,11 +232,11 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {visible.map((record) => (
-            <li key={record.id}>
+            <li key={record.id} className="flex items-center transition-colors hover:bg-secondary">
               <button
                 type="button"
                 onClick={() => open(record)}
-                className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-secondary focus-visible:bg-secondary focus-visible:outline-none"
+                className="flex min-w-0 flex-1 items-center gap-4 px-4 py-3 text-left focus-visible:bg-secondary focus-visible:outline-none"
               >
                 <span className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-secondary">
                   {record.image_url ? (
@@ -241,6 +252,17 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
                 </span>
                 {!record.is_active && <Badge variant="secondary">Hidden</Badge>}
               </button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="mr-3 shrink-0 text-muted-foreground"
+                onClick={() => duplicate(record)}
+                aria-label={`Duplicate ${String(record.model)}`}
+                title="Duplicate"
+              >
+                <Copy className="h-4 w-4" aria-hidden="true" />
+              </Button>
             </li>
           ))}
         </ul>
@@ -249,8 +271,14 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
       <Dialog open={editing !== null} onOpenChange={(o) => !o && !pending && setEditing(null)}>
         <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing === "new" ? `Add ${config.singular}` : `Edit ${config.singular}`}</DialogTitle>
-            <DialogDescription>Saved changes go live in the configurator immediately.</DialogDescription>
+            <DialogTitle>
+              {duplicateOf !== null ? `Duplicate ${config.singular}` : editing === "new" ? `Add ${config.singular}` : `Edit ${config.singular}`}
+            </DialogTitle>
+            <DialogDescription>
+              {duplicateOf !== null
+                ? `Copy of ${duplicateOf}. Rename it and adjust what you need, then save to create a new ${config.singular.toLowerCase()}.`
+                : "Saved changes go live in the configurator immediately."}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
@@ -281,19 +309,25 @@ export function ProductManager({ config, records }: { config: ProductTable; reco
 
           <DialogFooter className="gap-2 sm:justify-between">
             {editing && editing !== "new" ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                disabled={pending}
-                onClick={() => {
-                  setDeleteError(null)
-                  setToDelete(editing)
-                }}
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-                Delete
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  disabled={pending}
+                  onClick={() => {
+                    setDeleteError(null)
+                    setToDelete(editing)
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  Delete
+                </Button>
+                <Button type="button" variant="ghost" disabled={pending} onClick={() => duplicate(editing)}>
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  Duplicate
+                </Button>
+              </div>
             ) : (
               <span />
             )}
