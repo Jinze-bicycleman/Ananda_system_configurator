@@ -98,7 +98,7 @@ export async function saveProductAction(
     if ("error" in result) return { ok: false, error: result.error }
     payload[field.name] = result.value
   }
-  if (config.table === "chargers") {
+  if (config.table === "chargers" || config.table === "batteries") {
     // voltage_v keeps the lowest supported voltage for older consumers of this column.
     payload.voltage_v = payload.voltage_option === "48" ? 48 : 36
   }

@@ -87,6 +87,11 @@ export type BatteryRow = {
   weight_kg: number | null
   size: string | null
   voltage_v: number
+  /** "36", "48" or "36_48" (supports both platforms). Falls back to voltage_v when missing. */
+  voltage_option: string | null
+  max_continuous_discharge_current_a: number | null
+  /** Discharge current at 48V, only for 36V & 48V batteries. */
+  max_continuous_discharge_current_secondary_a: number | null
   communication_protocol: string | null
   communication_protocols: string[] | null
   length_mm: number | null
@@ -111,7 +116,7 @@ const HMI_COLUMNS =
   "id, model, size, bluetooth, weight_kg, has_4g, has_gps, display_material, connection_type, voltage_v, communication_protocol, mounting_position, certifications, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 const BATTERY_COLUMNS =
-  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
+  "id, model, capacity_ah, capacity_wh, weight_kg, size, voltage_v, voltage_option, max_continuous_discharge_current_a, max_continuous_discharge_current_secondary_a, communication_protocol, communication_protocols, length_mm, width_mm, height_mm, safety_certificate, image_url, image_path, datasheet_url, short_description, is_active, sort_order"
 
 async function fetchMotors(): Promise<MotorRow[]> {
   const supabase = createClient()
@@ -159,6 +164,38 @@ export function useDisplays() {
 export function useBatteries() {
   const { data, isLoading, error } = useSWR<BatteryRow[]>("ananda-batteries", fetchBatteries)
   return { batteries: data ?? [], isLoading, error }
+}
+
+/** Voltage platforms a battery supports, e.g. [36], [48] or [36, 48]. */
+export function batteryVoltages(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">): number[] {
+  const option = battery.voltage_option || String(battery.voltage_v)
+  if (option === "36_48") return [36, 48]
+  return [Number(option) || battery.voltage_v]
+}
+
+export function batterySupportsVoltage(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">, voltagePlatform: number | null) {
+  return voltagePlatform != null && batteryVoltages(battery).includes(voltagePlatform)
+}
+
+/** "36V" or "36V / 48V" */
+export function batteryVoltageLabel(battery: Pick<BatteryRow, "voltage_v" | "voltage_option">) {
+  return batteryVoltages(battery).map((v) => `${v}V`).join(" / ")
+}
+
+/** Max discharge current for the platform, or for every platform when none is given. */
+export function batteryDischargeLabel(
+  battery: Pick<BatteryRow, "voltage_v" | "voltage_option" | "max_continuous_discharge_current_a" | "max_continuous_discharge_current_secondary_a">,
+  voltagePlatform?: number | null,
+): string | null {
+  const voltages = batteryVoltages(battery)
+  const currents = [battery.max_continuous_discharge_current_a, battery.max_continuous_discharge_current_secondary_a]
+  if (voltages.length === 1) return currents[0] != null ? `${currents[0]}A` : null
+  if (voltagePlatform != null) {
+    const current = currents[voltages.indexOf(voltagePlatform)]
+    return current != null ? `${current}A` : null
+  }
+  const known = voltages.map((voltage, i) => ({ voltage, current: currents[i] })).filter((r) => r.current != null)
+  return known.length ? known.map((r) => `${r.current}A @ ${r.voltage}V`).join(" / ") : null
 }
 
 const driveTypeToMotorType: Record<"mid" | "hub", MotorRow["motor_type"]> = {

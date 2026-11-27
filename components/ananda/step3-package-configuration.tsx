@@ -13,6 +13,9 @@ import {
   sensorsForPlatform,
   useBikeComponents,
   chargersForVoltage,
+  batterySupportsVoltage,
+  batteryVoltageLabel,
+  batteryDischargeLabel,
   chargerVoltageLabel,
   chargerCurrentLabel,
   productImages,
@@ -577,7 +580,7 @@ export function Step3PackageConfiguration() {
   const torqueSensors = sensorsForPlatform(allTorqueSensors, s.driveType)
 
   const compatibleControllers = controllers.filter((c) => c.compatible_motor_type === "hub" && c.voltage_v === s.voltagePlatform)
-  const compatibleBatteries = batteries.filter((b) => b.voltage_v === s.voltagePlatform)
+  const compatibleBatteries = batteries.filter((b) => batterySupportsVoltage(b, s.voltagePlatform))
   const compatibleChargers = chargersForVoltage(s.voltagePlatform)
   const { components: bikeComponents, isLoading: bikeComponentsLoading } = useBikeComponents()
 
@@ -731,9 +734,11 @@ export function Step3PackageConfiguration() {
               specs={[
                 { label: "Capacity", value: b.capacity_wh ? `${b.capacity_wh}Wh` : null },
                 { label: "Weight", value: b.weight_kg ? `${b.weight_kg}kg` : null },
-                { label: "Voltage", value: `${b.voltage_v}V` },
+                { label: "Voltage", value: batteryVoltageLabel(b) },
+                { label: "Max Discharge", value: batteryDischargeLabel(b, s.voltagePlatform) },
               ]}
               fullSpecs={[
+                { label: "Max Discharge Current", value: batteryDischargeLabel(b) },
                 {
                   label: "Exact Dimensions",
                   value: b.length_mm && b.width_mm && b.height_mm ? `${b.length_mm} × ${b.width_mm} × ${b.height_mm} mm` : null,

@@ -172,8 +172,34 @@ export const PRODUCT_TABLES: ProductTable[] = [
     singular: "battery",
     fields: [
       { name: "model", label: "Model", type: "text", required: true },
-      { name: "voltage_v", label: "Voltage (V)", type: "integer", required: true },
-      { name: "capacity_ah", label: "Capacity (Ah)", type: "number" },
+  {
+  name: "voltage_option",
+  label: "Voltage platform",
+  type: "select",
+  required: true,
+  options: CHARGER_VOLTAGE_OPTIONS,
+  hint: "Choose 36V & 48V for a battery that supports both platforms.",
+  },
+  {
+  name: "max_continuous_discharge_current_a",
+  label: "Max discharge current (A)",
+  type: "number",
+  labelWhen: {
+  field: "voltage_option",
+  labels: {
+  "36": "Max discharge current at 36V (A)",
+  "48": "Max discharge current at 48V (A)",
+  "36_48": "Max discharge current at 36V (A)",
+  },
+  },
+  },
+  {
+  name: "max_continuous_discharge_current_secondary_a",
+  label: "Max discharge current at 48V (A)",
+  type: "number",
+  showWhen: { field: "voltage_option", in: ["36_48"] },
+  },
+  { name: "capacity_ah", label: "Capacity (Ah)", type: "number" },
       { name: "capacity_wh", label: "Energy (Wh)", type: "number" },
       { name: "weight_kg", label: "Weight (kg)", type: "number" },
       { name: "size", label: "Size", type: "text" },

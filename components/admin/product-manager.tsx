@@ -106,12 +106,27 @@ function summary(config: ProductTable, record: ProductRecord) {
     }
     return parts.join("  ·  ")
   }
+  if (config.table === "batteries") {
+    const option = String(record.voltage_option ?? record.voltage_v ?? "")
+    const discharge = record.max_continuous_discharge_current_a
+    const dischargeSecondary = record.max_continuous_discharge_current_secondary_a
+    if (option === "36_48") {
+      parts.push("36V & 48V")
+      if (record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
+      if (discharge) parts.push(`${discharge} A discharge @ 36V`)
+      if (dischargeSecondary) parts.push(`${dischargeSecondary} A discharge @ 48V`)
+    } else {
+      if (option) parts.push(`${option}V`)
+      if (record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
+      if (discharge) parts.push(`${discharge} A discharge`)
+    }
+    return parts.join("  ·  ")
+  }
   if (record.voltage_v) parts.push(`${record.voltage_v} V`)
   if (config.table === "motors" && record.torque_nm) parts.push(`${record.torque_nm} Nm`)
   if (config.table === "motors" && record.motor_type) parts.push(record.motor_type === "hub" ? "Hub" : "Mid drive")
   if (config.table === "controllers" && record.peak_current_a) parts.push(`${record.peak_current_a} A peak`)
   if (config.table === "hmi_displays" && record.size) parts.push(String(record.size))
-  if (config.table === "batteries" && record.capacity_wh) parts.push(`${record.capacity_wh} Wh`)
   if (config.table === "charging_ports" && record.connector_type) parts.push(String(record.connector_type))
   if (config.table === "accessories" && record.category) parts.push(String(record.category))
   if (record.motor_platform && ["speed_sensors", "cadence_sensors", "torque_sensors"].includes(config.table)) {
